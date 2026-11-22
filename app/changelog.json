@@ -6,6 +6,20 @@
  },
  "releases": [
   {
+   "id": "v7.2.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Expedition roster graphs and sorting, 3 opponents per week, phone fixes",
+   "changes": [
+    "Expedition roster: columns are Player, Gear, DPS avg, Best DPS, Performance, Notable (vs lane and Alive at end are on each player's page).",
+    "DPS avg is now the last 6 rounds on the player's current gear (was 5), everywhere including the main Roster. Hover it to see how many rounds it's based on.",
+    "Performance: each player's last 6 played rounds on their own scale, newest on the right, with the latest K/s. Hover a dot for the week and round; hollow dots are rounds on another gear set.",
+    "Expedition roster sorts like the main Roster: tap a heading, tap again to flip, earlier taps break ties, with removable sort chips and Reset to DPS avg.",
+    "Opponents: officers add guilds to the week on screen (New opponent guild name, Add to this week), up to 3 per week. Fixed: Edit this opponent didn't save for guilds from the starting data.",
+    "Phones: the main Roster's Player heading stays pinned (iPhone Safari), round cards are narrower, and opening an opponent no longer stretches the page."
+   ]
+  },
+  {
    "id": "v7.1.0",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",
