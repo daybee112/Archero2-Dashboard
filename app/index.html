@@ -249,7 +249,6 @@ thead.floating th { background: var(--surface); box-shadow: inset 0 -1px 0 var(-
 th { white-space: nowrap; }   /* column headings stay on one line */
 td.num { white-space: nowrap; }   /* numbers like "92 K/s" never break */
 .lanehist td .hp { white-space: nowrap; line-height: 1.5; }
-tr.hit td, .hp.hit { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 .roundcards { display: flex; gap: 8px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
 .roundcards button.roundcard { flex: 0 0 220px; width: 220px; border-radius: 10px; padding: 7px 10px; text-align: left; display: grid; grid-template-rows: auto 1fr auto; gap: 3px; font-weight: 400; background: var(--surface); }   /* same size whatever the round's state */
 .roundcards button.roundcard[aria-pressed="true"] { border-width: 2px; padding: 6px 9px; }
@@ -262,6 +261,8 @@ tr.hit td, .hp.hit { background: color-mix(in srgb, var(--accent) 14%, var(--sur
 .rcdot.won { background: var(--good); border-color: var(--good); } .rcdot.lost { background: var(--bad); border-color: var(--bad); }
 .chip.accent { border-color: var(--accent); color: var(--accent); }
 @media (max-width: 560px) { .stickybar.panel { padding: 8px; } }
+.buildsbar { background: var(--surface); margin: -16px -16px 0; padding: 16px 16px 10px; border-bottom: 1px solid var(--line); border-radius: 10px 10px 0 0; gap: 10px; }
+.oppsec { margin: 8px 0 0; color: var(--muted); }
 .stickybar { position: sticky; top: var(--topbar-h, 110px); z-index: 15; }
 .shots { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .shot { border: 2px solid var(--line); border-radius: 10px; padding: 8px; display: grid; gap: 6px; align-content: start; }
@@ -375,6 +376,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   <!-- ================= BUILDS ================= -->
   <section id="view-builds" class="stack" hidden>
     <div class="panel stack">
+      <div class="stickybar buildsbar stack">   <!-- build picker, New custom build and Save stay pinned while scrolling -->
       <div class="row" style="justify-content:space-between">
         <h2>My builds</h2>
         <div class="row">
@@ -384,6 +386,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       </div>
       <div class="buildtabs" id="build-list" role="group" aria-label="Your builds"></div>
       <div class="row" id="build-meta"></div>
+      </div>
       <p class="small muted" style="margin:0">Pick from what's in your Inventory. Main build is what Training Ground uses; Expedition preset is your Guild Expedition loadout. <span id="save-msg-builds"></span></p>
       <div id="ed-builds"></div>
       <div id="build-check"></div>
@@ -649,7 +652,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
             <li><b>Rounds:</b> each round's lanes for us and the opponent, the <b>Message to the officers</b> explaining the plan, notes and reasoning, and <b>Round details</b> with lane results, fight lengths and damage. Played rounds are read-only.</li>
             <li><b>Week results:</b> the week so far after each round (record, standings, each round's key notes, top DPS), then the final results and what we learned once Round 3 is in.</li>
             <li><b>Roster:</b> everyone's Expedition damage per second (DPS), best round, and trend. Tap a name for full round-by-round history.</li>
-            <li><b>Opponents:</b> the guilds in the selected week (switch to all weeks or search by guild or player), with their roster scans, lane history, each player's damage and seconds survived, and habits.</li>
+            <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to add earlier ones below), with their roster scans, lane history, each player's damage and seconds survived, and habits.</li>
             <li><b>Findings:</b> what we've learned so far, how Expedition works, and the assumptions behind the numbers.</li>
           </ul>
           <p>Guild names link to the Opponents view, and player names link to that player's history.</p>
@@ -3175,7 +3178,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         lines.push(`- ${s.ign}${gear ? " · " + gear : ""} · ${dps != null ? fmtK(dps) + " DPS" : fmtK(s.dmg) + " dmg"}${dps != null ? ` (${fmtK(s.dmg)} in ${s.surv}s)` : ""}`);
       }
     }
-    if (r.notes) lines.push("", `📝 ${r.notes}`);
+    if (r.notes) lines.push("", "📝 **Notes**", ...noteLines(r.notes).map(l => { const m = l.match(/^([A-Z][\w '’-]{1,24}):\s+(.*)$/); return m ? `- **${m[1]}:** ${m[2]}` : `- ${l}`; }));
     return lines.join("\n");
   }
   function resultsCard(w, r) {
@@ -3254,7 +3257,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       el("div", { class: "tablewrap" }, t));
     if (r.partialStats) box.append(el("div", { class: "small muted", text: "Only part of this round's per-player stats were recorded (no survival times), so it doesn't count toward DPS averages." }));
     if ((r.offSet || []).length) box.append(el("div", { class: "small muted", text: `On a different gear set than they use now (shown, not averaged): ${r.offSet.join(", ")}.` }));
-    if (r.notes) box.append(el("div", { class: "small" }, el("b", { text: "Notes: " }), r.notes));
+    if (r.notes) box.append(notesList(r.notes));
     box.append(el("div", { class: "small muted", text: "Round data is kept by Claude from the screenshots Daby shares. Spot something wrong? Tell Daby." }));
     return box;
   }
@@ -3332,7 +3335,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       lines.push(`**R${r.n} vs ${r.opponent} · ${res} ${(r.score || "").replace("-", "–")}**`);
       const meta = [x.won.length ? `Won ${x.won.join(", ")}` : "No lanes won", x.hasDmg ? `${x.ourDmg.toFixed(2)}M vs ${x.theirDmg.toFixed(2)}M damage` : ""].filter(Boolean).join(" · ");
       lines.push(`*${meta}*`);
-      const notes = (r.keyNotes && r.keyNotes.length ? r.keyNotes : r.notes ? [r.notes] : []).slice(0, 3);
+      const notes = (r.keyNotes && r.keyNotes.length ? r.keyNotes : r.notes ? noteLines(r.notes) : []).slice(0, 3);
       for (const n of notes) lines.push(`- ${n}`);
     });
     if (s.top.length) { lines.push("", "🔥 **TOP DPS THIS WEEK** (2+ rounds)"); s.top.forEach((t, i) => lines.push(`${i + 1}. **${t.ign}** · ${fmtRate(t.avg)} over ${t.n} rounds`)); }
@@ -3481,10 +3484,13 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
   let expDraft = null;
   // Round notes as an easy-to-scan list: one bullet per line, or per sentence when the note is one paragraph. "Label: text" lines get a bold label.
-  function notesList(text) {
-    const lines = /\n/.test(text) ? text.split("\n").map(x => x.replace(/^\s*[-•]\s*/, "").trim()).filter(Boolean)
+  function noteLines(text) {
+    return /\n/.test(text) ? text.split("\n").map(x => x.replace(/^\s*[-•]\s*/, "").trim()).filter(Boolean)
       : text.split(/(?<=[.!?])\s+(?=[A-Z0-9"(])/).map(x => x.trim()).filter(Boolean);
-    return el("div", { class: "roundnotes" }, el("h3", { text: "Notes" }), el("ul", { class: "tips" }, ...lines.map(l => {
+  }
+  function notesList(text, heading = "Notes") {
+    const lines = noteLines(text);
+    return el("div", { class: "roundnotes" }, heading ? el("h3", { text: heading }) : null, el("ul", { class: "tips" }, ...lines.map(l => {
       const m = l.match(/^([A-Z][\w '’-]{1,24}):\s+(.*)$/);
       return el("li", { class: "small" }, m ? el("b", { text: m[1] + ": " }) : null, m ? m[2] : l);
     })));
@@ -3598,7 +3604,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
 
   // ----- opponents -----
-  let oppScope = "week", oppQuery = "", oppKind = "all";
+  let oppShowAll = false;   // Opponents: this week's guilds by default; the button adds every earlier guild below them
   // Every match an opponent guild played (vs us and vs the other guilds), with lanes and per-player stats where we have them.
   function oppMatches(n) {
     const hist = [];
@@ -3617,27 +3623,17 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     }
     return hist.sort((a, z) => a.week === z.week ? a.round - z.round : (a.week < z.week ? -1 : 1));
   }
-  function oppPlayerNames(n) {
-    const o = allOpponents()[n] || {}, set = new Set();
-    for (const sc of (o.scans || [])) for (const p of sc.players) set.add(p.name);
-    for (const h of oppMatches(n)) { for (const l of LANES) for (const p of (h.lanes[l]?.players || [])) set.add(p); for (const s of h.stats) set.add(s.name); }
-    return [...set];
-  }
   function renderOpponents() {
     const box = $("exp-opponents"); box.replaceChildren();
     const w = weekById(expWeekId);
-    if (expOpenOpp) { oppQuery = ""; oppKind = "all"; const o = allOpponents()[expOpenOpp] || {};
-      if (!w || !((o.weeks || []).includes(w.id) || (w.group || []).some(g => g.guild === expOpenOpp) || (w.rounds || []).some(r => r.opponent === expOpenOpp))) oppScope = "all"; }
+    if (expOpenOpp) { const o = allOpponents()[expOpenOpp] || {};
+      if (!w || !((o.weeks || []).includes(w.id) || (w.group || []).some(g => g.guild === expOpenOpp) || (w.rounds || []).some(r => r.opponent === expOpenOpp))) oppShowAll = true; }
     const controls = el("div", { class: "panel stack" });
-    const scopeSel = el("select", { id: "opp-scope", "aria-label": "Which weeks" }, el("option", { value: "week", text: w ? `${w.label} only` : "Selected week" }), el("option", { value: "all", text: "All weeks" }));
-    const kindSel = el("select", { id: "opp-kind", "aria-label": "Which guilds" }, el("option", { value: "all", text: "All guilds" }), el("option", { value: "faced", text: "Faced us" }), el("option", { value: "seen", text: "Seen only (not faced yet)" }));
-    const q = el("input", { type: "search", id: "opp-q", placeholder: "Search guild or player", value: oppQuery, style: "min-width:200px" });
-    scopeSel.value = oppScope; kindSel.value = oppKind;
+    const total = Object.keys(allOpponents()).length;
     const list = el("div", { class: "stack", id: "opp-list" });
-    scopeSel.addEventListener("change", () => { oppScope = scopeSel.value; drawOppList(list); });
-    kindSel.addEventListener("change", () => { oppKind = kindSel.value; drawOppList(list); });
-    q.addEventListener("input", () => { oppQuery = q.value; drawOppList(list); });
-    controls.append(el("div", { class: "row" }, el("label", { class: "row small" }, "Show ", scopeSel), el("label", { class: "row small" }, kindSel), q));
+    const btn = el("button", { type: "button", class: "btn ghost", id: "opp-all", "aria-pressed": String(oppShowAll), text: oppShowAll ? "Hide other weeks" : `Show all guilds (${total})`,
+      onclick: () => { oppShowAll = !oppShowAll; btn.setAttribute("aria-pressed", String(oppShowAll)); btn.textContent = oppShowAll ? "Hide other weeks" : `Show all guilds (${total})`; drawOppList(list); } });
+    controls.append(el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { style: "margin:0", text: w ? `${w.label} opponents` : "Opponents" }), btn));
     if (isEditor) controls.append(el("div", { class: "row" }, el("input", { type: "text", id: "opp-new-name", placeholder: "New opponent guild name", maxlength: "40" }),
       el("button", { type: "button", class: "btn ghost", text: "Add opponent", onclick: async () => { const n = $("opp-new-name").value.trim(); const opps = allOpponents(); if (!n || opps[n]) return; await saveOpponent({ name: n, weeks: [], behavior: [], scans: [] }, "added opponent " + n); } })));
     box.append(controls, list);
@@ -3647,25 +3643,20 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     list.replaceChildren();
     const opps = allOpponents(), w = weekById(expWeekId);
     const inWeek = (n) => { const o = opps[n]; return !!w && ((o.weeks || []).includes(w.id) || (w.group || []).some(g => g.guild === n) || (w.rounds || []).some(r => r.opponent === n)); };
-    const faced = (n) => allWeeks().some(x => (x.rounds || []).some(r => r.opponent === n));
-    const qq = oppQuery.trim().toLowerCase();
     let names = Object.keys(opps).sort((a, z) => ((opps[z].weeks || []).slice(-1)[0] || "").localeCompare((opps[a].weeks || []).slice(-1)[0] || "") || a.localeCompare(z));
-    if (oppScope === "week") names = names.filter(inWeek);
-    if (oppKind === "faced") names = names.filter(faced); else if (oppKind === "seen") names = names.filter(n => !faced(n));
-    const hits = {};
-    if (qq) names = names.filter(n => { if (n.toLowerCase().includes(qq)) return true; const ps = oppPlayerNames(n).filter(p => p.toLowerCase().includes(qq)); if (ps.length) { hits[n] = ps; return true; } return false; });
-    list.append(el("div", { class: "small muted", text: `${names.length} guild${names.length === 1 ? "" : "s"}${oppScope === "week" && w ? ` in ${w.label}` : " across all weeks"}${qq ? ` matching “${oppQuery.trim()}”` : ""}.` }));
-    if (!names.length) list.append(el("div", { class: "panel muted small", text: oppScope === "week" ? "No guilds match in this week. Try All weeks." : "No guilds match." }));
+    const mine = names.filter(inWeek), earlier = names.filter(n => !inWeek(n));
+    names = oppShowAll ? [...mine, ...earlier] : mine;
+    if (!mine.length) list.append(el("div", { class: "panel muted small", text: "No opponents for this week yet." + (oppShowAll ? "" : " Tap Show all guilds to see earlier ones.") }));
     for (const n of names) {
+      if (oppShowAll && n === earlier[0]) list.append(el("h3", { class: "oppsec", text: "Other weeks" }));
+      const thisWeek = inWeek(n);
       const o = opps[n];
       const card = el("details", { class: "inv" });
-      card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${(o.weeks || []).map(id => weekById(id)?.label || id).join(", ") || "not faced yet"}${o.power ? " · " + o.power.toFixed(1) + "M" : ""}` }),
-        hits[n] ? el("span", { class: "chip neutral", style: "margin-left:6px", text: "player: " + hits[n].slice(0, 3).join(", ") }) : null)));
+      card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${(o.weeks || []).map(id => weekById(id)?.label || id).join(", ") || "not faced yet"}${o.power ? " · " + o.power.toFixed(1) + "M" : ""}` }))));
       const body = el("div", { class: "body" }); card.append(body);
       if ((o.behavior || []).length) body.append(el("div", {}, el("h3", { text: "Lane habits" }), el("ul", { class: "tips" }, ...o.behavior.map(b => el("li", { class: "small", text: b })))));
       const all = oppMatches(n);
-      const hist = oppScope === "week" && w ? all.filter(h => h.week === w.id) : all;
-      const hl = (p) => qq && p.toLowerCase().includes(qq);
+      const hist = thisWeek && w ? all.filter(h => h.week === w.id) : all;
       if (hist.length) {
         const t = el("table", { class: "lb lanehist" }, el("thead", {}, el("tr", {}, el("th", { text: "Match" }), ...LANES.map(l => el("th", { text: LANE_LABEL[l] })))));
         const tb = el("tbody");
@@ -3677,12 +3668,12 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
               dur ? el("div", { class: "muted", text: `fight ${dur}s` }) : null,
               ...order.map(p => { const st = h.stats.find(x => x.name === p && x.lane === l) || h.stats.find(x => x.name === p);
                 const dps = st ? (st.dps || (st.dmg != null && st.surv ? st.dmg / st.surv : null)) : null;
-                return el("div", { class: "hp" + (hl(p) ? " hit" : "") }, p === L.anchor ? "⚓ " : "", el(p === L.anchor ? "b" : "span", { text: p }),
+                return el("div", { class: "hp" }, p === L.anchor ? "⚓ " : "", el(p === L.anchor ? "b" : "span", { text: p }),
                   st ? el("span", { class: "muted", text: ` · ${dps ? fmtRate(dps) : "—"}${st.surv ? ` · ${st.surv}s${dur && st.surv >= dur ? " ✓" : ""}` : ""}` }) : null); }),
               !ps.length ? el("div", { class: "muted", text: L.partial ? "not recorded" : "" }) : null);
           })));
         t.append(tb);
-        body.append(el("div", {}, el("h3", { text: oppScope === "week" && w ? `Lane history, ${w.label}` : "Lane history" }),
+        body.append(el("div", {}, el("h3", { text: thisWeek && w ? `Lane history, ${w.label}` : "Lane history, all weeks" }),
           el("p", { class: "small muted", style: "margin:0 0 6px", text: "Each player: DPS · seconds survived. ✓ = alive at the end of the fight." }), el("div", { class: "tablewrap" }, t)));
         // per-player results over the matches shown
         const agg = {};
@@ -3701,21 +3692,21 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           const pt = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Player" }), el("th", { text: "Gear" }), el("th", { text: "Lanes" }), el("th", { class: "num", text: "Avg DPS" }), el("th", { class: "num", text: "Best DPS" }), el("th", { class: "num", text: "Avg survived" }), el("th", { class: "num", text: "Alive at end" }), el("th", { class: "num", text: "Total damage" }))));
           const ptb = el("tbody");
           for (const a of rows) { const g = gearOf(oppPlayerInfo(n, a.name).scan);
-            ptb.append(el("tr", { class: hl(a.name) ? "hit" : "" }, el("td", {}, el("b", { text: a.name })), el("td", {}, g ? el("span", { class: "set " + g, text: g }) : "—"), el("td", { class: "small", text: a.lanes.join(" · ") }),
+            ptb.append(el("tr", {}, el("td", {}, el("b", { text: a.name })), el("td", {}, g ? el("span", { class: "set " + g, text: g }) : "—"), el("td", { class: "small", text: a.lanes.join(" · ") }),
               el("td", { class: "num", text: a.dps.length ? fmtRate(avg(a.dps)) : "—" }), el("td", { class: "num", text: a.dps.length ? fmtRate(Math.max(...a.dps)) : "—" }),
               el("td", { class: "num", text: a.surv.length ? Math.round(avg(a.surv)) + "s" : "—" }), el("td", { class: "num", text: a.aliveKnown ? `${a.alive} of ${a.aliveKnown}` : "—" }), el("td", { class: "num", text: a.dmg ? fmtK(a.dmg) : "—" }))); }
           pt.append(ptb);
-          body.append(el("div", {}, el("h3", { text: oppScope === "week" && w ? `Player results, ${w.label}` : "Player results, all weeks" }),
+          body.append(el("div", {}, el("h3", { text: thisWeek && w ? `Player results, ${w.label}` : "Player results, all weeks" }),
             el("p", { class: "small muted", style: "margin:0 0 6px", text: `Over the ${hist.length} match${hist.length === 1 ? "" : "es"} above. Lanes in round order (L = Left, M = Middle, R = Right).` }), el("div", { class: "tablewrap" }, pt)));
         }
-      } else body.append(el("p", { class: "small muted", text: oppScope === "week" ? "No lane history for this guild in this week." : "No lane history yet." }));
+      } else body.append(el("p", { class: "small muted", text: thisWeek ? "No lane history for this guild in this week." : "No lane history yet." }));
       // roster scan
       const scan = (o.scans || []).slice(-1)[0];
       if (scan) {
         const rows = scan.players.map(p => ({ ...p, hp: p.mythic != null ? p.mythic * 18 + (p.leg || 0) * 1.8 : null, info: oppPlayerInfo(n, p.name) })).sort((a, z) => (z.hp ?? -1) - (a.hp ?? -1));
         const t = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Player" }), el("th", { class: "num", text: "Power" }), el("th", { class: "num", text: "Mythic / Leg" }), el("th", { class: "num", text: "Lane HP" }), el("th", { text: "Gear" }), el("th", { class: "num", text: "DPS seen" }), el("th", { text: "Note" }))));
         const tb = el("tbody");
-        for (const p of rows) tb.append(el("tr", { class: hl(p.name) ? "hit" : "" }, el("td", { text: p.name }), el("td", { class: "num", text: p.power ? p.power.toFixed(2) + "M" : "—" }), el("td", { class: "num", text: p.mythic != null ? `${p.mythic} / ${p.leg ?? "?"}` : "—" }),
+        for (const p of rows) tb.append(el("tr", {}, el("td", { text: p.name }), el("td", { class: "num", text: p.power ? p.power.toFixed(2) + "M" : "—" }), el("td", { class: "num", text: p.mythic != null ? `${p.mythic} / ${p.leg ?? "?"}` : "—" }),
           el("td", { class: "num", text: p.hp != null ? "+" + Math.round(p.hp) + "%" : "—" }), el("td", {}, gearOf(p) ? el("span", { class: "set " + gearOf(p), text: p.gear }) : (p.gear || "—")),
           el("td", { class: "num", text: p.info.dps ? `${fmtRate(p.info.dps)} (${p.info.seen})` : "—" }), el("td", { class: "small muted", text: p.note || "" })));
         t.append(tb);
@@ -3723,7 +3714,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       } else body.append(el("p", { class: "small muted", text: "No roster scan yet." }));
       if (isEditor) body.append(opponentEditor(o));
       list.append(card);
-      if (expOpenOpp === n || (qq && hits[n] && names.length <= 3)) { card.open = true; if (expOpenOpp === n) setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 0); }
+      if (expOpenOpp === n) { card.open = true; setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 0); }
     }
     expOpenOpp = null;
   }

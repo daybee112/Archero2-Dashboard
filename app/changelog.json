@@ -6,6 +6,18 @@
  },
  "releases": [
   {
+   "id": "v7.1.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Round notes as bullets with test results, simpler Opponents, pinned Builds bar",
+   "changes": [
+    "Round notes are bullet points everywhere: the Round results card (and its Copy text), round notes, Round details and Week results.",
+    "Week of Nov 16 round notes now include test results and what we learned: R1's five tests, R2's lesson (it was win-only), and all eight R3 tests.",
+    "Opponents: shows the selected week's three guilds; a Show all guilds button adds every earlier guild below them under Other weeks (Hide other weeks puts it back). The search and guild filter from v7.0.0 are gone.",
+    "Builds: the build picker, New custom build and Save stay pinned at the top while you scroll."
+   ]
+  },
+  {
    "id": "v7.0.0",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",
