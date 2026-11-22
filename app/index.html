@@ -176,6 +176,9 @@ table.lb td.num, table.lb th.num { text-align: right; font-variant-numeric: tabu
 .briefing { border: 1px solid var(--accent); border-left-width: 5px; border-radius: 10px; padding: 12px 14px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); gap: 8px; }
 .brieftext { white-space: pre-wrap; }
 .briefing.results { border-color: var(--good, #1a7f37); }
+#view-inventory.readonly select, #view-inventory.readonly input { pointer-events: none; opacity: .85; }
+#view-inventory.readonly #suggest-box { display: none; }
+button.invlink { cursor: pointer; background: transparent; }
 tr.tampered td { background: color-mix(in srgb, var(--bad) 7%, transparent); }
 .weekres { border: 1px solid var(--ink); border-left-width: 5px; border-radius: 10px; padding: 12px 14px; background: color-mix(in srgb, var(--ink) 4%, var(--surface)); gap: 8px; }
 .help h3 { margin: 10px 0 0; }
@@ -241,7 +244,25 @@ tr.tampered td { background: color-mix(in srgb, var(--bad) 7%, transparent); }
 .gchip.g-Oracle, .gk.g-Oracle { border-color: var(--oracle); background: color-mix(in srgb, var(--oracle) 12%, var(--surface)); }
 .gchip.g-Griffin, .gk.g-Griffin { border-color: var(--griffin); background: color-mix(in srgb, var(--griffin) 14%, var(--surface)); }
 .gk { padding: 0 4px; border-radius: 4px; border: 1px solid; font-weight: 700; }
-#roster-table thead.floating th { box-shadow: inset 0 -1px 0 var(--line), 0 4px 8px -6px rgba(0,0,0,.35); }
+thead { position: relative; z-index: 2; }
+thead.floating th { background: var(--surface); box-shadow: inset 0 -1px 0 var(--line), 0 4px 8px -6px rgba(0,0,0,.35); }
+th { white-space: nowrap; }   /* column headings stay on one line */
+td.num { white-space: nowrap; }   /* numbers like "92 K/s" never break */
+.lanehist td .hp { white-space: nowrap; line-height: 1.5; }
+tr.hit td, .hp.hit { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.roundcards { display: flex; gap: 8px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+.roundcards button.roundcard { flex: 0 0 220px; width: 220px; border-radius: 10px; padding: 7px 10px; text-align: left; display: grid; grid-template-rows: auto 1fr auto; gap: 3px; font-weight: 400; background: var(--surface); }   /* same size whatever the round's state */
+.roundcards button.roundcard[aria-pressed="true"] { border-width: 2px; padding: 6px 9px; }
+.rcwhen { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.rcopp { font-weight: 700; font-size: .95rem; overflow-wrap: anywhere; align-self: center; }   /* long names wrap, never cut off */
+.rcbottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rcbottom .chip { white-space: nowrap; font-size: .7rem; padding: 1px 6px; }
+.rclanes { display: flex; gap: 10px; font-size: .75rem; color: var(--muted); font-weight: 600; }
+.rcdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; vertical-align: -1px; border: 1.5px solid var(--line); }
+.rcdot.won { background: var(--good); border-color: var(--good); } .rcdot.lost { background: var(--bad); border-color: var(--bad); }
+.chip.accent { border-color: var(--accent); color: var(--accent); }
+@media (max-width: 560px) { .stickybar.panel { padding: 8px; } }
+.stickybar { position: sticky; top: var(--topbar-h, 110px); z-index: 15; }
 .shots { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .shot { border: 2px solid var(--line); border-radius: 10px; padding: 8px; display: grid; gap: 6px; align-content: start; }
 .shot img { width: 100%; max-height: 160px; object-fit: contain; background: var(--bg); border-radius: 6px; }
@@ -290,10 +311,12 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
 
   <!-- ================= INVENTORY ================= -->
   <section id="view-inventory" class="stack" hidden>
+    <div id="inv-viewing" class="banner info" hidden></div>
+    <div id="inv-shared-note" class="banner info small" hidden></div>
     <div class="panel stack">
       <div class="controls">
         <div class="field" style="min-width:220px;flex:1">
-          <label for="ign">Your in-game name</label>
+          <label for="ign" id="ign-label">Your in-game name</label>
           <input type="text" id="ign" maxlength="40" placeholder="e.g. daybee">
         </div>
         <div class="row">
@@ -309,7 +332,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           <button type="button" class="btn ghost" id="inv-confirm-no">Cancel</button>
         </div>
       </div>
-      <p class="small muted" style="margin:0">Everything you own, entered once. Your builds are made from it, and only you can see it. <span id="save-msg-inv"></span></p>
+      <p class="small muted" style="margin:0">Everything you own, entered once. Your builds are made from it. The whole guild can see your inventory (only you and officers can change it); your builds stay private. <span id="save-msg-inv"></span></p>
     </div>
 
     <details class="inv" open>
@@ -540,8 +563,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         <div class="seg" role="group" aria-label="Expedition section" id="exp-sub">
           <button type="button" data-sub="rounds" aria-pressed="true">Rounds</button>
           <button type="button" data-sub="results" aria-pressed="false">Week results</button>
+          <button type="button" data-sub="players" aria-pressed="false">Roster</button>
           <button type="button" data-sub="opponents" aria-pressed="false">Opponents</button>
-          <button type="button" data-sub="players" aria-pressed="false">Players</button>
           <button type="button" data-sub="findings" aria-pressed="false">Findings</button>
         </div>
         <button type="button" class="btn ghost" id="exp-new-week" hidden>New week</button>
@@ -571,8 +594,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       <h3>The tabs</h3>
       <ul>
         <li><b>Inventory and Builds:</b> your items and saved builds, plus build suggestions.</li>
-        <li><b>Roster:</b> every member's power, gear, artifacts and Expedition damage.</li>
-        <li><b>Expedition:</b> each round's lineup, the plan, results, the week's results, and your damage history (under <b>Players</b>).</li>
+        <li><b>Roster:</b> every member's power, gear, artifacts and Expedition damage, whether they've linked their account, and a link to their inventory.</li>
+        <li><b>Expedition:</b> each round's lineup, the plan, results, the week's results, and your damage history (under <b>Roster</b>).</li>
         <li><b>Training Ground:</b> test a build on the Training Dummy and post your score.</li>
         <li><b>Version number</b> (top right): tap it for what's new in the dashboard and the activity log.</li>
       </ul>
@@ -592,8 +615,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         <div class="help-body">
           <p><b>Who can change what:</b></p>
           <ul>
-            <li><b>Everyone:</b> your own Inventory, builds and Training Ground results, plus your own Expedition preset. Saving your Expedition preset updates your row on the Roster, so the whole guild sees it.</li>
-            <li><b>Officers:</b> everything shared. That means any roster profile, gear pieces on the Roster, lineups for unplayed rounds, opponents, messages to the officers and notes. Officers are also editors of the dashboard page itself.</li>
+            <li><b>Everyone:</b> your own Inventory, builds and Training Ground results, plus your own Expedition preset. Your inventory and Expedition preset are visible to the whole guild; your other builds stay private.</li>
+            <li><b>Officers:</b> everything shared. That means any roster profile, any player's inventory, gear pieces on the Roster, lineups for unplayed rounds, opponents, messages to the officers and notes. Officers are also editors of the dashboard page itself.</li>
           </ul>
           <p><b>Nothing changes until you press a save button.</b> Tapping a gear piece on the Roster, opening <b>Edit lineup</b> or opening a message box only opens an editor. Press <b>Cancel</b>, or just leave without saving, and nothing changes.</p>
           <p><b>Tips to avoid accidental edits:</b></p>
@@ -615,7 +638,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
             <tbody>
               <tr><td><b>Inventory</b></td><td>Everything you own, entered once: in-game name, characters, gear, runes, mystlings with stars</td><td>Add and update your items. Your builds only offer what's in here</td></tr>
               <tr><td><b>Builds</b></td><td>Your saved builds: Main build, Expedition preset, and any custom builds</td><td>Edit and save builds, see warnings and synergies, ask for a suggested build</td></tr>
-              <tr><td><b>Roster</b></td><td>Every guild member: rank, power, character, gear by slot, runes, artifacts, lane HP, Expedition DPS</td><td>Sort by any column (tap more headings to break ties), search, open a profile, link your account, edit your own preset, copy the table as an image</td></tr>
+              <tr><td><b>Roster</b></td><td>Every guild member: rank, power, character, gear by slot, runes, artifacts, lane HP, Expedition DPS</td><td>Sort by any column (tap more headings to break ties), search, open a profile, link your account, edit your own preset, open anyone's inventory (Inventory column), copy the table as an image</td></tr>
               <tr><td><b>Expedition</b></td><td>Guild Expedition planning and results</td><td>See lineups, officer messages, the week's results, opponents and your damage history</td></tr>
               <tr><td><b>Training Ground</b></td><td>A standard Training Dummy test (3 runs of 1 minute)</td><td>Test a build, post results to the guild leaderboard, keep a private tracker</td></tr>
               <tr><td><b>Version number</b> (top right)</td><td>The changelog: release notes and the activity log</td><td>See what changed in the dashboard and who changed shared data</td></tr>
@@ -625,8 +648,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           <ul>
             <li><b>Rounds:</b> each round's lanes for us and the opponent, the <b>Message to the officers</b> explaining the plan, notes and reasoning, and <b>Round details</b> with lane results, fight lengths and damage. Played rounds are read-only.</li>
             <li><b>Week results:</b> the week so far after each round (record, standings, each round's key notes, top DPS), then the final results and what we learned once Round 3 is in.</li>
-            <li><b>Opponents:</b> every guild we've faced, with their roster scans, lane history and habits.</li>
-            <li><b>Players:</b> everyone's Expedition damage per second (DPS), best round, and trend. Tap a name for full round-by-round history.</li>
+            <li><b>Roster:</b> everyone's Expedition damage per second (DPS), best round, and trend. Tap a name for full round-by-round history.</li>
+            <li><b>Opponents:</b> the guilds in the selected week (switch to all weeks or search by guild or player), with their roster scans, lane history, each player's damage and seconds survived, and habits.</li>
             <li><b>Findings:</b> what we've learned so far, how Expedition works, and the assumptions behind the numbers.</li>
           </ul>
           <p>Guild names link to the Opponents view, and player names link to that player's history.</p>
@@ -636,9 +659,9 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         <summary><b>Common tasks</b></summary>
         <div class="help-body">
           <p><b>Update your Expedition preset.</b> Change it on the Builds tab and save, or use <b>Edit my preset</b> in your Roster profile. The two stay in sync, and whichever you changed last wins. Do this whenever you change your in-game preset, since officers plan lanes from it.</p>
-          <p><b>Check how you did in Expedition.</b> Go to Expedition, then Players, and tap your name. You'll see your damage, seconds survived and DPS for every round, plus your average over your last 5 rounds.</p>
+          <p><b>Check how you did in Expedition.</b> Go to Expedition, then Roster, and tap your name. You'll see your damage, seconds survived and DPS for every round, plus your average over your last 5 rounds.</p>
           <p><b>Read the plan for a round.</b> Go to Expedition, then Rounds, and pick the round. The <b>Message to the officers</b> at the top explains the lineup. Tap <b>Show the full message</b> if it's cut off.</p>
-          <p><b>Share something on Discord.</b> Look for the <b>Copy as image</b> buttons on the lineup, round results, officer message, player history, Players table and Roster. The picture goes to your clipboard, ready to paste. If your browser blocks that, a preview opens with a <b>Download</b> button instead. On the officer message, <b>Copy text</b> copies it with its Discord formatting.</p>
+          <p><b>Share something on Discord.</b> Look for the <b>Copy as image</b> buttons on the lineup, round results, officer message, player history, the Expedition roster table and the main Roster. The picture goes to your clipboard, ready to paste. If your browser blocks that, a preview opens with a <b>Download</b> button instead. On the officer message, <b>Copy text</b> copies it with its Discord formatting.</p>
           <p><b>Test a build.</b> On Training Ground, pick a saved build, run the Training Dummy 3 times for 1 minute each, and enter your results. Post them to the leaderboard or keep them private.</p>
           <p><b>Get a build idea.</b> On Builds, open <b>Want a suggestion?</b> and tap <b>Suggest a build</b>. It only uses what's in your Inventory, and it tells you what's missing for a better option.</p>
         </div>
@@ -674,7 +697,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
               <tr><td><b>DPS</b></td><td>Damage per second in Expedition: your damage divided by the seconds you survived.</td></tr>
               <tr><td><b>DPS avg</b></td><td>Your average DPS over your last 5 counted rounds. Rounds on a different gear set aren't counted.</td></tr>
               <tr><td><b>Gear set</b></td><td>Dragoon, Oracle or Griffin, based on your weapon. On the dashboard the colors are red for Dragoon, blue for Oracle and gold for Griffin.</td></tr>
-              <tr><td><b>Notable</b></td><td>A flag on the Players view for big changes only: a gear switch, a huge jump or drop, a new personal best, or a strong trend. Most players have none, and that's normal.</td></tr>
+              <tr><td><b>Notable</b></td><td>A flag on the Expedition roster for big changes only: a gear switch, a huge jump or drop, a new personal best, or a strong trend. Most players have none, and that's normal.</td></tr>
               <tr><td><b>Expedition preset</b></td><td>The separate loadout you use in Expedition. It's usually close to your main loadout, but not always.</td></tr>
             </tbody>
           </table></div>
@@ -748,6 +771,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   let selectedBuildId = "main";
   let isExample = false;
   let linkedMemberId = null;   // the roster profile this account is linked to (one per account)
+  let invView = null, invStash = null;   // viewing someone else's inventory (see openInventoryOf)
+  let myInvSavedAt = 0, invShareChecked = false;
   let lastSuggestion = null;
   let myName = "";
   let db = null, user = null, myId = null, canSave = false, isEditor = false;
@@ -779,6 +804,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   const VIEWS = ["inventory", "builds", "training", "roster", "expedition", "changes", "help"];
   function showView(cur) {
     if (!VIEWS.includes(cur)) cur = "roster";
+    if (cur !== "inventory" && invView) exitInventoryView();
     for (const v of VIEWS) {
       $("view-" + v).hidden = v !== cur;
       const t = v === "changes" ? $("release-badge") : $("tab-" + v);
@@ -1509,6 +1535,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     }
   }
   function invChanged() {
+    if (invView) { summaries(); markDirty(); return; }   // someone else's inventory: never touch my builds
     if (isExample) { isExample = false; $("example-banner").hidden = true; }
     refreshBuildsFromInventory();
     summaries(); syncLockSelect(); markDirty();
@@ -1581,17 +1608,93 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   function setSaveMsg(t, cls) { for (const id of ["save-msg-inv", "save-msg-builds"]) { const n = $(id); n.textContent = t; n.className = cls || ""; } }
   let unsaved = false, profileReady = false;   // profileReady: the saved account has been loaded (or confirmed absent)
   function markDirty() {
+    if (invView) { invView.dirty = true; setSaveMsg(invView.editable ? `Unsaved changes to ${invView.ign}'s inventory.` : "", ""); return; }
     unsaved = true;
     setSaveMsg(canSave ? "Unsaved changes." : "", "");
     try { localStorage.setItem("aa-profile-draft", JSON.stringify(profilePayload())); } catch {}
   }
+  // An officer edited my inventory after my last save: bring it in and save it as mine.
+  async function pullOfficerInventory() {
+    const mm = myMember(); if (!mm || !db || !myId || isEditor) return;
+    try {
+      const snap = await db.doc("inventory/" + mm.id).get(); if (!snap.exists) return;
+      const o = snap.data() || {}, mineAt = Math.max(myInvSavedAt || 0, (invSubs[myId] || {}).at || 0);
+      if (!o.byOfficer || !(o.at > mineAt) || unsaved || invView) return;
+      inv = normalizeInv(o.inv); if (o.ign) ign = o.ign;
+      refreshBuildsFromInventory(); syncInventoryUI();
+      unsaved = true; await saveProfile(null, false);
+      const n = $("inv-shared-note"); n.textContent = `An officer updated your inventory on ${localDate(o.at)}. It's loaded here and saved as yours; change anything that's off and press Save.`; n.hidden = false;
+    } catch { /* try again next visit */ }
+  }
+  // First visit after inventories became shared: publish my saved inventory once and say so.
+  async function shareInventoryFirstTime() {
+    if (invShareChecked || !db || !myId) return; invShareChecked = true;
+    try {
+      const snap = await db.doc("presets/" + myId).get();
+      if (!(snap.exists && (snap.data() || {}).shared) && !isExample && (ign || invFilled({ inv }))) {
+        await publishMyInventory("shared inventory (first time)");
+        let seen = false; try { seen = localStorage.getItem("aa-inv-shared-notice") === "1"; } catch {}
+        if (!seen) { const n = $("inv-shared-note"); n.textContent = "Heads up: inventories are now visible to the whole guild, so officers can plan with real data. Your builds stay private. Only you and officers can change your inventory."; n.hidden = false; try { localStorage.setItem("aa-inv-shared-notice", "1"); } catch {} }
+      }
+    } catch { invShareChecked = false; }
+  }
+  // ----- viewing someone else's inventory (everyone can view; officers can edit) -----
+  function openInventoryOf(memberId) {
+    const m = memberById(memberId); if (!m || !D) return;
+    const mm = myMember();
+    if (mm && mm.id === memberId) { if (invView) exitInventoryView(); goTo("inventory"); return; }
+    if (!invView) invStash = { inv, ign, isExample, unsaved };
+    const sh = sharedInv(m);
+    invView = { memberId, ign: m.ign, editable: !!isEditor, dirty: false, sh };
+    inv = normalizeInv(sh && sh.inv); ign = (sh && sh.ign) || m.ign;
+    $("example-banner").hidden = true;
+    syncInventoryUI(); renderInvViewing();
+    goTo("inventory");
+  }
+  function exitInventoryView() {
+    if (!invView) return;
+    invView = null;
+    if (invStash) { inv = invStash.inv; ign = invStash.ign; isExample = invStash.isExample; unsaved = invStash.unsaved; invStash = null; }
+    $("example-banner").hidden = !isExample;
+    syncInventoryUI(); renderInvViewing(); setSaveMsg(unsaved ? "Unsaved changes." : "", "");
+  }
+  function renderInvViewing() {
+    const b = $("inv-viewing"), v = invView, sec = $("view-inventory");
+    sec.classList.toggle("readonly", !!v && !v.editable);
+    for (const id of ["btn-example", "btn-clear"]) $(id).hidden = !!v;
+    $("btn-save-inv").hidden = !!v && !v.editable;
+    $("btn-save-inv").textContent = v ? `Save to ${v.ign}` : "Save";
+    $("ign-label").textContent = v ? "In-game name" : "Your in-game name";
+    for (const x of sec.querySelectorAll("select, input")) x.disabled = !!v && !v.editable;
+    if (!v) { b.hidden = true; return; }
+    const when = v.sh && v.sh.at ? ` Last updated ${localDate(v.sh.at)}${v.sh.byOfficer ? " by an officer" : " by the player"}.` : " Nothing filled in yet.";
+    b.replaceChildren(el("b", { text: `Viewing ${v.ign}'s inventory.` }), when, v.editable ? " As an officer you can edit it; changes are saved to their profile and logged." : " Only officers and the player can change it.",
+      " ", el("button", { type: "button", class: "btn ghost", style: "margin-left:8px", text: "Back to my inventory", onclick: () => exitInventoryView() }));
+    b.hidden = false;
+  }
+  async function saveViewedInventory(btn) {
+    const v = invView; if (!v || !v.editable || !db || !isEditor) return false;
+    if (btn) btn.disabled = true; setSaveMsg("Saving…");
+    try {
+      const before = { ign: (v.sh && v.sh.ign) || "", inv: normalizeInv(v.sh && v.sh.inv) };
+      const doc = { memberId: v.memberId, ign, inv: clone(inv), at: Date.now(), by: myId, byOfficer: true, v: 1 };
+      await db.doc("inventory/" + v.memberId).set(doc);
+      invDocs[v.memberId] = doc; invSubs[v.memberId] = doc; v.sh = { ...doc, docId: v.memberId }; v.dirty = false;
+      logEvent("edited inventory", v.ign, { src: "typed", changes: diffObj(before, { ign: doc.ign, inv: doc.inv }) });
+      setSaveMsg(`Saved to ${v.ign}'s inventory.`, "ok-msg"); renderInvViewing(); renderRoster();
+      return true;
+    } catch { setSaveMsg("Couldn't save.", "err"); return false; }
+    finally { if (btn) btn.disabled = false; }
+  }
   async function saveProfile(btn, push = true) {
+    if (invView) return saveViewedInventory(btn);
     if (!canSave) { setSaveMsg("Saving to your account isn't available here, so changes are kept in this browser only."); return false; }
     if (btn) btn.disabled = true;
     setSaveMsg("Saving…");
     try {
       await profileDoc().set(profilePayload()); unsaved = false;
-      let note = "Saved. Only you can see it.";
+      let note = "Saved. Your inventory is visible to the guild; your builds stay private.";
+      try { await publishMyInventory(); } catch { note = "Saved, but couldn't update the guild's copy of your inventory."; }
       if (push) {
         try { const r = await pushPreset(); if (r === "pushed") note = "Saved. Your Expedition preset on the roster was updated too."; else if (r === "older") note = "Saved. The roster has a newer Expedition preset; it will replace yours."; }
         catch { note = "Saved, but couldn't update your Expedition preset on the roster."; }
@@ -1608,6 +1711,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     inv = normalizeInv(p && p.inv);
     ign = p && typeof p.ign === "string" ? p.ign.slice(0, 40) : "";
     linkedMemberId = p && typeof p.linkedMemberId === "string" ? p.linkedMemberId.slice(0, 80) : null;
+    myInvSavedAt = p && Number.isFinite(p.savedAt) ? p.savedAt : 0;
     builds = normalizeBuilds(p && p.builds);
     if (!builds.some(b => b.id === selectedBuildId)) selectedBuildId = "main";
     refreshBuildsFromInventory();
@@ -1741,6 +1845,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   function diffObj(a, b, path = "", out = []) {
     if (out.length >= 30) return out;
     const isObj = (x) => x && typeof x === "object";
+    if (isObj(b) && !Array.isArray(b) && (a === undefined || a === null)) a = {};
+    if (isObj(a) && !Array.isArray(a) && (b === undefined || b === null)) b = {};
     if (isObj(a) && isObj(b) && Array.isArray(a) === Array.isArray(b)) {
       for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) { if (!path && DIFF_SKIP.has(k)) continue; diffObj(a[k], b[k], path ? `${path}.${k}` : k, out); }
       return out;
@@ -2053,7 +2159,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     // presets players published themselves (presets/<user id>): used when newer than the roster's copy,
     // and only from the account an officer linked (if any)
     for (const [uidV, s] of Object.entries(presetSubs)) {
-      const m = out.get(s && s.memberId); if (!m || !s.preset) continue;
+      const m = out.get(s && s.memberId); if (!m || !s.preset || s.linked === false) continue;
       if (linkedTo(m) && linkedTo(m) !== uidV) continue;
       if ((s.at || 0) > presetTime(m)) out.set(m.id, { ...m, preset: s.preset, presetDate: localDate(s.at), presetUpdatedAt: s.at, presetSrc: "Updated by the player", presetBy: uidV });
     }
@@ -2152,18 +2258,28 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   document.addEventListener("click", closeGearPop);
   // Top 5 anchors: highest Lane HP (if anchor) among active members.
   const topAnchors = (all) => all.filter(m => (m.status || "active") === "active" && calcHp(m) != null).sort((a, z) => calcHp(z) - calcHp(a)).slice(0, 5).map(m => m.id);
-  // Keep the roster's column headings just under the pinned top bar while the page scrolls.
+  // Keep every table's column headings just under the pinned top bar (and the pinned round buttons) while the page scrolls.
+  // Tables sit in side-scrolling wrappers, which break CSS sticky, so the heading row is shifted with a transform instead.
+  let headsQueued = false;
   function syncRosterHead() {
-    const t = $("roster-table"); if (!t || !t.tHead) return;
-    if ($("view-roster").hidden) { t.tHead.style.transform = ""; return; }
-    const bar = document.querySelector(".topbar").getBoundingClientRect().bottom;
-    const r = t.getBoundingClientRect(), hh = t.tHead.offsetHeight;
-    const shift = Math.max(0, Math.min(bar - r.top, r.height - hh * 2));
-    t.tHead.style.transform = shift > 0 ? `translateY(${shift}px)` : "";
-    t.tHead.classList.toggle("floating", shift > 0);
+    headsQueued = false;
+    const top = document.querySelector(".topbar");
+    document.documentElement.style.setProperty("--topbar-h", top.offsetHeight + "px");
+    let bar = top.getBoundingClientRect().bottom;
+    for (const sb of document.querySelectorAll(".stickybar")) if (sb.offsetParent) bar = Math.max(bar, sb.getBoundingClientRect().bottom);
+    for (const t of document.querySelectorAll("table")) {
+      if (!t.tHead) continue;
+      if (!t.offsetParent) { if (t.tHead.style.transform) { t.tHead.style.transform = ""; t.tHead.classList.remove("floating"); } continue; }
+      const r = t.getBoundingClientRect(), hh = t.tHead.offsetHeight;
+      const shift = Math.max(0, Math.min(bar - r.top, r.height - hh * 2));
+      t.tHead.style.transform = shift > 0 ? `translateY(${shift}px)` : "";
+      t.tHead.classList.toggle("floating", shift > 0);
+    }
   }
-  addEventListener("scroll", syncRosterHead, { passive: true });
-  addEventListener("resize", syncRosterHead);
+  const queueHeads = () => { if (!headsQueued) { headsQueued = true; requestAnimationFrame(syncRosterHead); } };
+  addEventListener("scroll", queueHeads, { passive: true });
+  addEventListener("resize", queueHeads);
+  new MutationObserver(queueHeads).observe(document.body, { childList: true, subtree: true });
   const localDate = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };   // viewer's own calendar day, not UTC
   // newest date anywhere on the profile: power, artifacts, preset, or an officer's edit
   function lastUpdated(m) {
@@ -2173,6 +2289,52 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
   const linkedTo = (m) => m.linkedUser && m.linkedUser.id;
   const myMember = () => (myId && allMembers().find(m => linkedTo(m) === myId)) || (linkedMemberId ? memberById(linkedMemberId) : null) || null;
+  // ----- shared inventories (inventory/<user id> written by the player; inventory/<member id> written by officers) -----
+  // Everyone can read them. The roster shows whichever copy is newer; a player's copy only counts from the account
+  // linked to that profile (when an officer linked one).
+  // Shared inventories: a player's own copy lives on presets/<their user id>.shared (they can write that record);
+  // officers' edits for a player live on inventory/<member id>. invSubs merges both, keyed by doc id.
+  let invSubs = {}, invDocs = {};
+  function rebuildInvSubs() {
+    const next = { ...invDocs };
+    for (const [uidV, d] of Object.entries(presetSubs)) if (d && d.shared) next[uidV] = d.shared;
+    invSubs = next;
+  }
+  // Public link: an officer's link on the roster doc, or the member's own link (presets/<user id>.memberId, or their shared inventory's memberId).
+  function publicLink(m) {
+    if (linkedTo(m)) return linkedTo(m);
+    for (const [uidV, sb] of Object.entries(presetSubs)) if (sb && sb.memberId === m.id && sb.linked !== false) return uidV;
+    for (const [id, d] of Object.entries(invSubs)) if (d && !d.byOfficer && d.memberId === m.id) return id;
+    return null;
+  }
+  function sharedInv(m) {
+    const lk = linkedTo(m); let best = null;
+    for (const [id, d] of Object.entries(invSubs)) {
+      if (!d || d.memberId !== m.id) continue;
+      if (!d.byOfficer && lk && id !== lk) continue;
+      if (!best || (d.at || 0) > (best.at || 0)) best = { ...d, docId: id };
+    }
+    return best;
+  }
+  const invFilled = (x) => !!x && !!(x.ign || Object.keys(x.inv?.chars || {}).length || Object.values(x.inv?.gear || {}).some(g => Object.keys(g || {}).length) || Object.keys(x.inv?.runes || {}).length || Object.keys(x.inv?.mystlings || {}).length);
+  async function publishMyInventory(why) {
+    if (!db || !myId) return;
+    const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {}, prev = d.shared || {};
+    const mm = myMember();
+    const doc = { memberId: mm ? mm.id : null, ign, inv: clone(inv), at: Date.now(), by: myId, v: 1 };
+    const changes = diffObj({ ign: prev.ign || "", inv: normalizeInv(prev.inv) }, { ign: doc.ign, inv: doc.inv });
+    if (d.shared && !changes.length && prev.memberId === doc.memberId) return;
+    await ref.set({ ...d, shared: doc, v: 1 }); invSubs[myId] = doc;
+    logEvent(why || "updated own inventory", `${mm ? mm.ign : (ign || "unlinked account")}`, { src: "typed", changes });
+  }
+  // A member's own link goes on their presets/<id> record so the roster can show it (officers' links stay on the roster doc).
+  async function publishMyLink(memberIdOrNull) {
+    if (!db || !myId || isEditor) return;
+    const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {};
+    const nd = { ...d, v: 1 };
+    if (memberIdOrNull) { nd.memberId = memberIdOrNull; nd.linked = true; } else { nd.linked = false; }
+    await ref.set(nd);
+  }
 
   const COLS = [
     { key: "ign", label: "Player", val: m => m.ign.toLowerCase() },
@@ -2186,7 +2348,9 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     { key: "hp", label: ["Lane HP", "(if anchor)"], num: true, calc: true, val: m => calcHp(m) ?? -1 },
     { key: "dps", label: ["DPS Avg", "(K/s)"], num: true, calc: true, val: m => rosterDps(m) ?? -1 },
     { key: "upd", label: ["Last", "updated"], val: m => lastUpdated(m) },
-    { key: "preset", label: "Preset", val: m => PSTATUS.indexOf(m.presetStatus) }
+    { key: "preset", label: "Preset", val: m => PSTATUS.indexOf(m.presetStatus) },
+    { key: "acct", label: ["Account", "linked"], val: m => publicLink(m) ? 0 : 1 },
+    { key: "inv", label: "Inventory", val: m => invFilled(sharedInv(m)) ? 0 : 1 }
   ];
   function renderRosterHead() {
     const tr = $("roster-head"); tr.replaceChildren();
@@ -2206,6 +2370,13 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       tr.append(el("th", { class: c.num ? "num" : null, "aria-sort": si === 0 ? (sd < 0 ? "descending" : "ascending") : null }, b));
     }
   }
+  function invCell(m) {
+    const sh = sharedInv(m), filled = invFilled(sh), mine = myMember() && myMember().id === m.id;
+    if (!filled && !isEditor && !mine) return el("td", {}, el("span", { class: "small muted", text: "Empty" }));
+    const b = el("button", { type: "button", class: "chip " + (filled ? "good invlink" : "neutral invlink"), title: filled ? `Open ${m.ign}'s inventory${sh.at ? " · updated " + localDate(sh.at) : ""}` : `Fill in ${m.ign}'s inventory`, text: filled ? "✓ Filled" : "Empty · add" });
+    b.addEventListener("click", (e) => { e.stopPropagation(); openInventoryOf(m.id); });
+    return el("td", {}, b);
+  }
   function renderRoster() {
     if (!D) return;
     renderRosterHead();
@@ -2223,7 +2394,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     $("roster-img").replaceChildren(imgBtn("Copy as image", () => ({ title: "ArchAcademy roster", subtitle: `${rosterRows.length} players · ${`Sorted by ${sortNames.join(", then ")}`}`,
       sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Rank", w: 1.1 }, { label: "Power", align: "right", w: 0.8 }, { label: "Character", w: 1.2 }, { label: "Gear", w: 0.9 }, { label: "Mythic / Leg", align: "right", w: 0.9 }, { label: "Lane HP", align: "right", w: 0.8 }, { label: "DPS avg", align: "right", w: 0.8 }],
         rows: rosterRows.map(m => [{ text: m.ign, bold: true }, m.rank || "", m.power?.m != null ? m.power.m.toFixed(2) + "M" : "—", m.preset?.chars?.[0]?.name || "—", { text: weaponSet(m) || "—", bar: weaponSet(m) || "line" },
-          m.artifacts?.mythic != null ? `${m.artifacts.mythic} / ${m.artifacts.leg}` : "—", calcHp(m) != null ? "+" + Math.round(calcHp(m)) + "%" : "—", rosterDps(m) != null ? rosterDps(m) + "K/s" : "—"]) } }] })));
+          m.artifacts?.mythic != null ? `${m.artifacts.mythic} / ${m.artifacts.leg}` : "—", calcHp(m) != null ? "+" + Math.round(calcHp(m)) + "%" : "—", rosterDps(m) != null ? rosterDps(m) + " K/s" : "—"]) } }] })));
     const isDefault = sortStack.length === 1 && sortStack[0].key === "power" && sortStack[0].dir === -1;
     $("roster-sort").replaceChildren("Sorted by ",
       ...sortStack.map((s, i) => el("span", { class: "sortchip" }, sortNames[i],
@@ -2240,7 +2411,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const res = (m.preset?.chars || []).slice(1).filter(Boolean).map(c => c.name);
       const atk = calcAtk(m), hp = calcHp(m);
       tr.append(
-        el("td", {}, anchors.includes(m.id) ? el("span", { title: `Top 5 anchor (#${anchors.indexOf(m.id) + 1} by Lane HP)`, "aria-label": "Top 5 anchor", text: "⚓ " }) : null, el("b", { text: m.ign }), linkedTo(m) || m.id === linkedMemberId ? el("span", { class: "chip good", style: "margin-left:6px", text: linkedTo(m) === myId || m.id === linkedMemberId ? "you" : "linked" }) : null),
+        el("td", {}, anchors.includes(m.id) ? el("span", { title: `Top 5 anchor (#${anchors.indexOf(m.id) + 1} by Lane HP)`, "aria-label": "Top 5 anchor", text: "⚓ " }) : null, el("b", { text: m.ign }), (linkedTo(m) === myId || m.id === linkedMemberId) ? el("span", { class: "chip good", style: "margin-left:6px", text: "you" }) : null),
         el("td", { class: "small", text: m.rank || "" }),
         el("td", { class: "num", text: m.power?.m != null ? `${m.power.m.toFixed(2)}M` : "—" }),
         el("td", {}, m.preset?.chars?.[0]?.name || "—", res.length ? el("div", { class: "small muted", text: res.join(", ") }) : null),
@@ -2251,7 +2422,9 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         el("td", { class: "num", text: hp != null ? "+" + Math.round(hp) + "%" : "—" }),
         el("td", { class: "num", text: rosterDps(m) != null ? String(rosterDps(m)) : "—" }),
         el("td", { class: "small muted", text: lastUpdated(m) ? shortDate(lastUpdated(m)) : "—", title: lastUpdated(m) || null }),
-        el("td", {}, m.presetStatus ? el("span", { class: "chip " + (m.presetStatus === "Complete" ? "good" : m.presetStatus === "Bare" ? "bad" : "warn"), text: m.presetStatus }) : ""));
+        el("td", {}, m.presetStatus ? el("span", { class: "chip " + (m.presetStatus === "Complete" ? "good" : m.presetStatus === "Bare" ? "bad" : "warn"), text: m.presetStatus }) : ""),
+        el("td", {}, publicLink(m) ? el("span", { class: "chip good", title: linkedTo(m) ? "Linked by an officer" : "Linked by the player", text: "🔗 Linked" }) : el("span", { class: "small muted", text: "Not linked" })),
+        invCell(m));
       tb.append(tr);
     }
     requestAnimationFrame(syncRosterHead);
@@ -2305,7 +2478,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       kv("Artifacts (Mythic / Leg ★)", m.artifacts?.mythic != null ? `${m.artifacts.mythic} / ${m.artifacts.leg}` : "—", m.artifacts?.date || ""),
       kv("ATK bonus", atk != null ? atk.toFixed(2) + "%" : "—", "calculated"),
       kv("Lane HP if anchor", hp != null ? "+" + Math.round(hp) + "%" : "—", "calculated"),
-      kv("DPS, last 5", rosterDps(m) != null ? `${rosterDps(m)}K/s` : "—", (dpsAvg5(m.ign) || {}).n ? `${dpsAvg5(m.ign).n} matches · calculated` : m.dps?.matches ? `${m.dps.matches} matches · calculated` : "no tracked matches")));
+      kv("DPS, last 5", rosterDps(m) != null ? `${rosterDps(m)} K/s` : "—", (dpsAvg5(m.ign) || {}).n ? `${dpsAvg5(m.ign).n} matches · calculated` : m.dps?.matches ? `${m.dps.matches} matches · calculated` : "no tracked matches")));
     // preset
     const p = m.preset || {};
     const chars = el("div", { class: "chars" });
@@ -2380,6 +2553,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     return { added, presetFilled };
   }
   async function setLink(m, on) {
+    if (invView) exitInventoryView();
     const msg = () => $("link-msg");
     const say = (t, cls) => { const n = msg(); if (n) { n.textContent = t; n.className = cls || "small"; } };
     try {
@@ -2395,11 +2569,14 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         const r = prefillFromMember(memberById(m.id));
         refreshBuildsFromInventory(); syncInventoryUI(); renderBuildsTab(); refreshTgSource(true);
         markDirty(); await saveProfile();
+        if (!isEditor) { try { await publishMyLink(m.id); logEvent("linked account", m.ign, { src: "typed" }); } catch {} }
+        await pullOfficerInventory();
         renderRoster(); renderMemberPanel();
         say(`Linked. Added ${r.added} item${r.added === 1 ? "" : "s"} to your Inventory${r.presetFilled ? " and filled your Expedition preset" : ""}. Check anything marked ★? on the Inventory tab.`, "small ok-msg");
       } else {
         if (isEditor && linkedTo(m) === myId) { const nm = clone(m); nm.linkedUser = null; await saveMember(nm, "unlinked account", m.ign); }
         linkedMemberId = null; markDirty(); await saveProfile();
+        if (!isEditor) { try { await publishMyLink(null); logEvent("unlinked account", m.ign, { src: "typed" }); } catch {} }
         renderRoster(); renderMemberPanel();
       }
     } catch { say("Couldn't save the link. Check your connection.", "small err"); }
@@ -2719,9 +2896,14 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
   function subscribeRoster() {
     if (!db) return;
+    db.collection("inventory").onSnapshot((snap) => {
+      const next = {}; for (const d of snap.docs) next[d.id] = d.data();
+      invDocs = next; rebuildInvSubs(); renderRoster(); if (invView && !invView.dirty) { const m = memberById(invView.memberId); invView.sh = m ? sharedInv(m) : null; renderInvViewing(); }
+    }, () => {});
     db.collection("presets").onSnapshot((snap) => {
       const next = {}; for (const d of snap.docs) next[d.id] = d.data();
-      presetSubs = next; renderRoster(); renderAuditMerged();
+      presetSubs = next; rebuildInvSubs(); renderRoster(); renderAuditMerged();
+      if (invView && !invView.dirty) { const m = memberById(invView.memberId); invView.sh = m ? sharedInv(m) : null; renderInvViewing(); }
     }, () => {});
     db.collection("roster").onSnapshot((snap) => {
       const next = {};
@@ -2734,7 +2916,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   // Seed (expedition-seed.json) + officers' edits in the shared database: expedition/<week id> replaces a seed week,
   // opponents/<id> replaces a seed opponent. Everyone can view; officers edit.
   let EXP = { weeks: [], opponents: {}, observations: [], findings: [], mechanics: {} };
-  let expDb = {}, oppDb = {}, expWeekId = null, expRoundN = 1, expSub = "rounds", expEditing = null, expPlayer = null, expSuggest = null;
+  let expDb = {}, oppDb = {}, expWeekId = null, expRoundN = null, expSub = "rounds", expEditing = null, expPlayer = null, expSuggest = null;
   const LANES = ["left", "middle", "right"];
   const LANE_LABEL = { left: "Left", middle: "Middle", right: "Right" };
   const oppId = (name) => "o-" + [...new TextEncoder().encode(name)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -2751,6 +2933,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     return out;
   }
   const parseNum = (v) => { const m = String(v ?? "").replace(/[,\s]/g, "").match(/^(\d+(?:\.\d+)?)([kmb])?$/i); return m ? Math.round(parseFloat(m[1]) * ({ k: 1e3, m: 1e6, b: 1e9 }[(m[2] || "").toLowerCase()] || 1)) : null; };
+  const fmtRate = (n) => { if (n == null) return "—"; const t = fmtK(n), m = t.match(/^([\d.]+)([KM])$/); return m ? `${m[1]} ${m[2]}/s` : t + "/s"; };
   const fmtK = (n) => n == null ? "—" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(Math.round(n));
   const median = (a) => { const s = a.filter(x => x != null).sort((x, y) => x - y); if (!s.length) return null; const k = s.length >> 1; return s.length % 2 ? s[k] : (s[k - 1] + s[k]) / 2; };
 
@@ -2851,8 +3034,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const w = weekById(expWeekId);
     const head = $("exp-week-head"); head.replaceChildren();
     if (w) {
-      head.append(el("div", { class: "row small muted" }, "Guilds: ", ...(w.group || []).map(g => el("span", {}, el("b", {}, guildLink(g.guild)), g.power ? ` ${g.power.toFixed(1)}M` : ""))),
-        w.goal ? el("div", { class: "small", style: "margin-top:6px" }, el("b", { text: "Goal: " }), w.goal) : null);
+      head.append(el("div", { class: "row small muted" }, "Guilds: ", ...(w.group || []).map(g => el("span", {}, el("b", {}, guildLink(g.guild)), g.power ? ` ${g.power.toFixed(1)}M` : ""))));
     }
     if (expSub === "rounds") renderRounds(w);
     else if (expSub === "results") { const b = $("exp-results"); b.replaceChildren(w ? el("div", { class: "panel stack" }, weekResultsCard(w)) : el("div", { class: "panel muted", text: "No weeks yet." })); }
@@ -3039,7 +3221,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     for (const l of LANES) {
       const lr = r.laneResults?.[l] || {};
       const st = (r.stats || []).filter(s => s.lane === l).sort((a, z) => (z.surv ? z.dmg / z.surv : -1) - (a.surv ? a.dmg / a.surv : -1));
-      for (const s of st) rows.push([{ text: LANE_LABEL[l] + (lr.result ? ` (${lr.result})` : ""), color: lr.result === "won" ? "good" : lr.result === "lost" ? "bad" : null }, s.ign, fmtK(s.dmg), s.surv ? s.surv + "s" : "—", { text: s.surv ? fmtK(s.dmg / s.surv) + "/s" : "—", bold: true }]);
+      for (const s of st) rows.push([{ text: LANE_LABEL[l] + (lr.result ? ` (${lr.result})` : ""), color: lr.result === "won" ? "good" : lr.result === "lost" ? "bad" : null }, s.ign, fmtK(s.dmg), s.surv ? s.surv + "s" : "—", { text: s.surv ? fmtRate(s.dmg / s.surv) : "—", bold: true }]);
     }
     const bullets = LANES.map(l => { const lr = r.laneResults?.[l] || {}; return `${LANE_LABEL[l]}: ${lr.result || "?"}${lr.dur ? `, ${lr.dur}s` : ""}${lr.ourDmg != null ? `, ${lr.ourDmg.toFixed(2)}M vs ${lr.theirDmg != null ? lr.theirDmg.toFixed(2) + "M" : "?"}` : ""}${lr.note ? ` (${lr.note})` : ""}`; });
     return { title: `R${r.n} vs ${r.opponent}: results`, subtitle: `${w.label} · ${r.date || ""} · ${r.result === "W" ? "won" : r.result === "L" ? "lost" : "draw"} ${r.score || ""}`,
@@ -3076,7 +3258,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     box.append(el("div", { class: "small muted", text: "Round data is kept by Claude from the screenshots Daby shares. Spot something wrong? Tell Daby." }));
     return box;
   }
-  $("exp-week").addEventListener("change", (e) => { expWeekId = e.target.value; expRoundN = 1; expEditing = null; expSuggest = null; renderExpedition(); });
+  $("exp-week").addEventListener("change", (e) => { expWeekId = e.target.value; expRoundN = null; expEditing = null; expSuggest = null; renderExpedition(); });
   for (const b of $("exp-sub").querySelectorAll("button")) b.addEventListener("click", () => { expSub = b.dataset.sub; expPlayer = null; renderExpedition(); });
 
   // ----- rounds -----
@@ -3084,7 +3266,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const m = memberById(memberId(ign));
     const ws = m ? weaponSet(m) : "";
     const a = dpsAvg5(ign);
-    return el("span", { class: "pchip" + (ws ? " g-" + ws : ""), title: `${ign}${ws ? " · " + ws : ""}${a ? ` · DPS avg ${fmtK(a.avg)}/s (${a.n})` : " · no DPS yet"}` },
+    return el("span", { class: "pchip" + (ws ? " g-" + ws : ""), title: `${ign}${ws ? " · " + ws : ""}${a ? ` · DPS avg ${fmtRate(a.avg)} (${a.n})` : " · no DPS yet"}` },
       el("b", { text: ws ? ws[0] : "?" }), " ", playerLink(ign), extra || "");
   }
   // Lanes lock at 12:00 UTC on the round's day (4:00 AM PT). Before that we're preparing; after it, locked until results come in.
@@ -3153,7 +3335,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const notes = (r.keyNotes && r.keyNotes.length ? r.keyNotes : r.notes ? [r.notes] : []).slice(0, 3);
       for (const n of notes) lines.push(`- ${n}`);
     });
-    if (s.top.length) { lines.push("", "🔥 **TOP DPS THIS WEEK** (2+ rounds)"); s.top.forEach((t, i) => lines.push(`${i + 1}. **${t.ign}** · ${fmtK(t.avg)}/s over ${t.n} rounds`)); }
+    if (s.top.length) { lines.push("", "🔥 **TOP DPS THIS WEEK** (2+ rounds)"); s.top.forEach((t, i) => lines.push(`${i + 1}. **${t.ign}** · ${fmtRate(t.avg)} over ${t.n} rounds`)); }
     if (s.lessons.length) { lines.push("", "🧠 **WHAT WE LEARNED THIS WEEK**"); for (const l of s.lessons) lines.push(`- ${l}`); }
     return lines.join("\n");
   }
@@ -3181,13 +3363,29 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const box = $("exp-rounds"); box.replaceChildren();
     if (!w) { box.append(el("div", { class: "panel muted", text: "No weeks yet." })); return; }
     const rounds = w.rounds || [];
-    if (!rounds.some(r => r.n === expRoundN)) expRoundN = rounds[0] ? rounds[0].n : 1;
-    const tabs = el("div", { class: "buildtabs", role: "group", "aria-label": "Rounds" });
+    // default: the current round (first one not played yet), or the last round once the week is over
+    if (!rounds.some(r => r.n === expRoundN)) { const cur = rounds.find(x => !x.result && x.status !== "done") || rounds[rounds.length - 1]; expRoundN = cur ? cur.n : 1; }
+    const tabs = el("div", { class: "buildtabs roundcards", role: "group", "aria-label": "Rounds" });
+    const curN = (rounds.find(x => !x.result && x.status !== "done") || {}).n;
     for (const r of rounds) {
-      const res = r.result ? ` · ${r.result} ${r.score || ""}` : " · " + laneLockState(r).label.toLowerCase().replace(/ ·.*/, "");
-      tabs.append(el("button", { type: "button", "aria-pressed": String(r.n === expRoundN), text: `R${r.n} ${r.opponent || "?"}${res}`, onclick: () => { expRoundN = r.n; expEditing = null; expSuggest = null; renderExpedition(); } }));
+      const ls = laneLockState(r);
+      let chip;
+      if (r.result) chip = { c: r.result === "W" ? "good" : r.result === "L" ? "bad" : "neutral", t: (r.result === "W" ? "Won " : r.result === "L" ? "Lost " : "Draw ") + (r.score || "") };
+      else if (ls.locked) chip = { c: "hyp", t: "Locked" };
+      else if (r.n === curN && ls.at) { const ms = ls.at.getTime() - Date.now(), h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+        chip = { c: "accent", t: h < 24 ? `Locks in ${h ? h + "h " : ""}${m}m` : "Locks " + ls.at.toLocaleString(undefined, { weekday: "short", hour: "numeric" }) }; }
+      else chip = { c: "neutral", t: r.n === curN ? "Preparing" : "Upcoming" };
+      const day = r.date ? new Date(r.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "";
+      const lanes = el("div", { class: "rclanes" }, ...LANES.map(l => { const res = r.laneResults?.[l]?.result;
+        return el("span", { title: `${LANE_LABEL[l]}: ${res || "not played yet"}` }, el("i", { class: "rcdot " + (res === "won" ? "won" : res === "lost" ? "lost" : "open") }), LANE_LABEL[l][0]); }));
+      tabs.append(el("button", { type: "button", class: "roundcard", "aria-pressed": String(r.n === expRoundN), "aria-label": `Round ${r.n} vs ${r.opponent || "unknown"}, ${chip.t}`,
+        onclick: () => { expRoundN = r.n; expEditing = null; expSuggest = null; renderExpedition(); } },
+        el("div", { class: "rcwhen" }, `Round ${r.n}`, day ? " · " + day : ""),
+        el("div", { class: "rcopp", text: r.opponent || "Opponent not set" }),
+        el("div", { class: "rcbottom" }, lanes, el("span", { class: "chip " + chip.c, text: chip.t }))));
     }
-    box.append(el("div", { class: "panel stack" }, tabs));
+    box.append(el("div", { class: "panel stack stickybar" }, tabs));
+    requestAnimationFrame(() => { const sel = tabs.querySelector('[aria-pressed="true"]'); if (sel && tabs.scrollWidth > tabs.clientWidth) tabs.scrollLeft = sel.offsetLeft - tabs.offsetLeft - 8; });   // phones: keep the open round in view
     const r = rounds.find(x => x.n === expRoundN); if (!r) return;
     const panel = el("div", { class: "panel stack" }); box.append(panel);
     // header
@@ -3226,7 +3424,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const ourCard = el("div", { class: "lanecard ours" },
         el("div", { class: "small" }, el("b", {}, guildLink("ArchAcademy")), r.our?.[ln]?.role ? el("span", { class: "chip neutral", style: "margin-left:6px", text: r.our[ln].role }) : null, r.our?.[ln]?.tier ? el("span", { class: "chip neutral", style: "margin-left:6px", text: r.our[ln].tier + " tier" }) : null),
         el("div", { class: "small muted", text: `⚓ ${(r.result && recAnchor) || os.anchor || "—"} +${Math.round(os.hp)}% · DR ${os.sg.toFixed(1)}% · ${os.dragoon}/${os.n} Dragoon · ${os.power.toFixed(1)}M` }),
-        el("div", { class: "small muted", text: `DPS avg sum ${fmtK(os.dps)}/s${os.estimated ? ` (${os.estimated} estimated)` : ""}` }));
+        el("div", { class: "small muted", text: `DPS avg sum ${fmtRate(os.dps)}${os.estimated ? ` (${os.estimated} estimated)` : ""}` }));
       if (editing) {
         const used = new Set(LANES.flatMap(l => draft[l]).filter(Boolean));
         for (let i = 0; i < 8; i++) {
@@ -3244,9 +3442,9 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         for (const ign of igns) {
           const st = (r.stats || []).find(x => x.ign === ign);
           list.append(el("div", { class: "prow" }, playerChip(ign, ign === ((r.result && recAnchor) || os.anchor) ? " ⚓" : ""),
-            st && st.dmg != null ? el("span", { class: "small muted", text: `${fmtK(st.dmg)}${st.surv ? ` · ${st.surv}s · ${fmtK(st.dmg / st.surv)}/s` : ""}` })
-              : (() => { const a = dpsAvg5(ign); if (a) return el("span", { class: "small muted", title: `Average of the last ${a.n} counted round${a.n > 1 ? "s" : ""}`, text: `avg ${fmtK(a.avg)}/s` });
-                  const m = memberById(memberId(ign)), e = m ? estDps(m) : null; return el("span", { class: "small muted", title: "No counted rounds on this gear yet; estimate from gear set", text: e ? `est. ${fmtK(e.v)}/s` : "no data yet" }); })()));
+            st && st.dmg != null ? el("span", { class: "small muted", text: `${fmtK(st.dmg)}${st.surv ? ` · ${st.surv}s · ${fmtRate(st.dmg / st.surv)}` : ""}` })
+              : (() => { const a = dpsAvg5(ign); if (a) return el("span", { class: "small muted", title: `Average of the last ${a.n} counted round${a.n > 1 ? "s" : ""}`, text: `avg ${fmtRate(a.avg)}` });
+                  const m = memberById(memberId(ign)), e = m ? estDps(m) : null; return el("span", { class: "small muted", title: "No counted rounds on this gear yet; estimate from gear set", text: e ? `est. ${fmtRate(e.v)}` : "no data yet" }); })()));
         }
         if (!igns.length) list.append(el("div", { class: "small muted", text: "No lineup yet." }));
         ourCard.append(list);
@@ -3256,14 +3454,14 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const theirCard = el("div", { class: "lanecard theirs" }, el("div", { class: "small" }, r.opponent ? el("b", {}, guildLink(r.opponent)) : el("b", { text: "Opponent" }), theirLanes?.[ln]?.role ? el("span", { class: "chip neutral", style: "margin-left:6px", text: theirLanes[ln].role }) : null));
       if (ts) {
         theirCard.append(el("div", { class: "small muted", text: `⚓ ${theirLanes[ln].anchor || ts.anchor || "—"} +${Math.round(ts.hp)}% · ${Object.entries(ts.gear).map(([g, c]) => `${c} ${g}`).join(", ") || "gear unknown"}${ts.power ? " · " + ts.power.toFixed(1) + "M" : ""}` }),
-          el("div", { class: "small muted", text: `DPS est. ${fmtK(ts.dps)}/s${ts.estimated ? ` (${ts.estimated} from gear)` : ""}` }));
+          el("div", { class: "small muted", text: `DPS est. ${fmtRate(ts.dps)}${ts.estimated ? ` (${ts.estimated} from gear)` : ""}` }));
         const list = el("div", { class: "plist" });
         for (const n of tl) {
           const info = oppPlayerInfo(r.opponent, n), g = gearOf(info.scan);
           const st = (r.theirStats || []).find(x => x.name === n);
           list.append(el("div", { class: "prow" }, el("span", { class: "pchip" + (g ? " g-" + g : ""), title: info.scan ? `${n} · ${info.scan.mythic ?? "?"} / ${info.scan.leg ?? "?"} artifacts · ${info.scan.gear || "gear ?"}` : n }, el("b", { text: g ? g[0] : "?" }), " ", guildLink(r.opponent, n), n === (theirLanes[ln].anchor || ts.anchor) ? " ⚓" : ""),
-            el("span", { class: "small muted", text: st && st.dmg != null && st.surv ? `${fmtK(st.dmg)} · ${st.surv}s · ${fmtK(st.dmg / st.surv)}/s`
-              : st && st.dmg != null ? `${fmtK(st.dmg)}${st.dps ? ` · ${fmtK(st.dps)}/s` : ""}` : st && st.dps ? `${fmtK(st.dps)}/s` : info.dps ? `avg ${fmtK(info.dps)}/s` : "" })));
+            el("span", { class: "small muted", text: st && st.dmg != null && st.surv ? `${fmtK(st.dmg)} · ${st.surv}s · ${fmtRate(st.dmg / st.surv)}`
+              : st && st.dmg != null ? `${fmtK(st.dmg)}${st.dps ? ` · ${fmtRate(st.dps)}` : ""}` : st && st.dps ? `${fmtRate(st.dps)}` : info.dps ? `avg ${fmtRate(info.dps)}` : "" })));
         }
         theirCard.append(list);
       } else theirCard.append(el("div", { class: "small muted", text: "Unknown until lanes lock (their lineup is viewable for about 2 hours after the lock)." }));
@@ -3276,12 +3474,21 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const deployed = new Set(LANES.flatMap(l => (editing ? draft[l] : (r.our?.[l]?.players || [])).filter(Boolean)));
     const subs = allMembers().filter(m => (m.status || "active") === "active" && !deployed.has(m.ign)).sort((a, z) => estDps(z).v - estDps(a).v);
     if (deployed.size) panel.append(el("details", {}, el("summary", { class: "small", text: `Not deployed (${subs.length})` }), el("div", { class: "row", style: "margin-top:6px" }, ...subs.map(m => playerChip(m.ign)))));
-    if (r.notes) panel.append(el("p", { class: "small muted", style: "margin:0" }, el("b", { text: "Notes: " }), r.notes));
+    if (r.notes) panel.append(notesList(r.notes));
     const ns = notesSection(w, r); if (ns) panel.append(ns);
     // results editor / suggestions
     if (!r.result) box.append(suggestPanel(w, r, theirLanes, pred));
   }
   let expDraft = null;
+  // Round notes as an easy-to-scan list: one bullet per line, or per sentence when the note is one paragraph. "Label: text" lines get a bold label.
+  function notesList(text) {
+    const lines = /\n/.test(text) ? text.split("\n").map(x => x.replace(/^\s*[-•]\s*/, "").trim()).filter(Boolean)
+      : text.split(/(?<=[.!?])\s+(?=[A-Z0-9"(])/).map(x => x.trim()).filter(Boolean);
+    return el("div", { class: "roundnotes" }, el("h3", { text: "Notes" }), el("ul", { class: "tips" }, ...lines.map(l => {
+      const m = l.match(/^([A-Z][\w '’-]{1,24}):\s+(.*)$/);
+      return el("li", { class: "small" }, m ? el("b", { text: m[1] + ": " }) : null, m ? m[2] : l);
+    })));
+  }
   function lineupEditorBar(w, r, draft) {
     const msg = el("span", { class: "small" });
     const prev = (w.rounds || []).find(x => x.n === r.n - 1);
@@ -3317,7 +3524,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         for (const ln of LANES) {
           const L = s.lanes[ln];
           grid.append(el("div", { class: "lanecard ours" }, el("div", { class: "row", style: "justify-content:space-between" }, el("b", { text: LANE_LABEL[ln] + (L.role ? ` · ${L.role}` : "") }), mChip(L.mu)),
-            el("div", { class: "small muted", text: `⚓ ${L.stats.anchor} +${Math.round(L.stats.hp)}% · ${fmtK(L.stats.dps)}/s` }),
+            el("div", { class: "small muted", text: `⚓ ${L.stats.anchor} +${Math.round(L.stats.hp)}% · ${fmtRate(L.stats.dps)}` }),
             el("div", { class: "row", style: "gap:4px" }, ...L.players.map(i => playerChip(i)))));
         }
         card.append(grid, el("ul", { class: "tips" }, ...s.why.map(t => el("li", { class: "small", text: t }))));
@@ -3379,7 +3586,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     for (const o of options) {
       if (!theirStats) continue;
       const conceded = LANES.find(l => o.lanes[l].role === "concede");
-      if (conceded) o.why.push(`Concedes ${LANE_LABEL[conceded]}: their ${theirStats[conceded] ? `${fmtK(theirStats[conceded].dps)}/s lane anchored by ${theirStats[conceded].anchor || "?"}` : "lane"}.`);
+      if (conceded) o.why.push(`Concedes ${LANE_LABEL[conceded]}: their ${theirStats[conceded] ? `${fmtRate(theirStats[conceded].dps)} lane anchored by ${theirStats[conceded].anchor || "?"}` : "lane"}.`);
       const fav = LANES.filter(l => o.lanes[l].mu && o.lanes[l].mu.label === "favored").map(l => LANE_LABEL[l]);
       if (fav.length) o.why.push(`Favored in ${fav.join(", ")}.`);
     }
@@ -3391,47 +3598,132 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
 
   // ----- opponents -----
+  let oppScope = "week", oppQuery = "", oppKind = "all";
+  // Every match an opponent guild played (vs us and vs the other guilds), with lanes and per-player stats where we have them.
+  function oppMatches(n) {
+    const hist = [];
+    const durOf = (lanesStats, ln, extra) => Math.max(extra || 0, ...lanesStats.filter(s => s.lane === ln && s.surv).map(s => s.surv), 0) || null;
+    for (const w of allWeeks()) for (const r of (w.rounds || [])) if (r.opponent === n && r.their) {
+      const both = [...(r.theirStats || []), ...(r.stats || [])];
+      hist.push({ week: w.id, round: r.n, vs: "ArchAcademy", label: `${w.label} · Round ${r.n} vs ArchAcademy`, lanes: r.their, stats: r.theirStats || [],
+        dur: Object.fromEntries(LANES.map(l => [l, durOf(both, l, r.laneResults?.[l]?.dur)])),
+        result: r.result ? (r.result === "W" ? "they lost " : "they won ") + (r.score ? r.score.split("-").reverse().join("-") : "") : (LANES.some(l => r.their[l]?.predicted) ? "not played yet · predicted lineup" : "not played yet") });
+    }
+    for (const ob of EXP.observations) if (ob.guild === n) {
+      const pair = EXP.observations.find(x => x.week === ob.week && x.round === ob.round && x.guild === ob.vs && x.vs === ob.guild);
+      const both = [...(ob.stats || []), ...((pair && pair.stats) || [])];
+      hist.push({ week: ob.week, round: ob.round, vs: ob.vs, label: `${weekById(ob.week)?.label || ob.week} · Round ${ob.round} vs ${ob.vs}`, lanes: ob.lanes, stats: ob.stats || [],
+        dur: Object.fromEntries(LANES.map(l => [l, durOf(both, l)])), result: ob.result + (ob.note ? " · " + ob.note : "") });
+    }
+    return hist.sort((a, z) => a.week === z.week ? a.round - z.round : (a.week < z.week ? -1 : 1));
+  }
+  function oppPlayerNames(n) {
+    const o = allOpponents()[n] || {}, set = new Set();
+    for (const sc of (o.scans || [])) for (const p of sc.players) set.add(p.name);
+    for (const h of oppMatches(n)) { for (const l of LANES) for (const p of (h.lanes[l]?.players || [])) set.add(p); for (const s of h.stats) set.add(s.name); }
+    return [...set];
+  }
   function renderOpponents() {
     const box = $("exp-opponents"); box.replaceChildren();
-    const opps = allOpponents();
-    const names = Object.keys(opps).sort((a, z) => ((opps[z].weeks || []).slice(-1)[0] || "").localeCompare((opps[a].weeks || []).slice(-1)[0] || ""));
-    if (isEditor) box.append(el("div", { class: "panel row" }, el("input", { type: "text", id: "opp-new-name", placeholder: "New opponent guild name", maxlength: "40" }),
-      el("button", { type: "button", class: "btn ghost", text: "Add opponent", onclick: async () => { const n = $("opp-new-name").value.trim(); if (!n || opps[n]) return; await saveOpponent({ name: n, weeks: [], behavior: [], scans: [] }, "added opponent " + n); } })));
+    const w = weekById(expWeekId);
+    if (expOpenOpp) { oppQuery = ""; oppKind = "all"; const o = allOpponents()[expOpenOpp] || {};
+      if (!w || !((o.weeks || []).includes(w.id) || (w.group || []).some(g => g.guild === expOpenOpp) || (w.rounds || []).some(r => r.opponent === expOpenOpp))) oppScope = "all"; }
+    const controls = el("div", { class: "panel stack" });
+    const scopeSel = el("select", { id: "opp-scope", "aria-label": "Which weeks" }, el("option", { value: "week", text: w ? `${w.label} only` : "Selected week" }), el("option", { value: "all", text: "All weeks" }));
+    const kindSel = el("select", { id: "opp-kind", "aria-label": "Which guilds" }, el("option", { value: "all", text: "All guilds" }), el("option", { value: "faced", text: "Faced us" }), el("option", { value: "seen", text: "Seen only (not faced yet)" }));
+    const q = el("input", { type: "search", id: "opp-q", placeholder: "Search guild or player", value: oppQuery, style: "min-width:200px" });
+    scopeSel.value = oppScope; kindSel.value = oppKind;
+    const list = el("div", { class: "stack", id: "opp-list" });
+    scopeSel.addEventListener("change", () => { oppScope = scopeSel.value; drawOppList(list); });
+    kindSel.addEventListener("change", () => { oppKind = kindSel.value; drawOppList(list); });
+    q.addEventListener("input", () => { oppQuery = q.value; drawOppList(list); });
+    controls.append(el("div", { class: "row" }, el("label", { class: "row small" }, "Show ", scopeSel), el("label", { class: "row small" }, kindSel), q));
+    if (isEditor) controls.append(el("div", { class: "row" }, el("input", { type: "text", id: "opp-new-name", placeholder: "New opponent guild name", maxlength: "40" }),
+      el("button", { type: "button", class: "btn ghost", text: "Add opponent", onclick: async () => { const n = $("opp-new-name").value.trim(); const opps = allOpponents(); if (!n || opps[n]) return; await saveOpponent({ name: n, weeks: [], behavior: [], scans: [] }, "added opponent " + n); } })));
+    box.append(controls, list);
+    drawOppList(list);
+  }
+  function drawOppList(list) {
+    list.replaceChildren();
+    const opps = allOpponents(), w = weekById(expWeekId);
+    const inWeek = (n) => { const o = opps[n]; return !!w && ((o.weeks || []).includes(w.id) || (w.group || []).some(g => g.guild === n) || (w.rounds || []).some(r => r.opponent === n)); };
+    const faced = (n) => allWeeks().some(x => (x.rounds || []).some(r => r.opponent === n));
+    const qq = oppQuery.trim().toLowerCase();
+    let names = Object.keys(opps).sort((a, z) => ((opps[z].weeks || []).slice(-1)[0] || "").localeCompare((opps[a].weeks || []).slice(-1)[0] || "") || a.localeCompare(z));
+    if (oppScope === "week") names = names.filter(inWeek);
+    if (oppKind === "faced") names = names.filter(faced); else if (oppKind === "seen") names = names.filter(n => !faced(n));
+    const hits = {};
+    if (qq) names = names.filter(n => { if (n.toLowerCase().includes(qq)) return true; const ps = oppPlayerNames(n).filter(p => p.toLowerCase().includes(qq)); if (ps.length) { hits[n] = ps; return true; } return false; });
+    list.append(el("div", { class: "small muted", text: `${names.length} guild${names.length === 1 ? "" : "s"}${oppScope === "week" && w ? ` in ${w.label}` : " across all weeks"}${qq ? ` matching “${oppQuery.trim()}”` : ""}.` }));
+    if (!names.length) list.append(el("div", { class: "panel muted small", text: oppScope === "week" ? "No guilds match in this week. Try All weeks." : "No guilds match." }));
     for (const n of names) {
       const o = opps[n];
       const card = el("details", { class: "inv" });
-      card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${(o.weeks || []).map(id => weekById(id)?.label || id).join(", ") || "not faced yet"}${o.power ? " · " + o.power.toFixed(1) + "M" : ""}` }))));
+      card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${(o.weeks || []).map(id => weekById(id)?.label || id).join(", ") || "not faced yet"}${o.power ? " · " + o.power.toFixed(1) + "M" : ""}` }),
+        hits[n] ? el("span", { class: "chip neutral", style: "margin-left:6px", text: "player: " + hits[n].slice(0, 3).join(", ") }) : null)));
       const body = el("div", { class: "body" }); card.append(body);
       if ((o.behavior || []).length) body.append(el("div", {}, el("h3", { text: "Lane habits" }), el("ul", { class: "tips" }, ...o.behavior.map(b => el("li", { class: "small", text: b })))));
-      // lane history: vs us + vs others
-      const hist = [];
-      for (const w of [...allWeeks()].reverse()) for (const r of (w.rounds || [])) if (r.opponent === n && r.their) hist.push({ week: w.id, round: r.n, label: `${w.label} R${r.n} vs ArchAcademy`, lanes: r.their, result: r.result ? (r.result === "W" ? "they lost " : "they won ") + (r.score ? r.score.split("-").reverse().join("-") : "") : (LANES.some(l => r.their[l]?.predicted) ? "not played yet · predicted lineup" : "not played yet") });
-      for (const ob of EXP.observations) if (ob.guild === n) hist.push({ week: ob.week, round: ob.round, label: `${weekById(ob.week)?.label || ob.week} R${ob.round} vs ${ob.vs}`, lanes: ob.lanes, result: ob.result + (ob.note ? " · " + ob.note : "") });
-      hist.sort((a, z) => a.week === z.week ? a.round - z.round : (a.week < z.week ? -1 : 1));
+      const all = oppMatches(n);
+      const hist = oppScope === "week" && w ? all.filter(h => h.week === w.id) : all;
+      const hl = (p) => qq && p.toLowerCase().includes(qq);
       if (hist.length) {
-        const t = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Match" }), ...LANES.map(l => el("th", { text: LANE_LABEL[l] })))));
+        const t = el("table", { class: "lb lanehist" }, el("thead", {}, el("tr", {}, el("th", { text: "Match" }), ...LANES.map(l => el("th", { text: LANE_LABEL[l] })))));
         const tb = el("tbody");
         for (const h of hist) tb.append(el("tr", {}, el("td", { class: "small" }, el("b", { text: h.label }), el("div", { class: "muted", text: h.result })),
-          ...LANES.map(l => { const L = h.lanes[l] || {}; return el("td", { class: "small" }, L.anchor ? el("div", {}, "⚓ ", el("b", { text: L.anchor })) : null, L.role ? el("span", { class: "chip neutral", text: L.role }) : null,
-            el("div", { class: "muted", text: (L.players || []).filter(p => p !== L.anchor).join(", ") || (L.partial ? "not recorded" : "") })); })));
+          ...LANES.map(l => {
+            const L = h.lanes[l] || {}, ps = L.players || [], dur = h.dur[l];
+            const order = [...ps].sort((a, z) => (a === L.anchor ? -1 : z === L.anchor ? 1 : 0));
+            return el("td", { class: "small" }, L.role ? el("span", { class: "chip neutral", text: L.role }) : null,
+              dur ? el("div", { class: "muted", text: `fight ${dur}s` }) : null,
+              ...order.map(p => { const st = h.stats.find(x => x.name === p && x.lane === l) || h.stats.find(x => x.name === p);
+                const dps = st ? (st.dps || (st.dmg != null && st.surv ? st.dmg / st.surv : null)) : null;
+                return el("div", { class: "hp" + (hl(p) ? " hit" : "") }, p === L.anchor ? "⚓ " : "", el(p === L.anchor ? "b" : "span", { text: p }),
+                  st ? el("span", { class: "muted", text: ` · ${dps ? fmtRate(dps) : "—"}${st.surv ? ` · ${st.surv}s${dur && st.surv >= dur ? " ✓" : ""}` : ""}` }) : null); }),
+              !ps.length ? el("div", { class: "muted", text: L.partial ? "not recorded" : "" }) : null);
+          })));
         t.append(tb);
-        body.append(el("div", {}, el("h3", { text: "Lane history" }), el("div", { class: "tablewrap" }, t)));
-      }
+        body.append(el("div", {}, el("h3", { text: oppScope === "week" && w ? `Lane history, ${w.label}` : "Lane history" }),
+          el("p", { class: "small muted", style: "margin:0 0 6px", text: "Each player: DPS · seconds survived. ✓ = alive at the end of the fight." }), el("div", { class: "tablewrap" }, t)));
+        // per-player results over the matches shown
+        const agg = {};
+        for (const h of hist) for (const l of LANES) for (const p of (h.lanes[l]?.players || [])) {
+          const st = h.stats.find(x => x.name === p && x.lane === l) || h.stats.find(x => x.name === p);
+          const a = agg[p] || (agg[p] = { name: p, lanes: [], dps: [], surv: [], alive: 0, aliveKnown: 0, dmg: 0 });
+          a.lanes.push(LANE_LABEL[l][0]);
+          if (!st) continue;
+          const dps = st.dps || (st.dmg != null && st.surv ? st.dmg / st.surv : null);
+          if (dps) a.dps.push(dps); if (st.surv) a.surv.push(st.surv); if (st.dmg) a.dmg += st.dmg;
+          if (st.surv && h.dur[l]) { a.aliveKnown++; if (st.surv >= h.dur[l]) a.alive++; }
+        }
+        const avg = (x) => x.length ? x.reduce((s, v) => s + v, 0) / x.length : null;
+        const rows = Object.values(agg).filter(a => a.dps.length || a.surv.length).sort((a, z) => (avg(z.dps) ?? -1) - (avg(a.dps) ?? -1));
+        if (rows.length) {
+          const pt = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Player" }), el("th", { text: "Gear" }), el("th", { text: "Lanes" }), el("th", { class: "num", text: "Avg DPS" }), el("th", { class: "num", text: "Best DPS" }), el("th", { class: "num", text: "Avg survived" }), el("th", { class: "num", text: "Alive at end" }), el("th", { class: "num", text: "Total damage" }))));
+          const ptb = el("tbody");
+          for (const a of rows) { const g = gearOf(oppPlayerInfo(n, a.name).scan);
+            ptb.append(el("tr", { class: hl(a.name) ? "hit" : "" }, el("td", {}, el("b", { text: a.name })), el("td", {}, g ? el("span", { class: "set " + g, text: g }) : "—"), el("td", { class: "small", text: a.lanes.join(" · ") }),
+              el("td", { class: "num", text: a.dps.length ? fmtRate(avg(a.dps)) : "—" }), el("td", { class: "num", text: a.dps.length ? fmtRate(Math.max(...a.dps)) : "—" }),
+              el("td", { class: "num", text: a.surv.length ? Math.round(avg(a.surv)) + "s" : "—" }), el("td", { class: "num", text: a.aliveKnown ? `${a.alive} of ${a.aliveKnown}` : "—" }), el("td", { class: "num", text: a.dmg ? fmtK(a.dmg) : "—" }))); }
+          pt.append(ptb);
+          body.append(el("div", {}, el("h3", { text: oppScope === "week" && w ? `Player results, ${w.label}` : "Player results, all weeks" }),
+            el("p", { class: "small muted", style: "margin:0 0 6px", text: `Over the ${hist.length} match${hist.length === 1 ? "" : "es"} above. Lanes in round order (L = Left, M = Middle, R = Right).` }), el("div", { class: "tablewrap" }, pt)));
+        }
+      } else body.append(el("p", { class: "small muted", text: oppScope === "week" ? "No lane history for this guild in this week." : "No lane history yet." }));
       // roster scan
       const scan = (o.scans || []).slice(-1)[0];
       if (scan) {
         const rows = scan.players.map(p => ({ ...p, hp: p.mythic != null ? p.mythic * 18 + (p.leg || 0) * 1.8 : null, info: oppPlayerInfo(n, p.name) })).sort((a, z) => (z.hp ?? -1) - (a.hp ?? -1));
         const t = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Player" }), el("th", { class: "num", text: "Power" }), el("th", { class: "num", text: "Mythic / Leg" }), el("th", { class: "num", text: "Lane HP" }), el("th", { text: "Gear" }), el("th", { class: "num", text: "DPS seen" }), el("th", { text: "Note" }))));
         const tb = el("tbody");
-        for (const p of rows) tb.append(el("tr", {}, el("td", { text: p.name }), el("td", { class: "num", text: p.power ? p.power.toFixed(2) + "M" : "—" }), el("td", { class: "num", text: p.mythic != null ? `${p.mythic} / ${p.leg ?? "?"}` : "—" }),
+        for (const p of rows) tb.append(el("tr", { class: hl(p.name) ? "hit" : "" }, el("td", { text: p.name }), el("td", { class: "num", text: p.power ? p.power.toFixed(2) + "M" : "—" }), el("td", { class: "num", text: p.mythic != null ? `${p.mythic} / ${p.leg ?? "?"}` : "—" }),
           el("td", { class: "num", text: p.hp != null ? "+" + Math.round(p.hp) + "%" : "—" }), el("td", {}, gearOf(p) ? el("span", { class: "set " + gearOf(p), text: p.gear }) : (p.gear || "—")),
-          el("td", { class: "num", text: p.info.dps ? `${fmtK(p.info.dps)}/s (${p.info.seen})` : "—" }), el("td", { class: "small muted", text: p.note || "" })));
+          el("td", { class: "num", text: p.info.dps ? `${fmtRate(p.info.dps)} (${p.info.seen})` : "—" }), el("td", { class: "small muted", text: p.note || "" })));
         t.append(tb);
         body.append(el("div", {}, el("h3", { text: `Roster scan (${scan.date}, ${scan.players.length} players)` }), el("div", { class: "tablewrap" }, t)));
       } else body.append(el("p", { class: "small muted", text: "No roster scan yet." }));
       if (isEditor) body.append(opponentEditor(o));
-      box.append(card);
-      if (expOpenOpp === n) { card.open = true; setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 0); }
+      list.append(card);
+      if (expOpenOpp === n || (qq && hits[n] && names.length <= 3)) { card.open = true; if (expOpenOpp === n) setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 0); }
     }
     expOpenOpp = null;
   }
@@ -3471,14 +3763,14 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const when = last && !recent ? ` (${new Date(last.date + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })})` : "";
     if (c.length >= 3) {
       const prev = c.slice(0, -1).map(x => x.dps), ch = last.dps / avg(prev) - 1, prevBest = Math.max(...prev);
-      if (ch >= 0.4) out.push({ t: "up", w: ch, major: recent && c.length >= 4 && ch >= 0.75, text: `▲ ${pct(ch)} last round${when}`, why: `Latest round ${fmtK(last.dps)}/s vs their earlier average ${fmtK(avg(prev))}/s.` });
-      else if (ch <= -0.4) out.push({ t: "down", w: -ch, major: recent && c.length >= 4 && ch <= -0.5, text: `▼ ${pct(ch)} last round${when}`, why: `Latest round ${fmtK(last.dps)}/s vs their earlier average ${fmtK(avg(prev))}/s.` });
-      if (last.dps >= prevBest) out.push({ t: "up", w: last.dps / prevBest - 1 + 0.3, major: recent && last.dps >= prevBest * 1.25, text: `★ personal best${when}`, why: `Latest round (${fmtK(last.dps)}/s) is their best logged${last.dps > prevBest ? `, ${pct(last.dps / prevBest - 1)} over the old best` : ""}.` });
+      if (ch >= 0.4) out.push({ t: "up", w: ch, major: recent && c.length >= 4 && ch >= 0.75, text: `▲ ${pct(ch)} last round${when}`, why: `Latest round ${fmtRate(last.dps)} vs their earlier average ${fmtRate(avg(prev))}.` });
+      else if (ch <= -0.4) out.push({ t: "down", w: -ch, major: recent && c.length >= 4 && ch <= -0.5, text: `▼ ${pct(ch)} last round${when}`, why: `Latest round ${fmtRate(last.dps)} vs their earlier average ${fmtRate(avg(prev))}.` });
+      if (last.dps >= prevBest) out.push({ t: "up", w: last.dps / prevBest - 1 + 0.3, major: recent && last.dps >= prevBest * 1.25, text: `★ personal best${when}`, why: `Latest round (${fmtRate(last.dps)}) is their best logged${last.dps > prevBest ? `, ${pct(last.dps / prevBest - 1)} over the old best` : ""}.` });
     }
     if (c.length >= 5) {
       const r3 = avg(c.slice(-3).map(x => x.dps)), e = avg(c.slice(0, -3).map(x => x.dps)), ch = r3 / e - 1;
-      if (ch >= 0.3) out.push({ t: "up", w: ch * 0.9, major: ch >= 0.5, text: `↗ trending up ${pct(ch)}`, why: `Last 3 rounds ${fmtK(r3)}/s vs earlier ${fmtK(e)}/s.` });
-      else if (ch <= -0.25) out.push({ t: "down", w: -ch * 0.9, major: ch <= -0.4, text: `↘ trending down ${pct(ch)}`, why: `Last 3 rounds ${fmtK(r3)}/s vs earlier ${fmtK(e)}/s.` });
+      if (ch >= 0.3) out.push({ t: "up", w: ch * 0.9, major: ch >= 0.5, text: `↗ trending up ${pct(ch)}`, why: `Last 3 rounds ${fmtRate(r3)} vs earlier ${fmtRate(e)}.` });
+      else if (ch <= -0.25) out.push({ t: "down", w: -ch * 0.9, major: ch <= -0.4, text: `↘ trending down ${pct(ch)}`, why: `Last 3 rounds ${fmtRate(r3)} vs earlier ${fmtRate(e)}.` });
     }
     if (last && last.index != null) {
       if (last.index >= 1.6) out.push({ t: "up", w: (last.index - 1) * 0.3, text: `⚑ ${last.index.toFixed(1)}× lane${when}`, why: `Out-damaged their lanemates last round (${last.index.toFixed(2)}× the lane median).` });
@@ -3489,7 +3781,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const lastOff = off[off.length - 1];
       const since = c.filter(x => x.week > lastOff.week || (x.week === lastOff.week && x.round > lastOff.round)).map(x => x.dps);
       const before = avg(off.map(x => x.dps)), after = avg(since.length ? since : c.map(x => x.dps)), r = after / before;
-      out.push({ t: r >= 1 ? "up" : "down", w: Math.abs(Math.log(r)), major: r >= 2 || r <= 0.5, text: `⇄ gear switch ${fmtK(before)}→${fmtK(after)}`, why: `DPS on the old gear set ${fmtK(before)}/s, on the current set ${fmtK(after)}/s.` });
+      out.push({ t: r >= 1 ? "up" : "down", w: Math.abs(Math.log(r)), major: r >= 2 || r <= 0.5, text: `⇄ gear switch ${fmtK(before)}→${fmtK(after)}`, why: `DPS on the old gear set ${fmtRate(before)}, on the current set ${fmtRate(after)}.` });
     }
     if (c.length === 1) {
       const offN = ms.filter(x => x.offSet && x.dps != null).length;
@@ -3521,7 +3813,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       el("option", { value: "dps", text: "DPS avg (5)" }), el("option", { value: "change", text: "Biggest changes" }), el("option", { value: "up", text: "Biggest gains" }), el("option", { value: "down", text: "Biggest drops" }));
     sortSel.value = playersSort; sortSel.addEventListener("change", () => { playersSort = sortSel.value; renderPlayers(); });
     const ups = rows.filter(r => r.so.some(s => s.major && s.t === "up")).length, downs = rows.filter(r => r.so.some(s => s.major && s.t === "down")).length;
-    const t = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Player" }), el("th", { text: "Gear" }), el("th", { class: "num", text: "Rounds" }), el("th", { class: "num", text: "DPS avg (5)" }),
+    const t = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Player" }), el("th", { text: "Gear" }), el("th", { class: "num", text: "DPS avg (5)", title: "Average of their last 5 counted rounds (current gear set, full stats). Grey = fewer than 3 rounds so far." }),
       el("th", { class: "num", text: "Best" }), el("th", { class: "num", text: "vs lane", title: "Median of DPS ÷ lane median DPS. 1.0× = typical for the lanes they played in." }), el("th", { class: "num", text: "Alive at end" }),
       el("th", { text: "Trend (last 6)" }), el("th", { text: "Notable" }))));
     const tb = el("tbody");
@@ -3530,8 +3822,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const open = () => { expPlayer = r.m.ign; renderExpedition(); window.scrollTo({ top: 0 }); };
       tr.addEventListener("click", open); tr.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
       tr.append(el("td", {}, el("b", { text: r.m.ign })), el("td", {}, weaponSet(r.m) ? el("span", { class: "set " + weaponSet(r.m), text: weaponSet(r.m) }) : "—"),
-        el("td", { class: "num", text: r.played ? `${r.counted}/${r.played}` : "—" }), el("td", { class: "num", text: r.avg5 != null ? fmtK(r.avg5) + "/s" : "—" }),
-        el("td", { class: "num", text: r.best != null ? fmtK(r.best) + "/s" : "—" }), el("td", { class: "num" }, r.idx != null ? el("span", { class: "chip " + (r.idx >= 1.25 ? "good" : r.idx <= 0.6 ? "bad" : "neutral"), text: r.idx.toFixed(2) + "×" }) : "—"),
+        el("td", { class: "num" + (r.avg5 != null && r.counted < 3 ? " muted" : ""), title: r.played ? `Based on ${Math.min(r.counted, 5)} counted round${Math.min(r.counted, 5) === 1 ? "" : "s"} (${r.played} played${r.played > r.counted ? `; ${r.played - r.counted} on other gear or partial, not counted` : ""})` : "No rounds yet", text: r.avg5 != null ? fmtRate(r.avg5) : "—" }),
+        el("td", { class: "num", text: r.best != null ? fmtRate(r.best) : "—" }), el("td", { class: "num" }, r.idx != null ? el("span", { class: "chip " + (r.idx >= 1.25 ? "good" : r.idx <= 0.6 ? "bad" : "neutral"), text: r.idx.toFixed(2) + "×" }) : "—"),
         el("td", { class: "num", text: r.alive != null ? Math.round(r.alive * 100) + "%" : "—" }),
         el("td", {}, sparkline(r.trend)),
         el("td", {}, ...r.so.filter(s => s.major).slice(0, 1).map(s => el("span", { class: "so " + s.t, title: s.why, text: s.text }))));
@@ -3539,11 +3831,11 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     }
     t.append(tb);
     const tableSpec = () => ({ title: "Player performance", subtitle: `Expedition DPS from every logged round · sorted by ${sortSel.options[sortSel.selectedIndex].text.toLowerCase()}`,
-      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Gear" }, { label: "Rounds", align: "right", w: 0.7 }, { label: "DPS avg (5)", align: "right" }, { label: "Best", align: "right" }, { label: "vs lane", align: "right", w: 0.8 }, { label: "Notable", w: 2.2 }],
-        rows: rows.filter(r => r.played).map(r => { const s = r.so.filter(x => x.major)[0]; return [{ text: r.m.ign, bold: true }, { text: weaponSet(r.m) || "—", bar: weaponSet(r.m) || "line" }, `${r.counted}/${r.played}`, r.avg5 != null ? fmtK(r.avg5) + "/s" : "—", r.best != null ? fmtK(r.best) + "/s" : "—", r.idx != null ? r.idx.toFixed(2) + "×" : "—", s ? { text: s.text, color: s.t === "up" ? "good" : "bad" } : ""]; }) } },
+      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Gear" }, { label: "DPS avg (5)", align: "right" }, { label: "Best", align: "right" }, { label: "vs lane", align: "right", w: 0.8 }, { label: "Notable", w: 2.2 }],
+        rows: rows.filter(r => r.played).map(r => { const s = r.so.filter(x => x.major)[0]; return [{ text: r.m.ign, bold: true }, { text: weaponSet(r.m) || "—", bar: weaponSet(r.m) || "line" }, r.avg5 != null ? fmtRate(r.avg5) : "—", r.best != null ? fmtRate(r.best) : "—", r.idx != null ? r.idx.toFixed(2) + "×" : "—", s ? { text: s.text, color: s.t === "up" ? "good" : "bad" } : ""]; }) } },
         { text: "DPS = damage ÷ seconds survived. \"vs lane\" = DPS ÷ the median of their own lane in the same fight." }] });
     box.append(el("div", { class: "panel stack" }, el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: "Player performance" }), el("div", { class: "row" }, imgBtn("Copy as image", tableSpec), el("label", { class: "row small" }, "Sort by ", sortSel))),
-      el("p", { class: "small muted", style: "margin:0", text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}. Most players have no note: only big changes get one. DPS = damage ÷ seconds survived. \"vs lane\" compares each player to the median of their own lane in the same fight, which cancels out lane conditions. Tap a player for their round-by-round history.` }),
+      el("p", { class: "small muted", style: "margin:0", text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}. Most players have no note: only big changes get one. DPS = damage ÷ seconds survived. \"vs lane\" compares each player to the median of their own lane in the same fight, which cancels out lane conditions. Grey averages are based on fewer than 3 rounds, so treat them as early reads. Tap a player for their round-by-round history.` }),
       el("div", { class: "tablewrap" }, t),
       el("details", {}, el("summary", { class: "small", text: "How notes are picked" }), el("ul", { class: "tips" },
         ...["Only big changes get a note here, at most one per player; smaller ones show on the player's own page.",
@@ -3566,16 +3858,16 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const m = memberById(memberId(ign));
     const ms = playerMatches(ign), c = ms.filter(x => x.counts), a = dpsAvg5(ign);
     const panel = el("div", { class: "panel stack" });
-    const detailSpec = () => ({ title: `${ign}: Expedition history`, subtitle: `DPS avg (last 5) ${a ? fmtK(a.avg) + "/s" : "—"} · ${c.length} of ${ms.length} rounds counted · gear ${m ? (weaponSet(m) || "—") : "—"}`,
+    const detailSpec = () => ({ title: `${ign}: Expedition history`, subtitle: `DPS avg (last 5) ${a ? fmtRate(a.avg) : "—"} · ${c.length} of ${ms.length} rounds counted · gear ${m ? (weaponSet(m) || "—") : "—"}`,
       sections: [tipsForImage.length ? { heading: "What stands out", bullets: tipsForImage } : null,
         { table: { columns: [{ label: "Round", w: 2 }, { label: "Lane" }, { label: "Damage", align: "right" }, { label: "Survived", align: "right" }, { label: "DPS", align: "right" }, { label: "vs lane", align: "right" }],
-          rows: [...ms].reverse().map(x => [`${x.weekLabel} R${x.round} vs ${x.opponent}`, LANE_LABEL[x.lane] + (x.anchor ? " ⚓" : ""), fmtK(x.dmg), x.surv ? x.surv + "s" : "—", { text: x.dps != null ? fmtK(x.dps) + "/s" + (x.counts ? "" : " *") : "—", bold: x.counts }, x.index != null ? x.index.toFixed(2) + "×" : "—"]) } },
+          rows: [...ms].reverse().map(x => [`${x.weekLabel} R${x.round} vs ${x.opponent}`, LANE_LABEL[x.lane] + (x.anchor ? " ⚓" : ""), fmtK(x.dmg), x.surv ? x.surv + "s" : "—", { text: x.dps != null ? fmtRate(x.dps) + (x.counts ? "" : " *") : "—", bold: x.counts }, x.index != null ? x.index.toFixed(2) + "×" : "—"]) } },
         ms.some(x => !x.counts && x.dps != null) ? { text: "* not counted in averages (different gear set or partial round)." } : null].filter(Boolean) });
     const tipsForImage = [];
     panel.append(el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: ign }), el("div", { class: "row" }, imgBtn("Copy as image", detailSpec), el("button", { type: "button", class: "btn ghost", text: "All players", onclick: () => { expPlayer = null; renderExpedition(); } }))));
     const stat = (k, v) => el("div", { class: "stat" }, el("div", { class: "k", text: k }), el("div", { class: "v", style: "font-size:1.15rem", text: v }));
-    panel.append(el("div", { class: "stats" }, stat("DPS avg, last 5", a ? fmtK(a.avg) + "/s" : "—"), stat("Rounds counted", `${c.length} of ${ms.length}`),
-      stat("Best", c.length ? fmtK(Math.max(...c.map(x => x.dps))) + "/s" : "—"), stat("vs lane median", c.length ? median(c.map(x => x.index)).toFixed(2) + "×" : "—"),
+    panel.append(el("div", { class: "stats" }, stat("DPS avg, last 5", a ? fmtRate(a.avg) : "—"), stat("Rounds counted", `${c.length} of ${ms.length}`),
+      stat("Best", c.length ? fmtRate(Math.max(...c.map(x => x.dps))) : "—"), stat("vs lane median", c.length ? median(c.map(x => x.index)).toFixed(2) + "×" : "—"),
       stat("Gear now", m ? (weaponSet(m) || "—") : "—"), stat("Character now", m?.preset?.chars?.[0]?.name || "—")));
     // insights (rules, plain language)
     const tips = [];
@@ -3599,7 +3891,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const tb = el("tbody");
     for (const x of [...ms].reverse()) tb.append(el("tr", {}, el("td", { class: "small" }, el("b", { text: `${x.weekLabel} R${x.round}` }), el("div", { class: "muted", text: `vs ${x.opponent}` })),
       el("td", { text: LANE_LABEL[x.lane] + (x.anchor ? " ⚓" : "") }), el("td", { class: "num", text: fmtK(x.dmg) }), el("td", { class: "num", text: x.surv ? x.surv + "s" + (x.alive ? " ✓" : "") : "—" }),
-      el("td", { class: "num", text: x.dps != null ? fmtK(x.dps) + "/s" : "—" }), el("td", { class: "num", text: x.laneMedian ? fmtK(x.laneMedian) + "/s" : "—" }),
+      el("td", { class: "num", text: x.dps != null ? fmtRate(x.dps) : "—" }), el("td", { class: "num", text: x.laneMedian ? fmtRate(x.laneMedian) : "—" }),
       el("td", { class: "num", text: x.index != null ? x.index.toFixed(2) + "×" : "—" }), el("td", { class: "num", text: x.heal != null ? fmtK(x.heal) : "—" }),
       el("td", { class: "small muted", text: x.offSet ? "other gear set, not averaged" : x.partial ? "partial round, not averaged" : "" })));
     t.append(tb);
@@ -3682,7 +3974,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         const dt = new Date(id + "T12:00:00");
         const w = { id, label: "Week of " + dt.toLocaleDateString(undefined, { month: "short", day: "numeric" }), group: [{ guild: "ArchAcademy" }, ...g.map(x => x.value.trim()).filter(Boolean).map(n => ({ guild: n }))], standings: [], final: false,
           rounds: [1, 2, 3].map(n => ({ n, opponent: g[n - 1].value.trim(), status: "planned", result: null, our: { left: { players: [] }, middle: { players: [] }, right: { players: [] } } })) };
-        try { await saveWeek(w, "created " + w.label); expWeekId = id; expRoundN = 1; $("exp-new-week-box").hidden = true; renderExpedition(); } catch { msg.className = "small err"; msg.textContent = "Couldn't create."; }
+        try { await saveWeek(w, "created " + w.label); expWeekId = id; expRoundN = null; $("exp-new-week-box").hidden = true; renderExpedition(); } catch { msg.className = "small err"; msg.textContent = "Couldn't create."; }
       } }), msg));
   });
 
@@ -3877,6 +4169,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         setSaveMsg("Loaded your saved account.", "");
       }
       unsaved = false; profileReady = true; renderRoster();
+      if (snap.exists) { await shareInventoryFirstTime(); await pullOfficerInventory(); }
     } catch { clearTimeout(timer); }
   }
 
