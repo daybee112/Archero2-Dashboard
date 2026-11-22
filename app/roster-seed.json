@@ -1,0 +1,4158 @@
+{
+ "_meta": {
+  "purpose": "Starting roster for the Roster tab. Officers' edits are saved to the shared database and replace a member's seed entry.",
+  "generated": "2026-11-21",
+  "sources": [
+   "claude/archero2-expedition-log-2026-11-16.md (snapshot 2026-11-19, R3 deployment 2026-11-21)",
+   "Tracker Google Sheet: Roster tab (ranks, 11-06), DPS History tab"
+  ],
+  "rules": [
+   "Left the guild: Failwyn, Lodt (not included). Lepimi inactive.",
+   "Gear: complete set (per Daby 2026-11-21): any slot with an unknown set or quality takes the weapon's, treated as known; officers correct it as accurate info comes in.",
+   "Resonances only where the source preset screen is trusted; resonanceDate says when.",
+   "Runes left blank (not reliably captured).",
+   "Mystlings mapped from guild nicknames (reaper=Death Mage, jester=The Fool, snake=Queen Medusa, goblin witch=Witch, dragon=Nian Beast, owl=Snowy Owl). Stars from colors (yellow, teal, red, purple/pink/blue fade, dark red; 5 per color; 'blue' on old captures = teal) only when all five icons were recorded in adjacent colors. The raw capture stays in mystlingSeen."
+  ],
+  "dpsMatches": [
+   "11-06 R1 PWNZ",
+   "11-12 R1 Whispers",
+   "11-13 R2 おぶんぐさん",
+   "11-14 R3 Moonfall",
+   "11-20 R1 UkraineArchers",
+   "11-21 R2 Happiness"
+  ]
+ },
+ "members": [
+  {
+   "id": "m-hago26",
+   "ign": "Hago26",
+   "rank": "Vice Leader",
+   "status": "active",
+   "power": {
+    "m": 14.45,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 22,
+    "leg": 30,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 18
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper, 3 purple / 2 red",
+   "dps": {
+    "avg5": 284,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 248
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 361
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 283
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 299
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 251
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 225
+     }
+    ]
+   },
+   "notes": "Best mystling in guild (11-06).",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-isterbuk",
+   "ign": "Isterbuk",
+   "rank": "Elder",
+   "status": "active",
+   "power": {
+    "m": 12.14,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 15,
+    "leg": 34,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Dracoola",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper",
+   "dps": {
+    "avg5": 18,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 25
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 10
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 13
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 31
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 19
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 16
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-tuup",
+   "ign": "Tuup",
+   "rank": "Leader",
+   "status": "active",
+   "power": {
+    "m": 12.13,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 22,
+    "leg": 37,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     {
+      "name": "Loki",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "The Fool",
+     "stars": 8
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "jester, 2 yellow / 3 blue",
+   "dps": {
+    "avg5": 95,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 125
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 79
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 114
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 56
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 106
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 118
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-muffinknight",
+   "ign": "MuffinKnight",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 12.05,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 12,
+    "leg": 29,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Mymu",
+      "star": null
+     },
+     {
+      "name": "Cleo",
+      "star": null
+     },
+     {
+      "name": "Phynx",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Griffin",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 15
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper, 5 red",
+   "dps": {
+    "avg5": 16,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 12
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 18
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 12
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 16
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 15
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 18
+     }
+    ]
+   },
+   "notes": "Griffin amulet.",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-mharu",
+   "ign": "MHARU",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 10.86,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 17,
+    "leg": 29,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     },
+     {
+      "name": "Mymu",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-21",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper",
+   "dps": {
+    "avg5": 160,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 121
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 214
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 164
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 125
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 169
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 126
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-silverscope",
+   "ign": "SilverScope",
+   "rank": "Elder",
+   "status": "active",
+   "power": {
+    "m": 10.84,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 11,
+    "leg": 32,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Cleo",
+      "star": null
+     },
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Queen Medusa",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "snake",
+   "dps": {
+    "avg5": 18,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 14
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 14
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 14
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 18
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 26
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 20
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-hansi218",
+   "ign": "Hansi218",
+   "rank": "Elder",
+   "status": "active",
+   "power": {
+    "m": 10.69,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 12,
+    "leg": 34,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Seraph",
+      "star": null
+     },
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     },
+     {
+      "name": "Dracoola",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 15
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper, 5 red",
+   "dps": {
+    "avg5": 45,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 63
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 49
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 26
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 49
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 67
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 36
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-mspoppycorn",
+   "ign": "MsPoppycorn",
+   "rank": "Elder",
+   "status": "active",
+   "power": {
+    "m": 10.62,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 10,
+    "leg": 33,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Dracoola",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 15
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper, 5 red",
+   "dps": {
+    "avg5": 17,
+    "matches": 4,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 13
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 20
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 26
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 10
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-daybee",
+   "ign": "daybee",
+   "rank": "Vice Leader",
+   "status": "active",
+   "power": {
+    "m": 10.53,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 15,
+    "leg": 28,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Demeter",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 6
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper, 4 yellow / 1 blue",
+   "dps": {
+    "avg5": 118,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 131
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 110
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 96
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 122
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 137
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 123
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-zeuzo",
+   "ign": "Zeuzo",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 10.37,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 14,
+    "leg": 29,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     {
+      "name": "Phynx",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 6
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper, 4 yellow / 1 blue",
+   "dps": {
+    "avg5": 96,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 21,
+      "note": "Oracle"
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 93
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 131
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 108
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 80
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 67
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-yullong",
+   "ign": "Yullong",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 10.28,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 8,
+    "leg": 34,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Phynx",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Complete",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": 16,
+    "matches": 3,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 19
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 13
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 17
+     }
+    ]
+   },
+   "notes": "Deployed Loki on 11-06, Phynx by 11-19; resonances not re-captured.",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-thesithlor",
+   "ign": "thesithlor",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 10.07,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 8,
+    "leg": 24,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Alex",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     {
+      "name": "Wukong",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper",
+   "dps": {
+    "avg5": 10,
+    "matches": 3,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 6
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 10
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 15
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-xe79a87e9bb8e",
+   "ign": "皇黎",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 10.04,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 15,
+    "leg": 33,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     {
+      "name": "Cleo",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper",
+   "dps": {
+    "avg5": 25,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 20
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 31
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 11
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 45
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 13
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 26
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-ilportoghese",
+   "ign": "Ilportoghese",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 10.01,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 10,
+    "leg": 23,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Dracoola",
+      "star": null
+     },
+     {
+      "name": "Artemis",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Witch",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-19",
+   "presetStatus": "Complete",
+   "mystlingSeen": "goblin witch",
+   "dps": {
+    "avg5": 29,
+    "matches": 4,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 25
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 20
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 24
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 47
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-shoex",
+   "ign": "Shoex",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 9.71,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 13,
+    "leg": 27,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Phynx",
+      "star": null
+     },
+     {
+      "name": "Cleo",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Queen Medusa",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "snake",
+   "dps": {
+    "avg5": 87,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 77
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 96
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 71
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 133
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 78
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 59
+     }
+    ]
+   },
+   "notes": "High-damage Oracle outlier.",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-terminus323",
+   "ign": "Terminus323",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 9.28,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 11,
+    "leg": 24,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Phynx",
+      "star": null
+     },
+     {
+      "name": "Rolla",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "Mid",
+     "movement": "Balanced"
+    }
+   },
+   "presetDate": "2026-11-22",
+   "resonanceDate": "2026-11-22",
+   "presetStatus": "Complete",
+   "mystlingSeen": "naga, 1 rainbow + 4 red stars",
+   "dps": {
+    "avg5": 15,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 11
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 15
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 14
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 17
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 18
+     }
+    ]
+   },
+   "notes": "Switched Oracle to Chaotic Dragoon (preset screen 2026-11-22): all six pieces Chaotic Lv135-138, runes full. Oracle rounds stay in his history but aren't averaged with Dragoon rounds.",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-heynow",
+   "ign": "Heynow",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 9.2,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 9,
+    "leg": 21,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Complete",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": 6,
+    "matches": 2,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 7
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 4
+     }
+    ]
+   },
+   "notes": "Filled both resonance slots + mystling week of 11-16 (which ones not recorded).",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-venom17",
+   "ign": "Venom17",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 8.95,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 11,
+    "leg": 27,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Cleo",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Snowy Owl",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "owl",
+   "dps": {
+    "avg5": 83,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 58
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 145
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 90
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 60
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 69
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 51
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-katiecarmine",
+   "ign": "KatieCarmine",
+   "rank": "Vice Leader",
+   "status": "active",
+   "power": {
+    "m": 8.27,
+    "date": "2026-11-21",
+    "src": "Preset recheck + R3 Team Info"
+   },
+   "artifacts": {
+    "mythic": 7,
+    "leg": 20,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Hela",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     },
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Witch",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-21",
+   "presetStatus": "Complete",
+   "mystlingSeen": "goblin witch (11-19)",
+   "dps": {
+    "avg5": 65,
+    "matches": 2,
+    "history": [
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 22,
+      "note": "Oracle"
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 26,
+      "note": "Oracle"
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 3,
+      "note": "Oracle"
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 92
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 38
+     }
+    ]
+   },
+   "notes": "Character is Hela (was misread as Loki). Switched Oracle → Dragoon week of 11-16.",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-thedragonix725",
+   "ign": "TheDragonix725",
+   "rank": "Elder",
+   "status": "active",
+   "power": {
+    "m": 8.06,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 13,
+    "leg": 21,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper",
+   "dps": {
+    "avg5": 58,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 75
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 77
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 59
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 44
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 35
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-bubobubo",
+   "ign": "Bubobubo",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 8.04,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 13,
+    "leg": 29,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": 66,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 82
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 70
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 68
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 87
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 47
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 56
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-michelo",
+   "ign": "Michelo",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.96,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 11,
+    "leg": 23,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Cleo",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "reaper",
+   "dps": {
+    "avg5": 175,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 115
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 219
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 201
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 176
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 119
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 159
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-drshabz",
+   "ign": "DrShabz",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.89,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 8,
+    "leg": 19,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Snowy Owl",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-14",
+   "presetStatus": "Complete",
+   "mystlingSeen": "owl, 2 red / 3 yellow (11-14)",
+   "dps": {
+    "avg5": 97,
+    "matches": 3,
+    "history": [
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 100
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 87
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 103
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-jjjrrrbbb",
+   "ign": "JJJRRRBBB",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.86,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 7,
+    "leg": 16,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Bare",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": 8,
+    "matches": 2,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 8
+     },
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 8
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-leko",
+   "ign": "LeKo",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.73,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 13,
+    "leg": 31,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     },
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Nian Beast",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "dragon",
+   "dps": {
+    "avg5": 10,
+    "matches": 2,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 10
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 10
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-archerojj",
+   "ign": "Archerojj",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.53,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 8,
+    "leg": 24,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Alex",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Bare",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-bungy",
+   "ign": "Bungy",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.48,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 9,
+    "leg": 28,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Mythic+2"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Mythic+2"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Mythic+2"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Mythic+2"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Mythic+2"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Mythic+2"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Bare",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "Oracle pieces + Dragoon weapon (Mythic+2).",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-itsgeorgees",
+   "ign": "Itsgeorgees",
+   "rank": "Elder",
+   "status": "active",
+   "power": {
+    "m": 7.46,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 10,
+    "leg": 20,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Hou Yi",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-19",
+   "presetStatus": "Partial",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": 63,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-06 R1 PWNZ",
+      "kps": 57
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 75
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 44
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 78
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 62
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-drfuko",
+   "ign": "DrFuko",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.34,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 8,
+    "leg": 22,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     {
+      "name": "Dracoola",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "1 yellow / 4 blue",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-tylerg",
+   "ign": "TylerG",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.22,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 11,
+    "leg": 22,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Mymu",
+      "star": null
+     },
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 0
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Partial",
+   "mystlingSeen": "reaper, 0★",
+   "dps": {
+    "avg5": 54,
+    "matches": 5,
+    "history": [
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 83
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 58
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 41
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 43
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 45
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-goatgeass",
+   "ign": "GoatGeass",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.18,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 8,
+    "leg": 19,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Otta",
+      "star": null
+     },
+     {
+      "name": "Cleo",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "2 blue",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-buchacha",
+   "ign": "Buchacha",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 7.13,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 8,
+    "leg": 29,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Dracoola",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-19",
+   "presetStatus": "Partial",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": 67,
+    "matches": 3,
+    "history": [
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 63
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 34
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 103
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-prodegie",
+   "ign": "Prodegie",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 6.94,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 10,
+    "leg": 21,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Seraph",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Bare",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-gaga94",
+   "ign": "Gaga94",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 6.93,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 12,
+    "leg": 33,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     },
+     {
+      "name": "Dracoola",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Godforge ★5"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Mythic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Mythic+3"
+     },
+     "amulet": {
+      "set": "Griffin",
+      "q": "Mythic+2"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Partial",
+   "mystlingSeen": "5 yellow",
+   "dps": {
+    "avg5": 19,
+    "matches": 3,
+    "history": [
+     {
+      "match": "11-12 R1 Whispers",
+      "kps": 31
+     },
+     {
+      "match": "11-13 R2 おぶんぐさん",
+      "kps": 14
+     },
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 12
+     }
+    ]
+   },
+   "notes": "Expedition preset mixes all three sets (confirmed by Daby 2026-11-21): Godforge ★5 Oracle weapon, Mythic Dragoon armor, Chaotic Oracle ring, Mythic+3 Dragoon helmet, Mythic+2 Griffin amulet, Chaotic Dragoon boots. Main loadout 9.34M.",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-bazal",
+   "ign": "Bazal",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 6.69,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 10,
+    "leg": 19,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Dracoola",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": ""
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Mythic+4"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": ""
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": ""
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": ""
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": ""
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "The Fool",
+     "stars": 0
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Partial",
+   "mystlingSeen": "jester, 0★",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "Oracle, boots Mythic+4. Owns Cornucopia (0★).",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-slenderu",
+   "ign": "slenderu",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 6.59,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 11,
+    "leg": 21,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     {
+      "name": "Cleo",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-06",
+   "presetStatus": "Complete",
+   "mystlingSeen": "2 blue",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-abr0",
+   "ign": "Abr0",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 6.59,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 10,
+    "leg": 20,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Partial",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-tw3akz",
+   "ign": "Tw3aKZ",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 6.47,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 12,
+    "leg": 21,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Thor",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 10
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Partial",
+   "mystlingSeen": "reaper, 5 blue",
+   "dps": {
+    "avg5": 54,
+    "matches": 3,
+    "history": [
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 77
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 39
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 46
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-kevinshock",
+   "ign": "KevinShock",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 6.44,
+    "date": "2026-11-21",
+    "src": "Expedition deployment (R3 Team Info)"
+   },
+   "artifacts": {
+    "mythic": 7,
+    "leg": 17,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     },
+     {
+      "name": "Dracoola",
+      "star": null
+     },
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Death Mage",
+     "stars": 6
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-19",
+   "presetStatus": "Partial",
+   "mystlingSeen": "reaper, 4 yellow / 1 blue",
+   "dps": {
+    "avg5": 57,
+    "matches": 3,
+    "history": [
+     {
+      "match": "11-14 R3 Moonfall",
+      "kps": 72
+     },
+     {
+      "match": "11-20 R1 UkraineArchers",
+      "kps": 38
+     },
+     {
+      "match": "11-21 R2 Happiness",
+      "kps": 62
+     }
+    ]
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-banditten",
+   "ign": "Banditten",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 6.04,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 11,
+    "leg": 21,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Helix",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": null,
+   "presetStatus": "Bare",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-legitkit",
+   "ign": "Legitkit",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 5.76,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 4,
+    "leg": 17,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Alex",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     {
+      "name": "Demon King Atreus",
+      "star": null
+     }
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Chaotic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "The Fool",
+     "stars": 0
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-19",
+   "presetStatus": "Partial",
+   "mystlingSeen": "jester, 0★",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-profetafume",
+   "ign": "Profetafume",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 5.68,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 8,
+    "leg": 21,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Nyanja",
+      "star": null
+     },
+     {
+      "name": "Thor",
+      "star": null
+     },
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Oracle",
+      "q": "Mythic"
+     },
+     "armor": {
+      "set": "Oracle",
+      "q": "Mythic+4"
+     },
+     "boots": {
+      "set": "Oracle",
+      "q": "Mythic+2"
+     },
+     "amulet": {
+      "set": "Oracle",
+      "q": "Mythic"
+     },
+     "ring": {
+      "set": "Oracle",
+      "q": "Mythic"
+     },
+     "helmet": {
+      "set": "Oracle",
+      "q": "Mythic"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-19",
+   "presetStatus": "Partial",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "Oracle: armor Mythic+4, boots Mythic+2, weapon Mythic.",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-taz96",
+   "ign": "taz96",
+   "rank": "Member",
+   "status": "active",
+   "power": {
+    "m": 3.69,
+    "date": "2026-11-19",
+    "src": "Expedition sub list / Team Info"
+   },
+   "artifacts": {
+    "mythic": 11,
+    "leg": 26,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Dracoola",
+      "star": null
+     },
+     {
+      "name": "Loki",
+      "star": null
+     },
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": "Mythic+3"
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": "Mythic+3"
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": "Mythic+3"
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": "Mythic+3"
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": "Mythic+3"
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": "Mythic+3"
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": {
+     "name": "Nian Beast",
+     "stars": null
+    },
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-19",
+   "resonanceDate": "2026-11-19",
+   "presetStatus": "Partial",
+   "mystlingSeen": "dragon, 2 blue",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "All Mythic Dragoon (weapon Mythic+3).",
+   "src": "Seeded from claude/archero2-expedition-log-2026-11-16.md + tracker sheet"
+  },
+  {
+   "id": "m-lepimi",
+   "ign": "Lepimi",
+   "rank": "Member",
+   "status": "inactive",
+   "power": {
+    "m": 4.44,
+    "date": "2026-11-06",
+    "src": "Guild member list"
+   },
+   "artifacts": {
+    "mythic": 7,
+    "leg": 17,
+    "date": "2026-11-19"
+   },
+   "preset": {
+    "chars": [
+     {
+      "name": "Thor",
+      "star": null
+     },
+     null,
+     null
+    ],
+    "gear": {
+     "weapon": {
+      "set": "Dragoon",
+      "q": ""
+     },
+     "amulet": {
+      "set": "Dragoon",
+      "q": ""
+     },
+     "ring": {
+      "set": "Dragoon",
+      "q": ""
+     },
+     "helmet": {
+      "set": "Dragoon",
+      "q": ""
+     },
+     "armor": {
+      "set": "Dragoon",
+      "q": ""
+     },
+     "boots": {
+      "set": "Dragoon",
+      "q": ""
+     }
+    },
+    "runes": {
+     "blessing": [],
+     "enhancement": [],
+     "ability": [],
+     "etched": []
+    },
+    "mystling": null,
+    "behavior": {
+     "range": "",
+     "movement": ""
+    }
+   },
+   "presetDate": "2026-11-06",
+   "resonanceDate": null,
+   "presetStatus": "Bare",
+   "mystlingSeen": "",
+   "dps": {
+    "avg5": null,
+    "matches": 0,
+    "history": []
+   },
+   "notes": "Inactive (not registering), per Daby.",
+   "src": "Seeded from tracker sheet (11-06)"
+  }
+ ]
+}

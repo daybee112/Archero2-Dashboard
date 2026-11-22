@@ -1,0 +1,359 @@
+{
+ "_meta": {
+  "purpose": "Release notes shown on the dashboard's Changes tab. The authoritative log, with file fingerprints and rollback steps, is dashboard/CHANGELOG.md in the project.",
+  "rule": "Every publish adds an entry here AND in dashboard/CHANGELOG.md, and archives the released files under dashboard/releases/<id>/ in the project.",
+  "numbering": "Versions are major.minor.patch, each part starting at 0 (per Daby 2026-11-22): major (v7.0.0) for new features, minor (v6.8.0) for page fixes and adjustments, patch (v6.8.1) for releases that only change data files (round results, roster, opponent scans). Releases before v6.8.0 used two numbers (v6.7 = v6.7.0). Versions before 2026-11-21's rename were called r1, r2, r2.1."
+ },
+ "releases": [
+  {
+   "id": "v7.3.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Roster heading on iPhone, Opponents by week",
+   "changes": [
+    "Main Roster: once you scroll past the headings, a pinned copy of the heading row (with a frozen Player cell) stays under the top bar and follows sideways scrolling. Tapping a heading in it still sorts. Fixes the Player heading disappearing on iPhone.",
+    "Opponents: a guild faced in several weeks shows only the selected week (week label, that week's lane habits, lane history, player results and roster scan). Show all guilds shows every week."
+   ]
+  },
+  {
+   "id": "v7.2.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Expedition roster graphs and sorting, 3 opponents per week, phone fixes",
+   "changes": [
+    "Expedition roster: columns are Player, Gear, DPS avg, Best DPS, Performance, Notable (vs lane and Alive at end are on each player's page).",
+    "DPS avg is now the last 6 rounds on the player's current gear (was 5), everywhere including the main Roster. Hover it to see how many rounds it's based on.",
+    "Performance: each player's last 6 played rounds on their own scale, newest on the right, with the latest K/s. Hover a dot for the week and round; hollow dots are rounds on another gear set.",
+    "Expedition roster sorts like the main Roster: tap a heading, tap again to flip, earlier taps break ties, with removable sort chips and Reset to DPS avg.",
+    "Opponents: officers add guilds to the week on screen (New opponent guild name, Add to this week), up to 3 per week. Fixed: Edit this opponent didn't save for guilds from the starting data.",
+    "Phones: the main Roster's Player heading stays pinned (iPhone Safari), round cards are narrower, and opening an opponent no longer stretches the page."
+   ]
+  },
+  {
+   "id": "v7.1.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Round notes as bullets with test results, simpler Opponents, pinned Builds bar",
+   "changes": [
+    "Round notes are bullet points everywhere: the Round results card (and its Copy text), round notes, Round details and Week results.",
+    "Week of Nov 16 round notes now include test results and what we learned: R1's five tests, R2's lesson (it was win-only), and all eight R3 tests.",
+    "Opponents: shows the selected week's three guilds; a Show all guilds button adds every earlier guild below them under Other weeks (Hide other weeks puts it back). The search and guild filter from v7.0.0 are gone.",
+    "Builds: the build picker, New custom build and Save stay pinned at the top while you scroll."
+   ]
+  },
+  {
+   "id": "v7.0.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Shared inventories, roster indicators, Expedition clean-up",
+   "changes": [
+    "Inventories are now visible to the whole guild. Players edit their own; officers can edit anyone's (logged before → after). Builds stay private, except the Expedition preset.",
+    "Roster: new Account linked and Inventory columns. 'Filled' opens that player's inventory read-only (officers can edit and save it to them).",
+    "Existing private inventories are shared the next time each player opens the dashboard, with a one-time notice.",
+    "Expedition rounds: new round cards (round, date, opponent, lane dots, status) replace the R1/R2/R3 buttons, stay pinned at the top while you scroll, and open on the current or latest round.",
+    "Round notes show as bullet points instead of one paragraph.",
+    "Week header: removed the goal line.",
+    "Players is now Roster and comes before Opponents. The Rounds column is gone (hover a DPS average to see how many rounds it's based on; grey = fewer than 3).",
+    "DPS reads '92 K/s' everywhere and never wraps.",
+    "Opponents: shows the selected week by default, with All weeks, a faced/seen filter and a guild or player search. Lane history lists each player's DPS and seconds survived, plus a Player results table for the week.",
+    "Every table keeps its column headers pinned under the top bar while scrolling, and headers stay on one line."
+   ]
+  },
+  {
+   "id": "v6.9.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Clearer player notes after a gear switch",
+   "changes": [
+    "Player pages: a player with only one round on their current gear now reads '1 round on current gear', and says how many earlier rounds on a different gear set are listed but not counted.",
+    "'Consistently out-damages lanemates' and 'Usually well below lanemates' only show with 3 or more counted rounds, and state the median and the number of rounds. With 1 or 2 rounds the note says it's too early to call it a pattern.",
+    "Players who switched gear get a line with how they did before the switch (their lane-relative number on the earlier gear set).",
+    "Removed a duplicate lane note when a player has fewer than 3 counted rounds."
+   ]
+  },
+  {
+   "id": "v6.8.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Full activity tracking, new tab order, Week results view",
+   "changes": [
+    "Tabs are now Inventory, Builds, Roster, Expedition, Training Ground, Help. The Changelog tab is gone: tap the gold version number at the top right to open it.",
+    "Expedition: Week results is its own view (Rounds, Week results, Opponents, Players, Findings).",
+    "Activity log: every change now records who, when, how (typed in, screenshot import, Builds tab) and what changed, before → after. Filter by person or type, search, and export everything to CSV.",
+    "Members' own preset updates and Training Ground posts are now in the activity log. An officer's dashboard copies them into the officer's own record; if a member later edits or removes one, it's flagged and the original is shown.",
+    "Old activity entries are no longer dropped: past 400, the oldest move to a monthly archive (Load older entries).",
+    "Version numbers now use three parts starting at 0 (this release is v6.8.0; v6.7 = v6.7.0)."
+   ]
+  },
+  {
+   "id": "v6.7",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Weekly results in the Expedition tab",
+   "changes": [
+    "Rounds: new weekly results card above the round tabs. Empty before Round 1; after each round it shows the record, flags, points, damage, standings so far (from our rounds plus the other matches we logged), each round's result and notes, and the week's top DPS. Once Round 3 is in it shows the final standings and what we learned that week.",
+    "Copy text and Copy as image on the card, for Discord. Officers can add Week notes about the whole week.",
+    "Week of Nov 16: 3 key notes per round and the week's conclusions ('What we learned this week').",
+    "The week header no longer repeats the standings (they're in the new card)."
+   ]
+  },
+  {
+   "id": "v6.6",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Nov 2 and Nov 9 weeks backfilled from Details screens",
+   "changes": [
+    "Week of Nov 9, all 3 rounds: exact damage, survival and healing for our players, and damage, survival and DPS for every opponent player.",
+    "Week of Nov 2, R2 vs Happiness and R3 vs BlockMagic: full stats for both sides, including Happiness's and BlockMagic's full lineups (only a few players were known before). These rounds now count toward DPS averages.",
+    "Week of Nov 2, R1 vs PWNZ: exact stats for our Right lane and PWNZ's Middle and Right.",
+    "Opponents: full lineups and stats for the other matches in both weeks (PWNZ vs BlockMagic, PWNZ vs Happiness, Whispers / おぶんぐさん / Moonfall all three rounds). おぶんぐさん's R2 lanes confirmed (were assumed). Whispers swapped Tresnja and exsign between Middle and Right vs Moonfall in R2.",
+    "Lane damage totals matched to the screens (three opponent lanes adjusted by up to 0.05M)."
+   ]
+  },
+  {
+   "id": "v6.5",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Opponent damage and survival; R1 and R2 backfilled",
+   "changes": [
+    "Rounds: opponent players now show damage, seconds survived and DPS in the lane cards, the same as ours.",
+    "Week of Nov 16, R1 vs UkraineArchers and R2 vs Happiness: every opponent player's damage and survival filled in from the Details screens, plus our healing for R1. Lane damage totals adjusted by up to 0.01M to match the exact numbers.",
+    "Opponents: full damage and survival for Happiness vs Holymoly (R1) and UkraineArchers vs Holymoly (R2), including UkraineArchers' full Middle and Right lineups in R2 (only their leads were known before).",
+    "Confirmed from the round schedule screens: R1 ArchAcademy 2-1 UkraineArchers (won Left and Right) and Happiness 3-0 Holymoly; R2 ArchAcademy 2-1 Happiness (won Left and Right) and UkraineArchers 3-0 Holymoly."
+   ]
+  },
+  {
+   "id": "v6.4",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Round results card",
+   "changes": [
+    "Played rounds now show a \"Round results\" card where the message to the officers used to be: the score, then each lane (Left, Middle, Right) with its anchor, result, damage, fight length and who was alive, and every player's DPS. \"Copy text\" copies it with Discord formatting; \"Copy as image\" makes a picture. The plan message from before the round is still there, folded under the results.",
+    "Happiness 2-1 UkraineArchers in R3 is now confirmed from the round schedule screen (UkraineArchers won Left). Final standings stand as shown.",
+    "Terminus323's R3 power filled in with his main-profile power (9.24M), since his deployment screen wasn't captured."
+   ]
+  },
+  {
+   "id": "v6.3",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "R3 results: won 3-0, 1st place",
+   "changes": [
+    "R3 vs Holymoly: won 3-0. All 24 of ours survived every lane (Left 9s, Middle 11s, Right 9s). Per-player damage, survival, healing and DPS for both sides, from the Details screens.",
+    "Holymoly fielded the same 24 in the same lanes for the third round in a row.",
+    "Week of Nov 16 is final: ArchAcademy 1st with 9 pts. Happiness beat UkraineArchers 2-1 in R3 (read from who was still alive at the end of each lane); their lanes and damage are on the Opponents pages."
+   ]
+  },
+  {
+   "id": "v6.2",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Sort removal, lane status, side-by-side lanes, editing warning",
+   "changes": [
+    "Roster: each active sort shows as a chip with an ✕ to remove it, plus \"Reset to power\" any time the sort isn't the default (it used to appear only with two or more sorts).",
+    "Rounds: a round that hasn't been played shows \"Preparing\" with the lane lock time (4:00 AM PT on round day), then \"Locked\" automatically once lanes lock, until results come in. R3 vs Holymoly now shows Preparing.",
+    "Rounds: our players now show their DPS average (last 5 counted rounds) before a round is played, or a gear-based estimate if they have no counted rounds yet.",
+    "Rounds: each lane is one row with ArchAcademy and the opponent side by side (stacked on phones).",
+    "Terminus323's Oracle rounds still show in his history but no longer count toward his DPS average now that he's on Dragoon, so he shows a Dragoon estimate (60K/s) until his first Dragoon round is logged.",
+    "Help: new \"Editing permissions\" section (who can change what, nothing saves until you press save, tips to avoid accidental edits, how mistakes get fixed), plus a heads-up note under the quick start."
+   ]
+  },
+  {
+   "id": "v6.1",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "R3 lineup update: Terminus323 in",
+   "changes": [
+    "R3 vs Holymoly: Terminus323 replaces DrFuko in Middle (Terminus323 just switched to Chaotic Dragoon). Heynow stays. DrFuko moves to subs.",
+    "R3 message to the officers updated to match: lanes listed Left, Middle, Right; Terminus323's line, DrFuko in subs, tests #2, #3 and #4 updated, new test #8 (Terminus323's switch to Dragoon), and the note that long fights seem to lower DPS.",
+    "Roster: Terminus323's Expedition preset is now Chaotic Dragoon (Phynx with Rolla and Otta, behavior Mid / Balanced), from his 11-22 preset screen."
+   ]
+  },
+  {
+   "id": "v6",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Help tab",
+   "changes": [
+    "New Help tab: a 5-minute quick start (linking your account, checking your inventory, setting your Expedition preset), the tabs in one line each, and a full guide with the tabs in detail, common tasks, what officers can do, key terms and an FAQ.",
+    "First visit: a small note on the Roster points new people to the Help tab. Tap \"Got it\" or open Help and it won't show again on that browser.",
+    "The Changes tab is now called Changelog."
+   ]
+  },
+  {
+   "id": "v5.1",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Officer messages look like Discord, Roster first",
+   "changes": [
+    "Message to the officers now shows exactly what was posted in Discord, formatted the same way: bold, italics, bullets, lane headers and emoji sections. The three Nov 16 rounds have the real messages that went out.",
+    "Long messages show the first part with \"Show the full message\" to expand. \"Copy text\" copies the message with its Discord formatting, ready to paste.",
+    "The message image keeps the same formatting. The lineup image no longer repeats the message, since the message has its own image.",
+    "Officers can paste a Discord message straight into \"Write a new message\" and it keeps its formatting.",
+    "The dashboard now opens on the Roster tab."
+   ]
+  },
+  {
+   "id": "v5",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Expedition: officer messages, notes, shareable images",
+   "changes": [
+    "Rounds: a \"Message to the officers\" card at the top of each round explains why the lanes are deployed the way they are. Officers can post a new one any time; the latest shows on top and older ones stay in the notes.",
+    "Rounds: \"Notes & reasoning\" keeps decisions and logic from strategy talks (in the tool, or with Claude in chat) so the thinking behind a lineup isn't lost. Notes are added, never edited.",
+    "Copy as image: lineups (both sides), round results, player history, the Players table and the Roster can be copied as a picture to paste into Discord for anyone not on the tool yet. If your browser won't allow copying, the image opens with a Download button.",
+    "Players: a \"Notable\" column flags only the really big stuff (gear switch, huge jump or drop, new personal best, strong trend). Most players have nothing there, and that's fine. Smaller notes live on each player's page. Trend is now just the sparkline.",
+    "Rounds: \"Group\" is now \"Guilds\". Guild names link to the Opponents page (ArchAcademy links to the Roster) and player names link to their history on the Players page. Standings are plain text.",
+    "Rounds are read-only once played; \"Round details\" shows lane results, fight lengths, damage, survivors and anchors. Officers can still edit the lineup of a round that hasn't been played. Results are filled in by Claude from screenshots."
+   ]
+  },
+  {
+   "id": "v4",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Expedition tab",
+   "changes": [
+    "New Expedition tab with the last three weeks loaded (Nov 2, 9, 16): every round's lineups on both sides, lane results, fight lengths and per-player damage, survival and DPS, plus our notes and plans.",
+    "Rounds: lane board per round with live lane math (anchor and Lane HP, gear DMG reduction, Dragoon count, power, DPS) for us and the opponent, and a win estimate per lane for rounds not yet played. Officers edit lineups slot by slot, copy the previous round, and set round details (opponent, status, their lanes once visible).",
+    "Results: officers log each lane's result and every player's damage and survival, by hand or by reading a Details screenshot. DPS is calculated and feeds the roster's DPS Avg.",
+    "Suggested lineups (on request): spread vs stack-two-concede-one, built from 5-match DPS, gear and artifacts against their lanes (or their most recent lineup), with expected flags and reasoning. Officers can apply one with a tap.",
+    "Opponents: 8 guilds with roster scans, lane history (vs us and vs others) and lane habits; officers can add and edit opponents.",
+    "Players: every member's round-by-round history, 5-match DPS, best, alive-at-end rate, trend, and a lane-relative score that cancels out lane conditions, with plain-language notes.",
+    "Findings also lists every assumption behind the numbers (win estimate, DPS rules, anchors, predictions, suggested lineups, roster data) so officers know what to question.",
+    "Findings: what we've learned so far, the Expedition mechanics, and a check of how often the win estimate called past lanes right.",
+    "Roster: DPS Avg now comes from the logged Expedition rounds; profiles link to each player's history."
+   ]
+  },
+  {
+   "id": "v3.4",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Multi-column sort, inventory confirmations",
+   "changes": [
+    "Roster: sort by more than one column. Tap Power, then Rank: players are grouped by rank, each rank still ordered by power. The newest tap is the main sort; earlier ones break ties (small numbers on the arrows show the order). \"Reset sort\" goes back to power only.",
+    "Gear filled from the weapon now counts as known (no dashed outline). Officers will correct it as accurate info comes in.",
+    "Inventory: \"Load example\" and \"Clear inventory\" now ask you to confirm first."
+   ]
+  },
+  {
+   "id": "v3.3",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Expedition preset sync, runes, full gear sets",
+   "changes": [
+    "Fixed: saving your Expedition preset on the Builds tab didn't update your roster profile. Now it does, and it works the other way too: when your roster preset changes (an officer edit, a screenshot import, or your own edit on the Roster tab), your Builds-tab Expedition preset updates to match. Whichever was changed most recently wins.",
+    "Players can edit their own Expedition preset from the Roster tab (\"Edit my preset\" on their profile, or tap their own gear pieces). Officers can edit anyone's, as before.",
+    "New Runes column: how many of the 13 rune slots are filled (hover for the list). Runes are viewed and edited in the player's profile.",
+    "Gear: everyone is assumed to wear a full set. Any slot with an unknown set or quality takes the weapon's. Assumed pieces have a dashed outline until an officer or the player confirms them.",
+    "Activity log also shows when a player updates their own preset."
+   ]
+  },
+  {
+   "id": "v3.2",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Roster: gear by slot, anchors, scrolling",
+   "changes": [
+    "Fixed: the roster table scrolled inside its own box, so players near the bottom (like Gaga94) looked missing unless you scrolled inside the table. The whole page scrolls now, and the column headings follow you down under the top bar.",
+    "Gear by slot: each row shows all six pieces (weapon, amulet, ring, helmet, armor, boots) with the set and quality of each.",
+    "Officers can tap any gear piece in the roster table to change its set and quality right there. Each change is recorded in the Activity log.",
+    "⚓ marks the top 5 anchors (highest Lane HP).",
+    "Mystling stars: old captures' \"blue\" counts as teal, which fills in stars for Tuup, daybee, Zeuzo, Tw3aKZ and KevinShock."
+   ]
+  },
+  {
+   "id": "v3.1",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Roster fixes",
+   "changes": [
+    "Roster column headings stay on two lines at most, and the sort arrow no longer wraps onto its own line.",
+    "Roster column headings stay visible while you scroll the table.",
+    "Mystlings filled in from the guild nicknames (reaper = Death Mage, jester = The Fool, snake = Queen Medusa, goblin witch = Witch, dragon = Nian Beast, owl = Snowy Owl). Stars filled in only where the captured star colors were complete and unambiguous.",
+    "Mystling star colors explained on the Inventory tab: yellow, teal, red, purple/pink/blue fade, dark red (5 stars each).",
+    "Gaga94's Expedition preset corrected: Godforge ★5 Oracle weapon, Mythic Dragoon armor, Chaotic Oracle ring, Mythic+3 Dragoon helmet, Mythic+2 Griffin amulet, Chaotic Dragoon boots.",
+    "The dashboard title and tabs stay at the top of the screen as you scroll.",
+    "Training Ground: \"Someone else's build\" is now \"Custom build\": name it and save it to your builds, like on the Builds tab.",
+    "Preset import: each screenshot gets its own card where you type or pick whose preset it is (required; the page never guesses). Screenshots with the same name are read together as one preset (\"Same as previous\" helps). Several players can be imported at once, with Apply or Apply all. The import section now sits at the bottom of the Roster tab.",
+    "Linking your account to your roster profile fills your Inventory and Expedition preset from it, without overwriting anything you already entered. Unknown stars show as ★? so you know what to set.",
+    "Any member can now link themselves (kept in their private profile); officers' links also show on the roster. One roster profile per account: to switch, unlink first."
+   ]
+  },
+  {
+   "id": "v3",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Roster",
+   "changes": [
+    "New Roster tab: all 44 members seeded from last week's Expedition data (power with date, character, resonances where known, weapon set and gear quality, artifact stars) plus DPS from the tracker sheet. Runes and anything uncertain left blank.",
+    "Tap a player for their full profile: Expedition preset, DPS history, notes. ATK bonus, Lane HP and DPS are calculated and read-only for everyone.",
+    "Roster columns: Power, Character, Gear, Mythic / Leg Artifacts, ATK bonus, Lane HP (if anchor), DPS Avg (K/s), Last updated, Preset. Sort by tapping any heading.",
+    "Officers can edit profiles, add members, mark members inactive or left, and link their own Claude account to their in-game name. Every change is recorded in the Activity log.",
+    "Officers can import an Expedition preset screenshot: Claude reads it (runes only if clearly visible) and the page guesses whose preset it is from character, resonances, gear and power, for the officer to confirm.",
+    "Training Ground: the player field suggests names from the roster.",
+    "Changing just a gear quality (without the set) is now allowed when entering someone else's build."
+   ]
+  },
+  {
+   "id": "v2.3",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Rune names, rune and character picking",
+   "changes": [
+    "Runes now use the in-game names Sprite Multishot and Sprite Link (were Fairy Multishot and Fairy Combo). Saved accounts and builds switch over automatically.",
+    "Picking a rune or character in one slot removes it from the other slots' lists (Builds and Training Ground)."
+   ]
+  },
+  {
+   "id": "v2.2",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Builds and Training Ground fixes",
+   "changes": [
+    "New Inventory tab: everything you own, entered once, separate from your builds. Add your in-game name here.",
+    "Mystlings now have star levels (0-25); skill level shown. Builds use one equipped mystling.",
+    "Builds tab: labeled builds. Main build and Expedition preset always exist; create, rename and delete custom builds made from your inventory.",
+    "Build suggestions are now optional: open 'Want a suggestion?' and tap Suggest a build. A partial match names what's missing. Suggestions can be saved as a custom build.",
+    "Training Ground: pre-fills from your saved build (Main build by default), includes runes with quality, mystling stars and character stars, and can save the tested build back to your account.",
+    "Training Ground: player name defaults to your in-game name.",
+    "Saved accounts from v2.1 carry over (old mystlings come in at ★0)."
+   ]
+  },
+  {
+   "id": "v2.1",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Bug fix: tabs",
+   "changes": [
+    "Fixed: every tab's content showed at once as one long page, and tapping tabs did nothing (desktop and mobile). A layout style was overriding the hide rule.",
+    "Fixed: the Training Ground 'Their current build' fields were always visible for the same reason.",
+    "Tabs now switch directly on tap and jump back to the tab bar if you've scrolled down."
+   ]
+  },
+  {
+   "id": "v2",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "Deploy rule, quality levels, Training Ground, change log",
+   "changes": [
+    "Builds: all three abilities count equally; the deployed slot goes to a ★6+ character (or the highest-star one) so both resonance slots open. 'Deploy' picker replaced by 'Build around'.",
+    "Builds: gear quality now has every level (Epic to +3, Legendary to +3, Mythic to +4, Chaotic, Godforge ★1-10).",
+    "Builds: each rune has a quality (Common to Mythic, plus Twinborn). Quality affects the score, substitutes and upgrade tips.",
+    "Builds: Griffin + Circle requires Thor anywhere in the lineup; Dragoon + Element + Meteor requires Cleo and Otta (inferred).",
+    "New Training Ground tab: standard 3 x 1-minute Dummy test, movement tips per build, shared leaderboard and private tracker.",
+    "New Changes tab: release notes and an activity log of shared-data changes (tests posted and deleted).",
+    "Fixed: switching PvP/PvE crashed when the data file hadn't loaded."
+   ]
+  },
+  {
+   "id": "v1",
+   "date": "2026-11-21",
+   "by": "Daby (published by Claude)",
+   "title": "First release: Builds tab",
+   "changes": [
+    "Builds tab: account entry (characters, gear, runes, mystlings), one best PvP or PvE build with reasoning, upgrade list and optional Ask Claude explainer.",
+    "Private per-person saved account."
+   ]
+  }
+ ]
+}

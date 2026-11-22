@@ -1,0 +1,280 @@
+{
+  "_meta": {
+    "name": "build-data",
+    "purpose": "Compact data the Builds tab (Engine B) reads. DERIVED, not a source of truth.",
+    "derivedFrom": ["characters.json", "gear.json", "runes.json", "mystlings.json", "synergy-rules.json", "archero2-compiled-builds.md"],
+    "generated": "2026-11-21",
+    "syncRule": "When any source file changes in the project, regenerate this file and republish it beside the page. Never hand-edit knowledge here that isn't also in a source file.",
+    "engineAssumptions": [
+      "Scoring weights and the mystling ranking are Claude's design, not documented game facts. Tunable.",
+      "'Close/Far Behaviour' from the compiled builds is shown as Range priority Melee/Long in the preset. Mapping inferred.",
+      "'Spinning Orb' in the Griffin + Circle build isn't a rune name in runes.json. Treated as the 'Circle' ability rune, flagged.",
+      "'Required' characters (runes.json builds) mean deployed or in a resonance slot. Confirmed by Daby for Griffin + Circle (Thor); applied by inference to Dragoon + Element + Meteor (Cleo, Otta)."
+    ],
+    "corrections": [
+      "2026-11-21 (Daby): the Arena preset is NOT the build used in Guild Expedition. Removed the tool's note saying it was. Source docs (gear.json presetSystem.expeditionUses, game-modes.json Battle phase, characters.json resonance.note) still say otherwise and need correcting."
+    ]
+  },
+
+  "gearQualities": ["Epic", "Epic+1", "Epic+2", "Epic+3", "Legendary", "Legendary+1", "Legendary+2", "Legendary+3", "Mythic", "Mythic+1", "Mythic+2", "Mythic+3", "Mythic+4", "Chaotic",
+    "Godforge ★1", "Godforge ★2", "Godforge ★3", "Godforge ★4", "Godforge ★5", "Godforge ★6", "Godforge ★7", "Godforge ★8", "Godforge ★9", "Godforge ★10"],
+  "gearQualityNote": "Per Daby 2026-11-21: Epic 3 levels, Legendary 3, Mythic 4, Godforge 10. Read as base + plus-levels (to confirm).",
+  "runeQualities": ["Common", "Fine", "Rare", "Epic", "Epic+1", "Epic+2", "Legendary", "Legendary+1", "Legendary+2", "Legendary+3", "Mythic", "Twinborn"],
+  "runeQualityNote": "Per Daby 2026-11-21. Twinborn = two Mythic runes combined into one slot with both benefits; rare at ArchAcademy's power level. Scored like Mythic for now; details later. (runes.json still says 'Normal' for the lowest tier and Legendary+2 for the Twinborn requirement.)",
+  "deployRule": "Per Daby 2026-11-21: deployed and resonance abilities count equally and order doesn't matter. Deploy any character at ★6+ so both resonance slots unlock; if none is ★6+, deploy the highest-star character and accept a locked slot.",
+  "movementHints": {
+    "characters": {
+      "Thor": "Thor (★2+): moving gives a chance to summon a homing Mjolnir. Keep moving.",
+      "Loki": "Loki: moving gives a chance to enter Focus State (+20% ATK). Keep moving.",
+      "Nyanja": "Nyanja: Swift Wind fires periodically on its own; movement speed helps you stay on the target.",
+      "Nezha": "Nezha: your movement path burns. Walk back and forth through the target.",
+      "Otta": "Otta (★8): farther range means higher CRIT Rate, up to +15%. Keep your distance."
+    },
+    "gear": {
+      "Griffin": "Griffin gear rewards staying close: within about 7m you get more damage, CRIT and attack speed. Stay right next to the target."
+    },
+    "behavior": {
+      "close": "This build is set up for close range.",
+      "far": "This build is set up for long range."
+    }
+  },
+  "gearSlots": [
+    {"id": "weapon", "label": "Weapon"},
+    {"id": "amulet", "label": "Amulet"},
+    {"id": "ring", "label": "Ring"},
+    {"id": "helmet", "label": "Helmet"},
+    {"id": "armor", "label": "Armor"},
+    {"id": "boots", "label": "Boots"}
+  ],
+  "gearSets": {
+    "Dragoon": {"identity": "AoE/explosion with built-in sustain, the 'tanky nuker' set. Best PvP set, decent PvE.", "weaponName": "Crossbow"},
+    "Griffin": {"identity": "Close-range brawler, PvP-leaning. Weak in PvP and PvE until Chaotic.", "weaponName": "Claw", "weakBelowChaotic": true},
+    "Oracle": {"identity": "Combo/crit scaling, ranged DPS. Best PvE set.", "weaponName": "Light Spear"}
+  },
+  "gearChaotic": {
+    "Dragoon": {"weapon": "+5% main weapon DMG per skill taken, up to +50%", "amulet": "explosion-damaged enemies may attract a meteor", "ring": "periodically spawns a mine", "helmet": "ignited enemies take double explosion DMG", "armor": "Heart healing +20%", "boots": "flat 10% DMG REDUC"},
+    "Griffin": {"weapon": "close-range DMG taken -20%", "amulet": "taking DMG within 7m: chance to drop Hearts", "ring": "Hearts heal up to 100% more at low HP", "helmet": "ATK SPD up to +100% the closer you are", "armor": "weakens nearby enemies, wound DMG +20%", "boots": "20% DMG REDUC while moving"},
+    "Oracle": {"weapon": "more enemies hit = higher next attack DMG", "amulet": "combo >40: projectiles split +3", "ring": "combo >40: bonus DMG to max-HP enemies", "helmet": "CRIT hits: chance +1 Multishot", "armor": "looting Hearts: chance at 2s Invincibility Shield", "boots": "20% DMG REDUC while stationary"}
+  },
+
+  "tierPoints": {"S": 5, "A": 4, "B": 3, "C": 2, "D": 1, "NR": 0, "TBD": 2},
+  "characters": [
+    {"name": "Alex", "rarity": "Rare", "ability": "Braveheart", "tier": {"pvp": "C", "pve": "NR"}, "minStar": {"pvp": 8}},
+    {"name": "Nyanja", "rarity": "Rare", "ability": "Cloudfooted", "tier": {"pvp": "NR", "pve": "D"}},
+    {"name": "Helix", "rarity": "Rare", "ability": "Absolute Counter", "tier": {"pvp": "B", "pve": "C"}},
+    {"name": "Hela", "rarity": "Rare", "ability": "Hadean Blessing", "tier": {"pvp": "NR", "pve": "C"}, "note": "Team support/healer. Rated not recommended for 1v1 Arena, but her aura buffs nearby allies, which matters in an 8-player Expedition lane."},
+    {"name": "Mymu", "rarity": "Rare", "ability": "Immortal Curse", "tier": {"pvp": "B", "pve": "NR"}, "note": "PvP rating assumes a skin."},
+    {"name": "Hou Yi", "rarity": "Rare", "ability": "Sunpiercer", "tier": {"pvp": "NR", "pve": "C"}},
+    {"name": "Seraph", "rarity": "Epic", "ability": "Divine Favor", "tier": {"pvp": "NR", "pve": "S"}, "minStar": {"pve": 8}},
+    {"name": "Dracoola", "rarity": "Epic", "ability": "Lifesteal", "tier": {"pvp": "NR", "pve": "A"}, "minStar": {"pve": 5}},
+    {"name": "Rolla", "rarity": "Epic", "ability": "Frostsinger", "tier": {"pvp": "B", "pve": "B"}, "minStar": {"pvp": 5}, "elementalNative": "Ice"},
+    {"name": "Loki", "rarity": "Epic", "ability": "Fervent Rhythm", "tier": {"pvp": "C", "pve": "D"}},
+    {"name": "Phynx", "rarity": "Epic", "ability": "Desert Tribunal", "tier": {"pvp": "A", "pve": "A"}, "minStar": {"pvp": 8, "pve": 8}, "note": "An elemental multiplier, not a solo elemental character."},
+    {"name": "Nezha", "rarity": "Epic", "ability": "Cosmic Hoop", "tier": {"pvp": "NR", "pve": "NR"}},
+    {"name": "Otta", "rarity": "Legendary", "ability": "Brutality", "tier": {"pvp": "A", "pve": "B"}, "minStar": {"pvp": 2}, "note": "PvP rating assumes a skin."},
+    {"name": "Demon King Atreus", "rarity": "Legendary", "ability": "Demon King Energy", "tier": {"pvp": "D", "pve": "NR"}},
+    {"name": "Thor", "rarity": "Legendary", "ability": "Storm's Judgment", "tier": {"pvp": "S", "pve": "S"}, "elementalNative": "Lightning"},
+    {"name": "Cleo", "rarity": "Legendary", "ability": "Ember Throne", "tier": {"pvp": "S", "pve": "S"}, "elementalNative": "Fire"},
+    {"name": "Wukong", "rarity": "Legendary", "ability": "Monkey Brethren", "tier": {"pvp": "S", "pve": "B"}, "minStar": {"pvp": 5}},
+    {"name": "Artemis", "rarity": "Legendary", "ability": "Silvermoon Hunt", "tier": {"pvp": "S", "pve": "TBD"}, "minStar": {"pvp": 5}},
+    {"name": "Demeter", "rarity": "Legendary", "ability": "Harvest Battlefield", "tier": {"pvp": "S", "pve": "TBD"}, "minStar": {"pvp": 5}}
+  ],
+  "underStarPenalty": 1.5,
+  "resonanceUnlockStars": [3, 6],
+
+  "runes": {
+    "blessing": [
+      {"name": "Revive", "tier": "S"}, {"name": "Guardian", "tier": "A"}, {"name": "Lucky Shadow", "tier": "A"},
+      {"name": "Resilience", "tier": "B"}, {"name": "Devil Pact", "tier": "NR"}, {"name": "Rabbit's Foot", "tier": "NR"}, {"name": "Intelligence", "tier": "NR"}
+    ],
+    "enhancement": [
+      {"name": "Sharp Arrow", "tier": "S", "family": "Main Weapon"},
+      {"name": "Flamenox Seal", "tier": "S", "family": "Elemental"},
+      {"name": "Frostshock Seal", "tier": "S", "family": "Elemental"},
+      {"name": "Sawblade Circle", "tier": "A", "family": "Circle"},
+      {"name": "Spin SPD Up", "tier": "A", "family": "Circle"},
+      {"name": "Sprite Multishot", "formerly": "Fairy Multishot", "tier": "A", "family": "Sprite"},
+      {"name": "Sprite Link", "formerly": "Fairy Combo", "tier": "A", "family": "Sprite"},
+      {"name": "Root Guard", "tier": "A", "family": "Plant"},
+      {"name": "Vine Bind", "tier": "A", "family": "Plant"},
+      {"name": "Giant Meteor", "tier": "B", "family": "Meteor"},
+      {"name": "Potion Gravity", "alt": "Potion Magnet", "tier": "B", "family": "Meteor"},
+      {"name": "Dragonflight Sword", "tier": "NR", "family": "Sword Strike"},
+      {"name": "Blade Bounce", "tier": "NR", "family": "Sword Strike"}
+    ],
+    "ability": [
+      {"name": "Arrow Rain", "tier": "S", "family": "Main Weapon"},
+      {"name": "Ring of Agony", "tier": "S", "family": "Circle"},
+      {"name": "Melee Sprite", "tier": "A", "family": "Sprite"},
+      {"name": "Healing Sprite", "tier": "A", "family": "Sprite"},
+      {"name": "Plant Summon", "tier": "A", "family": "Plant"},
+      {"name": "Equinox Bloom", "alt": "Spider Lily", "tier": "A", "family": "Plant"},
+      {"name": "Flamenox Touch", "tier": "B", "family": "Elemental"},
+      {"name": "Frostshock Touch", "tier": "B", "family": "Elemental"},
+      {"name": "Circle", "tier": "B", "family": "Circle"},
+      {"name": "Star of Fury", "tier": "B", "family": "Meteor", "note": "Rated disproportionately strong in PvP: its on-damage-taken trigger fires constantly."},
+      {"name": "Sword of Time", "tier": "B", "family": "Sword Strike"},
+      {"name": "Strike Potion", "tier": "B", "family": "Sword Strike"},
+      {"name": "Star of Time", "tier": "NR", "family": "Meteor"}
+    ],
+    "etched": [
+      {"name": "Arrow of Echoes", "alt": "Symphony", "tier": "S", "family": "Main Weapon"},
+      {"name": "Sprite's Awe", "tier": "S", "family": "Sprite"},
+      {"name": "Elemental Crit", "tier": "A", "family": "Elemental"},
+      {"name": "Potion Spring", "tier": "A", "family": "Meteor"},
+      {"name": "Pulsing Orb", "tier": "A", "family": "Circle"},
+      {"name": "Sprite Assist", "tier": "A", "family": "Sprite"},
+      {"name": "Orbital Orb", "tier": "B", "family": "Circle"},
+      {"name": "Meteor Split", "tier": "B", "family": "Meteor"},
+      {"name": "Life Surge", "alt": "Wave of Life", "tier": "B", "family": "Plant", "tierInferred": true},
+      {"name": "Plant Crit", "tier": "B", "family": "Plant", "tierInferred": true},
+      {"name": "Elemental Domain", "tier": "NR", "family": "Elemental"},
+      {"name": "Echo Scythe", "alt": "Echo Sickle", "tier": "NR", "family": "Main Weapon"},
+      {"name": "Sword Strike Split", "tier": "NR", "family": "Sword Strike"},
+      {"name": "Sword Strike Aerie", "alt": "Swordstrike Aerie", "tier": "NR", "family": "Sword Strike"}
+    ],
+    "tierNote": "Rune tiers are archero2hub.com's PvP tier list. No separate PvE rune tier list is documented."
+  },
+
+  "mystlings": [
+    {"name": "Witch", "skill": "12 bouncing whirlwinds that apply Elemental Vulnerability", "tags": ["elemental-payoff"]},
+    {"name": "The Fool", "skill": "Scare Box: pulsing area damage + DMG-taken debuff; Lv6 adds 4 tracking spirits", "tags": ["damage"]},
+    {"name": "Queen Medusa", "skill": "9 homing serpents, Hit Rate reduction; dispels 1 buff from Lv5", "tags": ["damage", "pvp-debuff"]},
+    {"name": "Nian Beast", "skill": "Collision + firecracker rain, Healing reduction, brief paralyze", "tags": ["damage", "anti-heal"]},
+    {"name": "Death Mage", "skill": "8 bouncing scythes applying random debuffs", "tags": ["damage"]},
+    {"name": "Snowy Owl", "skill": "Self-buff: CRIT DMG/CRIT Rate for 3s, 20s cooldown", "tags": ["crit-buff"]}
+  ],
+  "runeRenames": {"Fairy Multishot": "Sprite Multishot", "Fairy Combo": "Sprite Link"},
+  "runeRenamesNote": "Per Daby 2026-11-21: use the in-game names Sprite Multishot and Sprite Link. Saved accounts using the old names are migrated on load.",
+  "mystlingMaxStars": 25,
+  "mystlingStarColors": ["yellow", "teal", "red", "purple/pink/blue fade", "dark red"],
+  "mystlingStarColorsNote": "Per Daby 2026-11-21: five star icons; each color tier holds 5 stars (yellow 1-5, teal 6-10, red 11-15, purple/pink/blue fade 16-20, dark red 21-25).",
+  "mystlingSkillLevelStars": [4, 9, 14, 19, 24],
+  "mystlingSkillNote": "Skill Lv1 at ★0; each of ★4/9/14/19/24 raises the skill one level, up to Lv6 at ★24 (mystlings.json collectionStatsCurvePattern).",
+  "equippedMystlings": 1,
+  "equippedMystlingsNote": "Per Daby 2026-11-21: assume one equipped mystling per preset per player (more slots need a large investment).",
+  "behaviorOptions": {"range": ["Melee", "Mid", "Long"], "movement": ["Balanced", "Offense", "Movement", "Pickup"], "source": "gear.json presetSystem"},
+  "mystlingNote":"Mystling ranking is Claude's heuristic from the documented skills, not a sourced tier list. In Expedition/Arena/Peak Arena, active skills start the match at 50% cooldown.",
+
+  "synergies": [
+    {"id": "invincible-archetype-core", "label": "Invincible core (Griffin Amulet + Griffin Ring + Oracle Armor)", "confidence": "confirmed", "modes": ["pvp", "pve"],
+      "when": [{"gear": {"slot": "amulet", "set": "Griffin"}}, {"gear": {"slot": "ring", "set": "Griffin"}}, {"gear": {"slot": "armor", "set": "Oracle"}}],
+      "why": "The three-piece core every top-tier PvP gear combo shares. Griffin Amulet drops Hearts when you're hit; Oracle Armor gives a 2s invincibility chance when you loot Hearts.",
+      "needsQuality": "Chaotic"},
+    {"id": "griffin-amulet-oracle-armor-mix", "label": "Griffin Amulet + Oracle Armor proc chain", "confidence": "confirmed", "modes": ["pvp", "pve"],
+      "when": [{"gear": {"slot": "amulet", "set": "Griffin"}}, {"gear": {"slot": "armor", "set": "Oracle"}}],
+      "why": "Getting hit drops Hearts (Griffin Amulet), looting Hearts can grant 2s invincibility (Oracle Armor).",
+      "needsQuality": "Chaotic", "supersededBy": "invincible-archetype-core"},
+    {"id": "dragoon-meteor-runes", "label": "Dragoon gear + Meteor runes", "confidence": "confirmed", "modes": ["pvp", "pve"],
+      "when": [{"gearSetCount": {"set": "Dragoon", "min": 2}}, {"rune": ["Giant Meteor", "Potion Gravity", "Meteor Split", "Star of Fury", "Star of Time", "Potion Spring"]}],
+      "why": "Dragoon's kit is explosion/Meteor-based and Meteor damage is always elemental, so the gear and the Meteor runes feed the same damage pool."},
+    {"id": "cleo-flame-poison-runes", "label": "Cleo + Flamenox runes", "confidence": "confirmed", "modes": ["pvp", "pve"],
+      "when": [{"char": ["Cleo"]}, {"rune": ["Flamenox Seal", "Flamenox Touch"]}],
+      "why": "Cleo already makes your attacks Fire. Flamenox adds Poison, and at Mythic triggers an explosion every second when Fire and Poison are both on a target."},
+    {"id": "rolla-thor-frost-thunder-runes", "label": "Thor/Rolla + Frostshock runes", "confidence": "confirmed", "modes": ["pvp", "pve"],
+      "when": [{"char": ["Thor", "Rolla"]}, {"rune": ["Frostshock Seal", "Frostshock Touch"]}],
+      "why": "Thor supplies Lightning (Rolla supplies Ice), so Frostshock's Frozen/Paralyzed bonuses get half their combo for free."},
+    {"id": "elemental-crit-rune-elemental-native", "label": "Elemental Crit + elemental character", "confidence": "confirmed", "modes": ["pvp", "pve"],
+      "when": [{"rune": ["Elemental Crit"]}, {"char": ["Cleo", "Thor", "Rolla"]}],
+      "why": "Elemental damage normally ignores your CRIT stats. Elemental Crit lets it inherit 10-30% of them, so crit investment pays off on burn/shock/freeze too."},
+    {"id": "witch-mystling-elemental-team", "label": "Witch + elemental character", "confidence": "confirmed", "modes": ["pvp", "pve"],
+      "when": [{"mystling": ["Witch"]}, {"char": ["Cleo", "Thor", "Rolla"]}],
+      "why": "Witch applies Elemental Vulnerability; your elemental damage cashes it in."},
+    {"id": "nezha-flame-poison-runes", "label": "Nezha + Flamenox runes", "confidence": "hypothesis", "modes": ["pvp", "pve"],
+      "when": [{"char": ["Nezha"]}, {"rune": ["Flamenox Seal", "Flamenox Touch"]}],
+      "why": "Nezha's burning trail may make him a second Fire-native character. Third-party source, unconfirmed."},
+    {"id": "demon-king-atreus-defensive-layering", "label": "Demon King Atreus + damage reduction", "confidence": "hypothesis", "modes": ["pvp", "pve"],
+      "when": [{"char": ["Demon King Atreus"]}, {"rune": ["Guardian"]}],
+      "why": "Shield-based sustain should layer with damage reduction. No specific pairing confirmed yet."},
+    {"id": "dragoon-hp-regen-mymu-overdraw", "label": "Dragoon Armor + Mymu", "confidence": "hypothesis", "modes": ["pve"],
+      "when": [{"gear": {"slot": "armor", "set": "Dragoon"}}, {"char": ["Mymu"]}],
+      "why": "Flame Shield regen might pair with Overdraw in PvE. Likely dead weight in PvP, where constant hits pop the shield."}
+  ],
+  "skillTips": [
+    {"id": "thor-weapon-enchantment-exception", "when": [{"char": ["Thor"]}], "modes": ["pvp", "pve"], "confidence": "confirmed",
+      "tip": "In-run skill tip: Thor takes no penalty from Weapon Enchantment (everyone else loses 30% ATK and ATK SPD). Doesn't apply in Expedition, where in-run skills reset."},
+    {"id": "swift-arrow-oracle-helmet-anti-synergy", "when": [{"gear": {"slot": "helmet", "set": "Oracle"}}], "modes": ["pvp", "pve"], "confidence": "confirmed",
+      "tip": "In-run skill tip: skip Swift Arrow with an Oracle Helmet (Chaotic). The helmet's Multishot delay cancels most of Swift Arrow's attack speed (hand-tested, ~12% gain instead of ~80%)."}
+  ],
+
+  "templates": [
+    {
+      "id": "explosive-tank", "name": "Explosive Tank", "source": "Compiled builds (player-provided image)", "behavior": "close",
+      "abilities": [["Thor"], ["Cleo"], ["Otta", "Phynx", "Helix"]],
+      "gear": {"weapon": ["Dragoon"], "amulet": ["Griffin"], "ring": ["Griffin"], "helmet": ["Dragoon"], "armor": ["Oracle"], "boots": ["Dragoon", "Griffin"]},
+      "runes": {
+        "blessing": [["Revive"], ["Guardian", "Lucky Shadow", "Resilience"]],
+        "enhancement": [{"rune": ["Potion Gravity"], "ench": "Meteor CRIT Rate"}, {"rune": ["Giant Meteor"], "ench": "Unique / Meteor CRIT Rate"}, {"rune": ["Flamenox Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Frostshock Seal"], "ench": "Elemental CRIT Rate"}],
+        "ability": [{"rune": ["Ring of Agony"], "ench": "Unique"}, {"rune": ["Star of Fury"], "ench": "Elemental DMG"}, {"rune": ["Frostshock Touch"], "ench": "Elemental DMG"}, {"rune": ["Flamenox Touch"], "ench": "Elemental DMG"}],
+        "etched": [["Elemental Crit"], ["Meteor Split"], ["Elemental Domain", "Arrow of Echoes"]]
+      },
+      "summary": "Thor + Cleo up close, tanking with the Dragoon Invincible gear core while Meteor and elemental runes do the damage."
+    },
+    {
+      "id": "elemental-tank", "name": "Elemental Tank", "source": "Compiled builds (player-provided image)", "behavior": "close",
+      "abilities": [["Thor"], ["Cleo"], ["Otta", "Phynx", "Helix", "Demon King Atreus"]],
+      "gear": {"weapon": ["Griffin", "Oracle"], "amulet": ["Griffin"], "ring": ["Griffin"], "helmet": ["Oracle", "Griffin"], "armor": ["Oracle"], "boots": ["Griffin"]},
+      "runes": {
+        "blessing": [["Revive"], ["Guardian", "Lucky Shadow", "Resilience"]],
+        "enhancement": [{"rune": ["Sharp Arrow"], "ench": "MW CRIT Rate / MW DMG"}, {"rune": ["Flamenox Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Frostshock Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["*"], "ench": "CRIT DMG"}],
+        "ability": [{"rune": ["Arrow Rain"], "ench": "Main Weapon DMG"}, {"rune": ["Frostshock Touch"], "ench": "Elemental DMG"}, {"rune": ["Flamenox Touch"], "ench": "Elemental DMG"}, {"rune": ["Ring of Agony"], "ench": "Unique"}],
+        "etched": [["Elemental Crit"], ["Elemental Domain"], ["Arrow of Echoes"]]
+      },
+      "summary": "Thor + Cleo up close on a Griffin/Oracle core with no Dragoon pieces. Elemental runes plus main-weapon damage."
+    },
+    {
+      "id": "explosive-dps", "name": "Explosive DPS", "source": "Compiled builds (player-provided image)", "behavior": "far",
+      "abilities": [["Cleo"], ["Otta"], ["Phynx", "Helix", "Thor"]],
+      "gear": {"weapon": ["Dragoon"], "amulet": ["Dragoon", "Oracle"], "ring": ["Dragoon", "Oracle"], "helmet": ["Dragoon"], "armor": ["Oracle", "Dragoon"], "boots": ["Dragoon"]},
+      "runes": {
+        "blessing": [["Revive"], ["Lucky Shadow"]],
+        "enhancement": [{"rune": ["Potion Gravity"], "ench": "Meteor CRIT Rate"}, {"rune": ["Giant Meteor"], "ench": "Unique / Meteor CRIT Rate"}, {"rune": ["Flamenox Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Frostshock Seal"], "ench": "Elemental CRIT Rate"}],
+        "ability": [{"rune": ["Star of Time"], "ench": "Meteor DMG"}, {"rune": ["Star of Fury"], "ench": "Unique / Meteor DMG"}, {"rune": ["Frostshock Touch"], "ench": "Elemental DMG"}, {"rune": ["Flamenox Touch"], "ench": "Elemental DMG"}],
+        "etched": [["Elemental Crit"], ["Meteor Split"], ["Potion Spring", "Elemental Domain", "Arrow of Echoes"]]
+      },
+      "summary": "Cleo + Otta from range on Dragoon-heavy gear, stacking Meteor and Fire damage."
+    },
+    {
+      "id": "elemental-dps", "name": "Elemental DPS", "source": "Compiled builds (player-provided image)", "behavior": "far",
+      "abilities": [["Cleo"], ["Otta"], ["Phynx", "Helix", "Demon King Atreus", "Thor"]],
+      "gear": {"weapon": ["Oracle"], "amulet": ["Oracle"], "ring": ["Oracle"], "helmet": ["Oracle"], "armor": ["Oracle"], "boots": ["Oracle"]},
+      "runes": {
+        "blessing": [["Revive"], ["Lucky Shadow", "Guardian"]],
+        "enhancement": [{"rune": ["Sharp Arrow"], "ench": "MW CRIT Rate / MW DMG"}, {"rune": ["Flamenox Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Frostshock Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Sprite Multishot"], "ench": "CRIT DMG"}],
+        "ability": [{"rune": ["Arrow Rain"], "ench": "Main Weapon DMG"}, {"rune": ["Frostshock Touch"], "ench": "Elemental DMG"}, {"rune": ["Flamenox Touch"], "ench": "Elemental DMG"}, {"rune": ["Healing Sprite"], "ench": "CRIT DMG REDUC"}],
+        "etched": [["Elemental Crit"], ["Sprite's Awe"], ["Elemental Domain", "Potion Spring", "Sprite Assist", "Arrow of Echoes"]]
+      },
+      "summary": "Cleo + Otta from range on full Oracle, the one mono-set build. Combo/crit scaling with elemental runes."
+    },
+    {
+      "id": "griffin-circle", "name": "Griffin + Circle", "source": "runes.json recommended builds (archero2hub.com)", "behavior": "close",
+      "requires": ["Thor"],
+      "requiresNote": "Per Daby (2026-11-21): Thor is required as either the deployed character or one of the two resonance slots.",
+      "abilities": [["Thor"], ["Cleo", "Mymu", "Helix"], ["Wukong", "Mymu", "Helix"]],
+      "gear": {"weapon": ["Griffin"], "amulet": ["Griffin"], "ring": ["Griffin"], "helmet": ["Oracle", "Griffin"], "armor": ["Oracle"], "boots": ["Griffin"]},
+      "runes": {
+        "blessing": [["Revive"], ["Guardian", "Lucky Shadow"]],
+        "enhancement": [{"rune": ["Sharp Arrow"]}, {"rune": ["Sawblade Circle"]}, {"rune": ["Spin SPD Up"]}, {"rune": ["Flamenox Seal"]}],
+        "ability": [{"rune": ["Arrow Rain"]}, {"rune": ["Circle"], "flag": "Source says 'Spinning Orb', which isn't a rune in runes.json. Using the Circle ability rune."}, {"rune": ["Ring of Agony"]}, {"rune": ["Frostshock Touch"]}],
+        "etched": [["Arrow of Echoes"], ["Pulsing Orb"], ["Elemental Crit"]]
+      },
+      "summary": "Thor brawling (with Cleo or Wukong) on Griffin Invincible gear, Circle runes orbiting for constant damage."
+    },
+    {
+      "id": "dragoon-element-meteor", "name": "Dragoon + Element + Meteor", "source": "runes.json recommended builds + resonance combos (archero2hub.com)", "behavior": "far",
+      "requires": ["Cleo", "Otta"],
+      "requiresNote": "runes.json lists Cleo and Otta as required. Read the same way as Daby's Griffin + Circle clarification: deployed or in a resonance slot. Inference, not yet confirmed.",
+      "abilities": [["Cleo"], ["Otta"], ["Wukong", "Mymu", "Helix"]],
+      "gear": {"weapon": ["Dragoon"], "amulet": ["Griffin", "Dragoon"], "ring": ["Griffin", "Dragoon"], "helmet": ["Dragoon"], "armor": ["Oracle", "Dragoon"], "boots": ["Dragoon"]},
+      "runes": {
+        "blessing": [["Revive"], ["Guardian"]],
+        "enhancement": [{"rune": ["Potion Gravity"]}, {"rune": ["Giant Meteor"]}, {"rune": ["Frostshock Seal"]}, {"rune": ["Flamenox Seal"]}],
+        "ability": [{"rune": ["Star of Fury"]}, {"rune": ["Flamenox Touch"]}, {"rune": ["Frostshock Touch"]}, {"rune": ["Ring of Agony"]}],
+        "etched": [["Potion Spring"], ["Elemental Crit"], ["Meteor Split"]]
+      },
+      "summary": "The S-tier PvP ability combo: Cleo, Wukong (5★+) and Otta (2★+), on Dragoon Invincible gear."
+    }
+  ],
+  "fallbackResonancePool": ["Cleo", "Thor", "Wukong", "Otta", "Phynx", "Artemis", "Demeter", "Helix", "Mymu", "Rolla", "Dracoola", "Seraph"],
+  "freeResonanceNote": "Free-to-play resonance pick per archero2hub.com: Helix's + Mymu's abilities (any star)."
+}

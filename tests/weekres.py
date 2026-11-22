@@ -1,0 +1,70 @@
+import os as _os
+HERE = _os.path.dirname(_os.path.abspath(__file__))
+APP = _os.path.join(HERE, "..", "app")
+TOOLS = _os.path.join(HERE, "..", "tools")
+import asyncio, threading, http.server, functools, json
+from playwright.async_api import async_playwright
+srv = http.server.ThreadingHTTPServer(("127.0.0.1", 8781), functools.partial(http.server.SimpleHTTPRequestHandler, directory=APP))
+threading.Thread(target=srv.serve_forever, daemon=True).start()
+MOCK = open(_os.path.join(HERE, "mock.js")).read(); res = []
+def check(n, c, x=""): res.append(c); print("PASS" if c else "FAIL", n, x)
+def seed(unplay):
+    d = json.load(open(APP + "/expedition-seed.json"))
+    w = [w for w in d["weeks"] if w["id"] == "2026-11-16"][0]
+    for r in w["rounds"]:
+        if r["n"] in unplay:
+            for k in ("result", "score", "laneResults", "stats", "theirStats"): r.pop(k, None)
+            r["status"] = "planned"
+    if unplay: w["final"] = False
+    return json.dumps(d)
+async def page(b, unplay, vp=(1280, 900)):
+    ctx = await b.new_context(viewport={"width": vp[0], "height": vp[1]}); await ctx.add_init_script(MOCK)
+    pg = await ctx.new_page(); errs = []; pg.on("pageerror", lambda e: errs.append(str(e)))
+    body = seed(unplay)
+    async def h(route): await route.fulfill(status=200, content_type="application/json", body=body)
+    await pg.route("**/expedition-seed.json*", h)
+    await pg.goto("http://127.0.0.1:8781/index.html#expedition"); await pg.wait_for_timeout(1500)
+    await pg.click("#exp-sub button[data-sub=results]"); await pg.wait_for_timeout(300)
+    return pg, errs
+async def main():
+    async with async_playwright() as p:
+        b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
+        pg, errs = await page(b, [1, 2, 3])
+        t = (await pg.text_content(".weekres"))
+        check("empty before R1", "Nothing yet" in t and "Week results" in t and "Copy text" not in t, t[:120])
+        pg, errs = await page(b, [3])
+        t = (await pg.text_content(".weekres")); print(t[:900])
+        check("mid-week title", "after R2 of 3" in t)
+        check("mid-week record + standings so far", "2–0" in t and "STANDINGS SO FAR" in t)
+        check("mid-week other matches counted (UA 3-0 Holymoly R2)", "UkraineArchers · 6 pts" in t or "UkraineArchers · 3 pts" in t, "")
+        check("no takeaways mid-week", "WHAT WE LEARNED" not in t)
+        pg, errs = await page(b, [])
+        t = (await pg.text_content(".weekres"))
+        check("final title + final standings", "Final results" in t and "FINAL STANDINGS" in t and "ArchAcademy · 9 pts" in t and "1st place" in t and "WHAT WE LEARNED" in t and "Reading lanes is our biggest edge" in t and t.count("Won Left") >= 3, t[:300])
+        check("top DPS listed", "TOP DPS THIS WEEK" in t)
+        check("not on the Rounds view", await pg.locator("#exp-rounds .weekres").count() == 0)
+        await pg.click("#exp-sub button[data-sub=rounds]"); await pg.wait_for_timeout(200)
+        check("Rounds view has no week card", await pg.locator("#exp-rounds:visible .weekres").count() == 0 and await pg.locator("#exp-results").is_hidden())
+        await pg.click("#exp-sub button[data-sub=results]"); await pg.wait_for_timeout(200)
+        await pg.select_option("#exp-week", "2026-11-02"); await pg.wait_for_timeout(300)
+        t = (await pg.text_content(".weekres"))
+        check("Nov 2 final with takeaways + game damage total", "Final results" in t and "WHAT WE LEARNED" in t and "1–2" in t and "3rd place" in t and "41.15M damage" in t, t[:200])
+        await pg.select_option("#exp-week", "2026-11-16"); await pg.wait_for_timeout(300)
+        await pg.click(".weekres >> text=Week notes"); await pg.wait_for_timeout(200); await pg.click(".weekres summary >> text=Add a note"); await pg.wait_for_timeout(200)
+        await pg.fill(".weekres textarea", "Holymoly never changes lanes."); await pg.click(".weekres >> text=Add note"); await pg.wait_for_timeout(400)
+        nd = await pg.evaluate("JSON.stringify(window.__store.get('notes/2026-11-16-week'))")
+        check("week note saved under notes/<week>-week", nd and "never changes" in nd, str(nd)[:120])
+        r = await pg.evaluate("""async()=>{const b=[...document.querySelectorAll('.weekres button')].find(x=>x.textContent==='Copy as image'); b.click(); await new Promise(r=>setTimeout(r,800)); return !!document.querySelector('.imgoverlay, .imgprev') || b.textContent}""")
+        check("copy as image works", bool(r), str(r))
+        pg2, e2 = await page(b, [3], (390, 844))
+        await pg2.screenshot(path="/tmp/shots/weekres-phone.png", full_page=False)
+        tabs = await pg.eval_on_selector_all("nav.tabs a", "as=>as.map(a=>a.innerText.trim())")
+        check("tab order", tabs == ["Inventory", "Builds", "Roster", "Expedition", "Training Ground", "Help"], str(tabs))
+        await pg.click("#release-badge"); await pg.wait_for_timeout(300)
+        check("version badge opens the changelog", await pg.locator("#view-changes").is_visible() and "#changes" in pg.url and (await pg.get_attribute("#release-badge", "aria-current")) == "page")
+        await pg.goto("http://127.0.0.1:8781/index.html#changes"); await pg.wait_for_timeout(800)
+        check("old #changes link still works", await pg.locator("#view-changes").is_visible())
+        check("no page errors", not errs and not e2, str(errs + e2))
+        await b.close()
+    print(f"{sum(res)} / {len(res)}")
+asyncio.run(main())
