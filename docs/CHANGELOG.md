@@ -31,6 +31,13 @@ without logging it.
 - **Format** (per Daby 2026-11-22): **major.minor.patch, each part starting at 0**. A new major is v7.0.0; a page improvement
   after it is v7.1.0; a bug fix or maintenance release after that is v7.1.1. Releases before v6.8.0 used two numbers (v6.7 = v6.7.0).
 
+## Branches and batched releases (from v9.0.0, per Daby)
+
+v9.0.0 is the first stable release. Work now happens on GitHub feature branches (`feature/…`, `fix/…`) off `main`, and
+releases ship in batches when appropriate rather than after every change. `main` always equals what's live. The batch's
+biggest change sets the version: any new feature → major, else page improvements → minor, else fixes only → patch. An
+urgent fix can still ship alone as a patch. Details in the repo README.
+
 ## Release process (every publish follows this)
 
 1. Before publishing: run the audit check below. If live ≠ last logged release, stop and log
@@ -132,8 +139,9 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v9.0.0 — 2026-11-23 — live
-- **Type:** major (new feature: What's next)
+### v9.0.0 — 2026-11-23 — live · first stable release
+- **Type:** major (new feature: What's next). **Marked the first stable release** (per Daby, 2026-11-23). From here on, work
+  happens on feature branches and releases ship in batches (see the repo README, "Branches").
 - **Requested by:** Daby · **Published by:** Claude
 - **Pre-publish audit:** clean (live matched v8.2.1 files exactly, platform version `1795443035-eb42`)
 - **Headless test before publish:** What's next 28/28 (tab last after Help; sub-tab names; plain planner names and roles
