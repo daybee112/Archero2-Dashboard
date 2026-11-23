@@ -132,7 +132,28 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v8.1.0 — 2026-11-22 — live
+### v8.1.1 — 2026-11-22 — live
+- **Type:** patch (fixes)
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v8.1.0 files exactly, platform version `1795404579-7efd`)
+- **Headless test before publish:** Expedition UX 47/47 (week scope in round order; Show all: selected week first with no
+  heading, then other weeks newest first with headings, each in round order; older week selected; Back to Expedition
+  roster restores scroll); expedition 27/27 (Back to Rounds); v8 data model 27/27; activity 24/24; shared inventories 21/21;
+  weekly results 16/16; lanes 14/14; image/notes 11/11; results 11/11; message 9/9; Help 14/14; full regression 66/67
+  (font unreachable in sandbox).
+- **Platform version:** `1795406494-015d`
+- **Files:**
+  - `index.html` · 359,915 bytes · sha256 `b9fa530fbae896612afb7d7f7cbc4052e25958b30b5447bd64543aafecb3be36` (changed)
+  - `changelog.json` · 30,031 bytes · sha256 `6502e47ff49c6d74b877afa6e5fa5efa1a2de075ff07c75f3863ec4b9327fc94` (changed)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…`, `build-data.json` `6fd7eeda…` (unchanged)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** Opponents: tiles sorted by round faced within a week; Show all puts the selected week first (no heading;
+  the panel title names it), then other weeks newest first with week headings (per Daby); a guild opened by link opens
+  its selected-week tile, else its latest. Player pages: "← Back to …" at the top (Expedition roster, Rounds, Opponents,
+  Week results or Roster) via `openPlayer`/`expBack`, restoring scroll; the old "All players" button removed.
+- **Archive:** GitHub `main`, commit "Release v8.1.1".
+
+### v8.1.0 — 2026-11-22
 - **Type:** minor (page improvements)
 - **Requested by:** Daby · **Published by:** Claude
 - **Pre-publish audit:** clean (live matched v8.0.0 files exactly, platform version `1795400020-ba15`)
