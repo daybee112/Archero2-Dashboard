@@ -30,7 +30,7 @@ async def main():
         pg = await ctx.new_page(); errs = []
         pg.on("pageerror", lambda e: errs.append(str(e))); pg.on("console", lambda m: m.type == "error" and errs.append(m.text))
         await pg.goto("http://127.0.0.1:8765/index.html#inventory"); await pg.wait_for_timeout(1500)
-        check("badge shows v3", (await pg.text_content("#release-badge")).strip() == "v8.2.1")
+        check("badge shows v3", (await pg.text_content("#release-badge")).strip() == "v9.0.0")
         for v in ["inventory", "builds", "training", "roster", "expedition", "changes"]:
             await pg.click("#release-badge" if v == "changes" else f"#tab-{v}"); await pg.wait_for_timeout(150)
             vis = await pg.evaluate("[...document.querySelectorAll('section[id^=view-]')].filter(s=>!s.hidden).map(s=>s.id)")

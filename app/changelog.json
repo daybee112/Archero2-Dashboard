@@ -6,6 +6,17 @@
  },
  "releases": [
   {
+   "id": "v9.0.0",
+   "date": "2026-11-23",
+   "by": "Daby (published by Claude)",
+   "title": "What's next: upcoming work, ideas and bug reports",
+   "changes": [
+    "New What's next tab (next to Help). Upcoming lists what's being worked on and planned, grouped as In progress, Planned, Waiting on data, Ideas and Done. It starts with 24 items gathered from the whole project: dashboard features, Expedition analysis, testing plans, game-knowledge work and housekeeping. Officers can add, edit and remove items.",
+    "Ideas & bugs: anyone can send an idea or report a bug. Everyone can see them; you can edit or withdraw your own until an officer replies. Officers reply with a status (New, Accepted, Planned, In progress, Done, Won't do, Duplicate) and can add an idea to Upcoming, credited to whoever sent it. Filter by Open, Ideas, Bugs, Closed or Everything.",
+    "Everything sent, edited, answered or changed here is recorded in the Activity log."
+   ]
+  },
+  {
    "id": "v8.2.1",
    "date": "2026-11-23",
    "by": "Daby (published by Claude)",

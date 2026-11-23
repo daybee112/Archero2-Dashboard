@@ -40,6 +40,7 @@
   window.__store = store; window.__fire = () => fire();
   // v8: pretend the one-time copy already ran, unless a test sets window.__migrate to exercise it
   if (!window.__migrate) store.set("meta/migration", { v: 8, at: 0, by: "test" });
+  if (!window.__seedRoadmap) store.set("meta/roadmap", { seeded: false, at: 0, by: "test" });
   if (window.__preseed) for (const [k, v] of Object.entries(window.__preseed)) store.set(k, v);
   window.claude = { use: async (name) => ({ db, user, sample }[name] || null) };
 })();

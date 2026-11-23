@@ -1,0 +1,107 @@
+import os as _os
+HERE = _os.path.dirname(_os.path.abspath(__file__))
+APP = _os.path.join(HERE, "..", "app")
+# What's next tab: upcoming list (officers edit), ideas & bug reports (everyone sends, officers reply).
+import asyncio, threading, http.server, functools, json
+from playwright.async_api import async_playwright
+srv = http.server.ThreadingHTTPServer(("127.0.0.1", 8787), functools.partial(http.server.SimpleHTTPRequestHandler, directory=APP))
+threading.Thread(target=srv.serve_forever, daemon=True).start()
+MOCK = open(_os.path.join(HERE, "mock.js")).read()
+res = []
+def check(n, c, x=""): res.append(c); print("PASS" if c else "FAIL", n, x)
+EV = lambda pre: f"[...window.__store.entries()].filter(([k])=>k.startsWith('{pre}/')).flatMap(([k,v])=>v.events||[]).sort((a,z)=>a.at-z.at)"
+
+async def main():
+    async with async_playwright() as p:
+        b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
+        errs = []
+        # 1. officer, first visit: the starting list is copied in once
+        oc = await b.new_context(viewport={"width": 1280, "height": 900}); await oc.add_init_script("window.__seedRoadmap = true;" + MOCK)
+        pg = await oc.new_page(); pg.on("pageerror", lambda e: errs.append(str(e)))
+        await pg.goto("http://127.0.0.1:8787/index.html#next"); await pg.wait_for_timeout(5000)
+        check("What's next tab sits right before Help", await pg.eval_on_selector_all("nav.tabs a", "a=>a.map(x=>x.innerText)") == ["Inventory", "Builds", "Roster", "Expedition", "Training Ground", "What's next", "Help"])
+        n = await pg.evaluate("[...window.__store.keys()].filter(k=>k.startsWith('roadmap/')).length")
+        check("starting list copied into the database once", n == 24 and (await pg.evaluate("window.__store.get('meta/roadmap')") or {}).get("seeded") is True, str(n))
+        heads = await pg.eval_on_selector_all("#next-upcoming h3", "h=>h.map(x=>x.innerText)")
+        check("grouped by status", [h.split(" (")[0].lower() for h in heads] == ["in progress", "planned", "waiting on data", "ideas"], str(heads))
+        check("seed log entry", any(e["action"] == "added to What's next" for e in await pg.evaluate(EV("audit/u-officer/months"))))
+        # officer adds and edits an item
+        await pg.click("#next-add"); await pg.fill("#nf-title", "Discord bot for lineups"); await pg.fill("#nf-detail", "Post the lineup image automatically.")
+        await pg.select_option("#nf-area", "Dashboard"); await pg.select_option("#nf-status", "idea"); await pg.click("#nf-save"); await pg.wait_for_timeout(400)
+        t = await pg.inner_text("#next-upcoming [data-status=idea]")
+        check("officer adds an item", "Discord bot for lineups" in t)
+        rid = await pg.evaluate("[...window.__store.entries()].find(([k,v])=>k.startsWith('roadmap/')&&v.title==='Discord bot for lineups')[0]")
+        await pg.click(f"#next-upcoming [data-id='{rid.split('/')[1]}'] .linkbtn"); await pg.select_option("#nf-status", "done"); await pg.fill("#nf-ver", "v9.0.0"); await pg.click("#nf-save"); await pg.wait_for_timeout(400)
+        t = await pg.inner_text("#next-upcoming [data-status=done]")
+        check("officer marks it done with a version", "Discord bot for lineups" in t and "Done in v9.0.0" in t, t[:200])
+        last = (await pg.evaluate(EV("audit/u-officer/months")))[-1]
+        check("edit logged with before → after", last["action"] == "edited What's next" and any("status" in c for c in last.get("changes", [])), str(last)[:200])
+        await pg.click(f"#next-upcoming [data-id='{rid.split('/')[1]}'] .linkbtn"); await pg.click("#nf-del"); await pg.wait_for_timeout(150)
+        check("delete asks first", (await pg.inner_text("#nf-del")) == "Really delete?")
+        await pg.click("#nf-del"); await pg.wait_for_timeout(400)
+        check("officer deletes an item (logged)", await pg.evaluate(f"!window.__store.has('{rid}')") and (await pg.evaluate(EV("audit/u-officer/months")))[-1]["action"] == "removed from What's next")
+        snap = await pg.evaluate("JSON.stringify(Object.fromEntries(window.__store))")
+        await oc.close()
+
+        # 2. a member sends an idea and a bug, edits one, withdraws one; can't edit the list
+        mc = await b.new_context(viewport={"width": 1280, "height": 900}); await mc.add_init_script(f"window.__member = true; window.__preseed = {snap};" + MOCK)
+        mp = await mc.new_page(); mp.on("pageerror", lambda e: errs.append(str(e)))
+        await mp.goto("http://127.0.0.1:8787/index.html#next"); await mp.wait_for_timeout(2500)
+        check("members see the list but no edit controls", await mp.locator("#next-add").count() == 0 and await mp.locator("#next-upcoming .linkbtn").count() == 0 and "Screenshot upload inside the dashboard" in await mp.inner_text("#next-upcoming"))
+        await mp.click("#next-sub button[data-sub=tickets]"); await mp.wait_for_timeout(200)
+        await mp.fill("#tf-title", "Show opponents' power trend"); await mp.fill("#tf-detail", "A small chart per guild."); await mp.click("#tf-send"); await mp.wait_for_timeout(500)
+        await mp.click("#tf-kind button[data-kind=bug]"); await mp.fill("#tf-title", "Roster header jumps on iPad"); await mp.fill("#tf-detail", "Scroll down on the Roster tab."); await mp.click("#tf-send"); await mp.wait_for_timeout(500)
+        keys = await mp.evaluate("[...window.__store.keys()].filter(k=>k.startsWith('presets/u-member/tickets/'))")
+        check("tickets saved under the member's own record", len(keys) == 2, str(keys))
+        t = await mp.inner_text("#next-tickets")
+        check("both show, newest first, with type and New status", t.index("Roster header jumps on iPad") < t.index("Show opponents' power trend") and "Bug" in t and "Idea" in t and "New" in t)
+        log = await mp.evaluate(EV("presets/u-member/log"))
+        check("member's sends are in their activity log", [e["action"] for e in log][-2:] == ["sent an idea", "reported a bug"], str([e["action"] for e in log]))
+        card = mp.locator("#next-tickets [data-ticket]", has_text="Show opponents' power trend")
+        await card.locator("text=Edit").click(); await mp.fill("#ticket-edit #tf-title", "Show opponents' power over time"); await mp.click("#ticket-edit #tf-send"); await mp.wait_for_timeout(400)
+        check("member edits their own ticket (logged)", "Show opponents' power over time" in await mp.inner_text("#next-tickets") and (await mp.evaluate(EV("presets/u-member/log")))[-1]["action"] == "edited a ticket")
+        bug = mp.locator("#next-tickets [data-ticket]", has_text="Roster header jumps on iPad")
+        await bug.locator("text=Withdraw").click(); await mp.wait_for_timeout(400)
+        check("member withdraws their own ticket", "Roster header jumps on iPad" not in await mp.inner_text("#next-tickets") and len(await mp.evaluate("[...window.__store.keys()].filter(k=>k.startsWith('presets/u-member/tickets/'))")) == 1)
+        await mp.click("#tf-kind button[data-kind=bug]"); await mp.fill("#tf-title", "Search box loses text"); await mp.click("#tf-send"); await mp.wait_for_timeout(400)
+        snap = await mp.evaluate("JSON.stringify(Object.fromEntries(window.__store))")
+        await mc.close()
+
+        # 3. officer replies, sets status, adds an idea to Upcoming
+        oc = await b.new_context(viewport={"width": 1280, "height": 900}); await oc.add_init_script(f"window.__preseed = {snap};" + MOCK)
+        pg = await oc.new_page(); pg.on("pageerror", lambda e: errs.append(str(e)))
+        await pg.goto("http://127.0.0.1:8787/index.html#next"); await pg.wait_for_timeout(3000)
+        await pg.click("#next-sub button[data-sub=tickets]"); await pg.wait_for_timeout(200)
+        idea = pg.locator("#next-tickets [data-ticket]", has_text="Show opponents' power over time")
+        await idea.locator("text=Reply").click(); await pg.select_option("#tr-status", "planned"); await pg.check("#tr-add"); await pg.fill("#tr-reply", "Good one, adding it."); await pg.click("#tr-save"); await pg.wait_for_timeout(600)
+        t = await pg.inner_text("#next-tickets")
+        check("officer reply and status show on the ticket", "Reply from Test Officer: Good one, adding it." in t and "Planned" in t and "Added to Upcoming." in t, t[:400])
+        tri = await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.startsWith('triage/')).map(([k,v])=>v)")
+        check("officer's answer stored in triage, not in the member's record", len(tri) == 1 and tri[0]["status"] == "planned")
+        await pg.click("#next-sub button[data-sub=upcoming]"); await pg.wait_for_timeout(200)
+        t = await pg.inner_text("#next-upcoming [data-status=planned]")
+        check("idea added to Upcoming, credited to the member", "Show opponents' power over time" in t and "From an idea by Test Member" in t, t[-300:])
+        acts = [e["action"] for e in await pg.evaluate(EV("audit/u-officer/months"))]
+        check("officer actions logged", "answered a ticket" in acts and acts.count("added to What's next") >= 2)
+        await pg.click("#next-sub button[data-sub=tickets]"); await pg.select_option("#ticket-filter", "bug"); await pg.wait_for_timeout(200)
+        t = await pg.inner_text("#next-tickets")
+        check("filter: bugs only", "Search box loses text" in t and "power over time" not in t)
+        bugc = pg.locator("#next-tickets [data-ticket]", has_text="Search box loses text")
+        await bugc.locator("text=Reply").click(); await pg.select_option("#tr-status", "done"); await pg.click("#tr-save"); await pg.wait_for_timeout(400)
+        await pg.select_option("#ticket-filter", "open"); await pg.wait_for_timeout(200)
+        check("done tickets drop off Open, show under Closed", "Search box loses text" not in await pg.inner_text("#next-tickets"))
+        await pg.select_option("#ticket-filter", "closed"); await pg.wait_for_timeout(200)
+        check("…and appear under Closed", "Search box loses text" in await pg.inner_text("#next-tickets"))
+        await oc.close()
+
+        # 4. phone layout
+        ph = await b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True); await ph.add_init_script(f"window.__member = true; window.__preseed = {snap};" + MOCK)
+        pp = await ph.new_page(); pp.on("pageerror", lambda e: errs.append(str(e)))
+        await pp.goto("http://127.0.0.1:8787/index.html#next"); await pp.wait_for_timeout(2000)
+        w = await pp.evaluate("document.documentElement.scrollWidth")
+        check("phone: no sideways scroll", w <= 392, str(w))
+        await ph.close()
+        check("no page errors", not errs, str(errs)[:300])
+        await b.close()
+    print(f"{sum(res)} / {len(res)}")
+asyncio.run(main())

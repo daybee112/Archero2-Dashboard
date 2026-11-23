@@ -59,7 +59,7 @@ async def main():
         pg2, e2 = await page(b, [3], (390, 844))
         await pg2.screenshot(path="/tmp/shots/weekres-phone.png", full_page=False)
         tabs = await pg.eval_on_selector_all("nav.tabs a", "as=>as.map(a=>a.innerText.trim())")
-        check("tab order", tabs == ["Inventory", "Builds", "Roster", "Expedition", "Training Ground", "Help"], str(tabs))
+        check("tab order", tabs == ["Inventory", "Builds", "Roster", "Expedition", "Training Ground", "What's next", "Help"], str(tabs))
         await pg.click("#release-badge"); await pg.wait_for_timeout(300)
         check("version badge opens the changelog", await pg.locator("#view-changes").is_visible() and "#changelog" in pg.url and (await pg.get_attribute("#release-badge", "aria-current")) == "page")
         await pg.goto("http://127.0.0.1:8781/index.html#changes"); await pg.wait_for_timeout(800)
