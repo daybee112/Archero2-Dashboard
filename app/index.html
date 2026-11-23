@@ -324,8 +324,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     <a href="#roster" id="tab-roster">Roster</a>
     <a href="#expedition" id="tab-expedition">Expedition</a>
     <a href="#training" id="tab-training">Training Ground</a>
-    <a href="#next" id="tab-next">What's next</a>
     <a href="#help" id="tab-help">Help</a>
+    <a href="#next" id="tab-next">What's next</a>
   </nav>
   </div>
   <div id="load-error" class="banner" hidden></div>
@@ -608,8 +608,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   <!-- ================= CHANGES ================= -->
   <section id="view-next" class="stack" hidden>
     <div class="row"><div class="seg" role="group" aria-label="What's next section" id="next-sub">
-      <button type="button" data-sub="upcoming" aria-pressed="true">Upcoming</button>
-      <button type="button" data-sub="tickets" aria-pressed="false">Ideas &amp; bugs</button>
+      <button type="button" data-sub="upcoming" aria-pressed="true">Upcoming features</button>
+      <button type="button" data-sub="tickets" aria-pressed="false">Ideas &amp; bug reports</button>
     </div></div>
     <div class="panel stack" id="next-upcoming"></div>
     <div class="panel stack" id="next-tickets" hidden></div>
@@ -699,7 +699,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           <p><b>Read the plan for a round.</b> Go to Expedition, then Rounds, and pick the round. The <b>Message to the officers</b> at the top explains the lineup. Tap <b>Show the full message</b> if it's cut off.</p>
           <p><b>Share something on Discord.</b> Look for the <b>Copy as image</b> buttons on the lineup, round results, officer message, player history, the Expedition roster table and the main Roster. The picture goes to your clipboard, ready to paste. If your browser blocks that, a preview opens with a <b>Download</b> button instead. On the officer message, <b>Copy text</b> copies it with its Discord formatting.</p>
           <p><b>See who changed something.</b> Tap the version number at the top right, then <b>Activity log</b>. Filter by person or type of change, or search for a player or field. Each entry shows what changed, before → after. Members' entries say "(member)", and results Claude adds from screenshots say "by Claude". <b>Export (CSV)</b> downloads everything.</p>
-          <p><b>Send an idea or report a bug.</b> Go to <b>What's next</b>, then <b>Ideas &amp; bugs</b>. Pick Idea or Bug, give it a short title and details, and press <b>Send</b>. Everyone can see it, and officers reply right on it. You can edit or withdraw it until an officer replies.</p>
+          <p><b>Send an idea or report a bug.</b> Go to <b>What's next</b>, then <b>Ideas &amp; bug reports</b>. Pick Idea or Bug, give it a short title and details, and press <b>Send</b>. Everyone can see it, and officers reply right on it. You can edit or withdraw it until an officer replies.</p>
           <p><b>Test a build.</b> On Training Ground, pick a saved build, run the Training Dummy 3 times for 1 minute each, and enter your results. Post them to the leaderboard or keep them private.</p>
           <p><b>Get a build idea.</b> On Builds, open <b>Want a suggestion?</b> and tap <b>Suggest a build</b>. It only uses what's in your Inventory, and it tells you what's missing for a better option.</p>
         </div>
@@ -715,7 +715,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
             <li><b>Lineups:</b> edit the lineup of a round that hasn't been played yet, slot by slot, or copy the previous round. Played rounds are locked.</li>
             <li><b>Message to the officers:</b> post a new message for a round. Pasting a Discord message keeps its formatting. Older messages move into the notes.</li>
             <li><b>Notes and reasoning:</b> add decisions or logic worth keeping, like why a player moved lanes. Notes can be added but not edited.</li>
-            <li><b>What's next:</b> add, edit or remove items on <b>Upcoming</b>, and reply to ideas and bug reports with a status (the reply is public). <b>Add to Upcoming</b> turns an idea into a planned item, credited to whoever sent it.</li>
+            <li><b>What's next:</b> add, edit or remove items on <b>Upcoming features</b>, and reply to ideas and bug reports with a status (the reply is public). <b>Add to Upcoming features</b> turns an idea or bug report into a planned item, credited to whoever sent it; <b>Remove from Upcoming features</b> takes it back off.</li>
             <li><b>Suggested lineups:</b> ask for a suggested lineup for an upcoming round and apply it with one tap.</li>
             <li><b>Opponents:</b> add each week's opponents (up to 3 per week) and update their details. Use <b>Edit this opponent</b> on the guild's tile.</li>
           </ul>
@@ -845,7 +845,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   };
 
   // ================= tabs =================
-  const VIEWS = ["inventory", "builds", "training", "roster", "expedition", "next", "changes", "help"];
+  const VIEWS = ["inventory", "builds", "training", "roster", "expedition", "changes", "help", "next"];
   function showView(cur) {
     if (!VIEWS.includes(cur)) cur = "roster";
     if (cur !== "inventory" && invView) exitInventoryView();
@@ -4539,10 +4539,11 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   const ROADMAP_SEED = [
     ["Dashboard", "planned", "Screenshot upload inside the dashboard", "Officers upload Details, deployment and scan screenshots right in the dashboard. It reads them, shows what it found, and nothing saves until you confirm. Replaces the weekly chat → sync step."],
     ["Dashboard", "planned", "Testing tracker and findings inbox", "Officers log test runs (test, build, tester, result, screenshots) and report \"the docs say X, I saw Y\" corrections, with a status for each (new, confirmed, rejected, merged) and a rotating reviewer."],
-    ["Dashboard", "in progress", "Build recommender (Engine B), full version", "One best build per character with reasoning, from your inventory and the synergy rules. A first version is on the Builds tab; next: weight confirmed vs unproven synergies, separate Expedition vs regular modes, and check picks against Training Ground results."],
-    ["Dashboard", "in progress", "Lane planner (Engine A), full version", "Suggested lineups exist for officers; next: use each opponent's lane habits from earlier rounds, how builds work together inside a lane, and say how confident it is when scouting is thin or a player's data is preset-only."],
+    ["Dashboard", "in progress", "Build advisor: the best build for each character", "One best build per character with reasoning, from your inventory and the synergy rules. A first version is on the Builds tab; next: weight confirmed vs unproven synergies, separate Expedition vs regular modes, and check picks against Training Ground results."],
+    ["Dashboard", "in progress", "Expedition lineup planner: who goes in which lane", "Suggested lineups exist for officers; next: use each opponent's lane habits from earlier rounds, how builds work together inside a lane, and say how confident it is when scouting is thin or a player's data is preset-only."],
     ["Dashboard", "planned", "Participation and Guild Boss tracking", "Add participation streaks and Guild Boss scores to the roster, which the project set out to track but the dashboard doesn't yet."],
     ["Dashboard", "waiting", "Guild Raid tracking", "Track Guild Raid once we have screenshots of scoring, attempts, buffs and rewards from the next event."],
+    ["Dashboard", "idea", "Roles with different permissions", "Three roles, each with its own permissions: member (their own inventory, builds, preset and tickets), officer (shared guild data, lineups, replies) and admin (managing roles and releases). Needs a check of what the platform allows first, since this dashboard's permission rules can't be changed right now."],
     ["Dashboard", "idea", "Tap \"Mixed\" to see gear sets on phones", "Hover tooltips don't work on phones; tapping Mixed on the Expedition roster would show which sets."],
     ["Dashboard", "idea", "Fold the Expedition roster key on phones", "Make the column key a tap-to-open section so the table starts higher on small screens."],
     ["Expedition analysis", "planned", "Helix + Dragoon test", "Helix on Dragoon has led damage for several rounds in a row. Design a proper test instead of only watching the numbers."],
@@ -4551,7 +4552,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     ["Expedition analysis", "planned", "Rune analysis", "Record every player's runes from preset screens and look for runes that change Expedition DPS beyond gear set and character. Needs most presets filled in first; the biggest analysis job on the list."],
     ["Expedition analysis", "idea", "Otta resonance on Dragoon", "A weaker hunch than Helix: several top Dragoon players run Otta. Watch it in the numbers."],
     ["Expedition analysis", "idea", "Mixed-gear builds", "Players with mixed sets (e.g. Gaga94) have underperformed. See whether that holds as more mixed builds appear."],
-    ["Testing", "planned", "Knowledge checks (QA tiers 1 to 4)", "Quiz and scenario tests of the game-knowledge docs and both engines, with severity and root cause logged for every mismatch."],
+    ["Testing", "planned", "Knowledge checks (QA tiers 1 to 4)", "Quiz and scenario tests of the game-knowledge docs, the build advisor and the lineup planner, with severity and root cause logged for every mismatch."],
     ["Testing", "planned", "Training Ground guild test builds", "12 build tests for members to run in Training Ground (T5-BUILD-01 to 12). Start with the easy single-change ones: Thor + Weapon Enchantment, and Elemental Crit before/after."],
     ["Testing", "waiting", "Training Ground open questions", "Run limits, whether duo/party tests are possible, and how to compare runs fairly. Needs a few screenshots from whoever runs the first test."],
     ["Game knowledge", "waiting", "More mystlings", "Add new mystlings as screenshots come in, and confirm The Fool's level 4 and 5 values."],
@@ -4634,9 +4635,9 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
   function renderUpcoming() {
     const box = $("next-upcoming"); box.replaceChildren();
-    box.append(el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: "Upcoming" }),
+    box.append(el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: "Upcoming features" }),
       isEditor ? el("button", { type: "button", class: "btn ghost", id: "next-add", text: "Add an item", onclick: () => { nextEdit = "new"; renderNext(); } }) : null),
-      el("p", { class: "small muted", style: "margin:0", text: "What's being worked on and what's planned, for the dashboard and the guild's testing. Have an idea or found a bug? Tell us under Ideas & bugs." }));
+      el("p", { class: "small muted", style: "margin:0", text: "What's being worked on and what's planned, for the dashboard and the guild's testing. Have an idea or found a bug? Tell us under Ideas & bug reports." }));
     if (nextEdit === "new") box.append(roadmapForm({}));
     const items = roadmapItems();
     for (const [st, label] of NEXT_STATUS) {
@@ -4696,7 +4697,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const tr = triageOf(t) || {};
     return el("div", { class: "nextform", id: "triage-form" },
       el("div", { class: "row" }, el("div", { class: "field" }, el("label", { for: "tr-status", text: "Status" }), statusSelect("tr-status", TICKET_STATUS, tr.status || "new")),
-        tr.roadmapId ? el("span", { class: "small muted", text: "Already on Upcoming." }) : el("label", { class: "small", style: "align-self:end" }, el("input", { type: "checkbox", id: "tr-add" }), " Add to Upcoming as Planned")),
+        ),
       el("div", { class: "field" }, el("label", { for: "tr-reply", text: "Reply (everyone can see it)" }), el("textarea", { id: "tr-reply", maxlength: "1500" }, tr.reply || "")),
       el("div", { class: "row" }, el("button", { type: "button", class: "btn", id: "tr-save", text: "Save", onclick: () => saveTriage(t) }),
         el("button", { type: "button", class: "btn ghost", text: "Cancel", onclick: () => { triageOpen = null; renderNext(); } })),
@@ -4704,24 +4705,45 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
   async function saveTriage(t) {
     const prev = triageOf(t) || {}, status = $("tr-status").value, reply = $("tr-reply").value.trim();
-    let roadmapId = prev.roadmapId || null;
+    const roadmapId = onList(prev) ? prev.roadmapId : null;
     try {
-      if (!roadmapId && $("tr-add") && $("tr-add").checked) {
-        if (!Object.keys(roadmapDb).length) for (const s of ROADMAP_SEED) await db.doc("roadmap/" + s.id).set({ ...s, at: Date.now(), by: myId, v: 1 });
-        roadmapId = newId("r-");
-        await db.doc("roadmap/" + roadmapId).set({ title: t.title, detail: t.detail || "", area: "Dashboard", status: "planned", order: Date.now(), at: Date.now(), by: myId,
-          fromTicket: { uid: t.uid, id: t.id, kind: t.kind, ign: t.ign || "" }, v: 1 });
-        logEvent("added to What's next", t.title + " (from a ticket)");
-      }
       await db.doc(`triage/${t.uid}__${t.id}`).set({ status, reply, roadmapId, at: Date.now(), by: myId, byName: myName || "", v: 1 });
       logEvent("answered a ticket", `${t.ign || "member"}: ${t.title}`, { changes: diffObj({ status: prev.status || "new", reply: prev.reply || "" }, { status, reply }) });
       triageOpen = null; renderNext();
     } catch { $("tr-msg").textContent = "Couldn't save. Only officers can answer tickets."; }
   }
+  // is the ticket's Upcoming features item still there? (an officer may have removed it from the list directly)
+  const onList = (tr) => !!(tr && tr.roadmapId && roadmapItems().some(i => i.id === tr.roadmapId));
+  async function addTicketToList(t) {
+    const prev = triageOf(t) || {};
+    try {
+      if (!Object.keys(roadmapDb).length) for (const s of ROADMAP_SEED) await db.doc("roadmap/" + s.id).set({ ...s, at: Date.now(), by: myId, v: 1 });
+      const roadmapId = newId("r-");
+      await db.doc("roadmap/" + roadmapId).set({ title: t.title, detail: t.detail || "", area: "Dashboard", status: "planned", order: Date.now(), at: Date.now(), by: myId,
+        fromTicket: { uid: t.uid, id: t.id, kind: t.kind, ign: t.ign || "" }, v: 1 });
+      const status = TICKET_OPEN.has(prev.status || "new") && (prev.status || "new") !== "in progress" ? "planned" : prev.status;
+      await db.doc(`triage/${t.uid}__${t.id}`).set({ status, reply: prev.reply || "", roadmapId, at: Date.now(), by: myId, byName: prev.byName || myName || "", v: 1 });
+      roadmapDb[roadmapId] = { id: roadmapId, title: t.title, detail: t.detail || "", area: "Dashboard", status: "planned", fromTicket: { ign: t.ign, kind: t.kind } };
+      triageDb[`${t.uid}__${t.id}`] = { ...prev, status, roadmapId };
+      logEvent("added to What's next", `${t.title} (from ${t.ign || "a member"}'s ${t.kind === "bug" ? "bug report" : "idea"})`, { changes: status !== (prev.status || "new") ? [`status: ${prev.status || "new"} → ${status}`] : [] });
+      renderNext();
+    } catch { /* officers only */ }
+  }
+  async function removeTicketFromList(t) {
+    const prev = triageOf(t) || {};
+    try {
+      if (prev.roadmapId) await db.doc("roadmap/" + prev.roadmapId).delete();
+      await db.doc(`triage/${t.uid}__${t.id}`).set({ ...prev, roadmapId: null, at: Date.now(), by: myId, v: 1 });
+      if (prev.roadmapId) delete roadmapDb[prev.roadmapId];
+      triageDb[`${t.uid}__${t.id}`] = { ...prev, roadmapId: null };
+      logEvent("removed from What's next", `${t.title} (from ${t.ign || "a member"}'s ${t.kind === "bug" ? "bug report" : "idea"})`);
+      renderNext();
+    } catch { /* officers only */ }
+  }
   function renderTickets() {
     const box = $("next-tickets");
     const draft = $("ticket-form") ? { title: $("ticket-form").querySelector("#tf-title").value, detail: $("ticket-form").querySelector("#tf-detail").value, kind: $("ticket-form").querySelector("#tf-kind button[aria-pressed=true]").dataset.kind } : {};
-    box.replaceChildren(el("h2", { text: "Ideas & bugs" }));
+    box.replaceChildren(el("h2", { text: "Ideas & bug reports" }));
     box.append(ticketForm(draft));
     const all = allTickets();
     const keep = (t) => nextFilter === "all" ? true : nextFilter === "open" ? TICKET_OPEN.has(ticketStatus(t)) : nextFilter === "closed" ? !TICKET_OPEN.has(ticketStatus(t)) : t.kind === nextFilter;
@@ -4739,11 +4761,13 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         t.detail ? el("div", { class: "small body", text: t.detail }) : null,
         el("div", { class: "small muted", text: `From ${t.ign || "a member"} · ${fmtDay(t.at)}${t.editedAt ? " · edited" : ""}` }),
         tr && tr.reply ? el("div", { class: "small", style: "border-left:3px solid var(--accent);padding-left:8px" }, el("b", { text: `Reply${tr.byName ? " from " + tr.byName : ""}: ` }), tr.reply) : null,
-        tr && tr.roadmapId ? el("div", { class: "small muted", text: "Added to Upcoming." }) : null);
+        onList(tr) ? el("div", { class: "small muted", text: "On the Upcoming features list." }) : null);
       const acts = el("div", { class: "row" });
       if (mine && st === "new") acts.append(el("button", { type: "button", class: "linkbtn", text: "Edit", onclick: () => { ticketEdit = `${t.uid}__${t.id}`; renderNext(); } }),
         el("button", { type: "button", class: "linkbtn", text: "Withdraw", onclick: () => withdrawTicket(t) }));
-      if (isEditor) acts.append(el("button", { type: "button", class: "linkbtn", text: tr ? "Update reply" : "Reply", onclick: () => { triageOpen = `${t.uid}__${t.id}`; renderNext(); } }));
+      if (isEditor) acts.append(el("button", { type: "button", class: "linkbtn", text: tr && (tr.reply || tr.status !== "new") ? "Update reply" : "Reply", onclick: () => { triageOpen = `${t.uid}__${t.id}`; renderNext(); } }),
+        onList(tr) ? el("button", { type: "button", class: "btn ghost", "data-act": "unlist", text: "Remove from Upcoming features", onclick: () => removeTicketFromList(t) })
+          : el("button", { type: "button", class: "btn ghost", "data-act": "list", text: "Add to Upcoming features", onclick: () => addTicketToList(t) }));
       if (acts.children.length) card.append(acts);
       if (isEditor && triageOpen === `${t.uid}__${t.id}`) card.append(triageForm(t));
       box.append(card);
