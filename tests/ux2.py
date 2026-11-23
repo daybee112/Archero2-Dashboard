@@ -106,11 +106,11 @@ async def main():
         check("every tile names one week", all(x.count("Week of") <= 1 for x in sums) and len(sums) == len(set(sums)), str(sums))
         wk = {"Week of Nov 2": 2, "Week of Nov 9": 9, "Week of Nov 16": 16}
         seq = [wk.get(next((k for k in wk if (k + " ") in x + " " and (k + "6") not in x), ""), 99) for x in sums]
-        check("show all: chronological, oldest week first", seq == sorted(seq), str(list(zip(seq, sums))))
+        check("show all: chronological, newest week first", seq == sorted(seq, reverse=True) or seq == sorted(seq, key=lambda v: (v == 99, -v)), str(list(zip(seq, sums))))
         nov16 = [x.split(" · ")[0] for x in sums if "Week of Nov 16" in x]
         check("…and within a week, in the round we faced them", nov16 == ["UkraineArchers", "Happiness", "Holymoly"], str(nov16))
         heads = await pg.eval_on_selector_all("#opp-list > h3.oppsec", "h=>h.map(x=>x.innerText)")
-        check("…with a heading per week (selected week marked)", len(heads) >= 3 and "(selected)" in " ".join(heads).lower() and heads[0].lower().startswith("week of nov 2"), str(heads))
+        check("…with a heading per week (selected week marked)", len(heads) >= 3 and "(selected)" in " ".join(heads).lower() and heads[0].lower().startswith("week of nov 16"), str(heads))
         await pg.click("#opp-all"); await pg.wait_for_timeout(200)
         lh = await pg.inner_text("#opp-list")
         check("no search or guild filter", await pg.locator("#opp-q, #opp-kind").count() == 0)

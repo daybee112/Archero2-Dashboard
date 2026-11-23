@@ -667,7 +667,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
             <li><b>Rounds:</b> each round's lanes for us and the opponent, the <b>Message to the officers</b> explaining the plan, notes and reasoning, and <b>Round details</b> with lane results, fight lengths and damage. Played rounds are read-only.</li>
             <li><b>Week results:</b> the week so far after each round (record, standings, each round's key notes, top DPS), then the final results and what we learned once Round 3 is in.</li>
             <li><b>Roster:</b> everyone's gear (hover or tap-and-hold <b>Mixed</b> to see which sets), character with resonance under it, Avg DPS, best round, and a graph of their last 6 rounds. Search by name, character or gear. Tap a name for full round-by-round history.</li>
-            <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to list every week, oldest first, in the order we faced them). Each tile is one guild in one week, so a guild we met in several weeks gets a tile per week. Tiles show their roster scans, lane history, each player's damage and seconds survived, and habits for that week.</li>
+            <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to list every week, newest first, each in the order we faced them). Each tile is one guild in one week, so a guild we met in several weeks gets a tile per week. Tiles show their roster scans, lane history, each player's damage and seconds survived, and habits for that week.</li>
             <li><b>Findings:</b> what we've learned so far, how Expedition works, and the assumptions behind the numbers.</li>
           </ul>
           <p>Guild names link to the Opponents view, and player names link to that player's history.</p>
@@ -3823,14 +3823,14 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const names = Object.keys(opps).sort((a, z) => latest(z).localeCompare(latest(a)) || a.localeCompare(z));
     const mine = names.filter(inWeek);
     // One tile = one guild in one week (per Daby: never several weeks in one tile). Show all lists every guild-week in
-    // chronological order (oldest week first), then by the round we faced them; guilds we only saw in other matches last.
+    // chronological order (newest week first, per Daby), then by the round we faced them; guilds we only saw in other matches last.
     const roundIn = (n, wk) => { const r = wk && (wk.rounds || []).find(x => x.opponent === n); return r ? r.n : 99; };
     const byRound = (wk) => (a, z) => roundIn(a.n, wk) - roundIn(z.n, wk) || a.n.localeCompare(z.n);
     let tiles = mine.map(n => ({ n, wk: w })).sort(byRound(w));
     if (oppShowAll) {
       tiles = [];
       for (const n of names) { const ws = weeksOf(n); if (ws.length) for (const id of ws) tiles.push({ n, wk: weekById(id) }); else tiles.push({ n, wk: null }); }
-      tiles.sort((a, z) => (a.wk ? 0 : 1) - (z.wk ? 0 : 1) || (a.wk && z.wk ? a.wk.id.localeCompare(z.wk.id) : 0) || roundIn(a.n, a.wk) - roundIn(z.n, z.wk) || a.n.localeCompare(z.n));
+      tiles.sort((a, z) => (a.wk ? 0 : 1) - (z.wk ? 0 : 1) || (a.wk && z.wk ? z.wk.id.localeCompare(a.wk.id) : 0) || roundIn(a.n, a.wk) - roundIn(z.n, z.wk) || a.n.localeCompare(z.n));
     }
     if (!mine.length) list.append(el("div", { class: "panel muted small", text: "No opponents for this week yet." + (oppShowAll ? "" : " Tap Show all guilds to see earlier ones.") }));
     const editorShown = new Set(), opened = new Set();
