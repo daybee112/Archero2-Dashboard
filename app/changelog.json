@@ -6,6 +6,15 @@
  },
  "releases": [
   {
+   "id": "v9.1.0",
+   "date": "2026-11-23",
+   "by": "Daby (published by Claude)",
+   "title": "New members start on Help",
+   "changes": [
+    "The first time someone opens the dashboard (with the plain link), it opens on Help's quick start with a welcome line. After that it opens on the Roster as usual. Links to a specific tab always open that tab. Remembered per browser, so a new phone shows the welcome once more."
+   ]
+  },
+  {
    "id": "v9.0.0",
    "date": "2026-11-23",
    "by": "Daby (published by Claude)",

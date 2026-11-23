@@ -139,7 +139,27 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v9.0.0 — 2026-11-23 — live · first stable release
+### v9.1.0 — 2026-11-23 — live
+- **Type:** minor (page improvement). First release under the branch workflow: `feature/help-first-visit` →
+  `release/v9.1.0` → `main`.
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v9.0.0 files exactly, platform version `1795450144-c32b`)
+- **Headless test before publish:** Help 22/22 (first visit with a plain link opens Help with the welcome line; second
+  visit opens the Roster; a first visit straight to a tab isn't redirected; Roster hint); What's next 28/28; weekly
+  results 22/22; Expedition UX 49/49; expedition 27/27; v8 27/27; activity 24/24; shared inventories 21/21; lanes 14/14;
+  image/notes 11/11; results 11/11; message 9/9; full regression 66/67 (font unreachable in sandbox).
+- **Platform version:** `1795454866-4ac8`
+- **Files:**
+  - `index.html` · 392,448 bytes · sha256 `a1b4c2c043e68d09732db9589fd11fddcbb147cb0cfc5e59c696cab37ab448ce` (changed)
+  - `changelog.json` · 33,226 bytes · sha256 `698108f6843906600c1a9638fb1c59c07e6931716bdd0287501fefe5e88ff955` (changed)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…`, `build-data.json` `6fd7eeda…` (unchanged)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** First visit per browser with no tab in the link → Help with a welcome line ("Next time, the dashboard
+  opens on the Roster."), marked with the existing `aa-help-seen` localStorage flag; later visits open on the Roster;
+  tab links never redirected; no redirect when storage is unavailable. Getting Started step 1 updated.
+- **Archive:** GitHub `main`, commit "Release v9.1.0".
+
+### v9.0.0 — 2026-11-23 · first stable release
 - **Type:** major (new feature: What's next). **Marked the first stable release** (per Daby, 2026-11-23). From here on, work
   happens on feature branches and releases ship in batches (see the repo README, "Branches").
 - **Requested by:** Daby · **Published by:** Claude
