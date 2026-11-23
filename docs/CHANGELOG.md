@@ -47,10 +47,10 @@ without logging it.
 
 Changes made inside the tool aren't releases, so they aren't entries here. They live in the activity log (version
 number at the top right → Activity): who, when, how (typed in / screenshot import / Builds tab), and before → after,
-with filters and CSV export. Officers' entries: `audit/<id>` (only that officer can write); past 400 the oldest 200 move
-to `audit/<id>/months/<yyyy-mm>` (removed from the main doc only after the archive write succeeds). Members' entries:
-`presets/<id>.log`, copied by any officer's open dashboard into that officer's `audit/<id>` (`mirrorOf`); later edits or
-removals by the member are flagged in the log with the original shown. **At each sync, Claude adds one line per week
+with filters and CSV export. From v8.0.0: officers' entries go to `audit/<id>/months/<yyyy-mm>` (only that officer can
+write; `audit/<id>` is an empty marker). Members' entries go to `presets/<id>/log/<yyyy-mm>` (the page only adds), copied
+by any officer's open dashboard into that officer's month record (`mirrorOf`); later edits or removals by the member are
+flagged in the log with the original shown. (Before v8: `audit/<id>` with a 400-entry overflow, and `presets/<id>.log`.) **At each sync, Claude adds one line per week
 below ("Activity summaries") counting that week's in-tool changes and pointing to the log.**
 
 ### Activity summaries
