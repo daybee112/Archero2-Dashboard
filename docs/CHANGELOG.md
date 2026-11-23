@@ -132,7 +132,30 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v8.0.0 — 2026-11-22 — live
+### v8.1.0 — 2026-11-22 — live
+- **Type:** minor (page improvements)
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v8.0.0 files exactly, platform version `1795400020-ba15`)
+- **Headless test before publish:** Expedition UX 41/41 (one week per opponent tile incl. Happiness Nov 2 tile, tile order;
+  Mixed gear tooltip; Character heading with Resonance under it on both rosters; Expedition roster search by name,
+  resonance, "mixed"; focus kept while typing); expedition 26/26; v8 data model 27/27; activity 24/24; shared
+  inventories 21/21; weekly results 16/16; lanes 14/14; image/notes 11/11; results 11/11; message 9/9; Help 14/14; full
+  regression 66/67 (font unreachable in sandbox).
+- **Platform version:** `1795404579-7efd`
+- **Files:**
+  - `index.html` · 358,041 bytes · sha256 `e96dd7b62b09d32731f3a295bedda9c9f8020116dcd19a6999916e5026f45a6c` (changed)
+  - `changelog.json` · 29,461 bytes · sha256 `f04615b179666c56145a1dd6d6366502c31fb1c32b811e36d3aab13be6ff6681` (changed)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…`, `build-data.json` `6fd7eeda…` (unchanged)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** Opponents: every tile is one guild in one week (`data-guild`/`data-week`); Show all adds a tile per other
+  week each guild appeared in (faced, in our group, or seen in other guilds' matches), this week's guilds' earlier weeks
+  first; week power from that week's group; editor on each guild's first tile. Expedition roster: `gearMix()` → "Mixed"
+  with sets and piece counts in the tooltip; one Character column with resonance under it (both rosters' headings read
+  Character / Resonance via `sub`); search (`pSearch`, `#players-search`). Images: "Character / resonance" column. Help
+  text updated.
+- **Archive:** GitHub `main`, commit "Release v8.1.0".
+
+### v8.0.0 — 2026-11-22
 - **Type:** major (new data model: guild data in the database)
 - **Requested by:** Daby · **Published by:** Claude
 - **Pre-publish audit:** clean (live matched v7.4.0 files exactly, platform version `1795393250-9fc3`)
