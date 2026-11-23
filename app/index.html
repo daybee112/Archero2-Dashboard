@@ -737,7 +737,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   <section id="view-changes" class="stack" hidden>
     <div class="panel stack">
       <h2>Versions</h2>
-      <p class="small muted" style="margin:0">Every published version of this dashboard. The last 5 are archived in the project and can be restored. The full log, with file fingerprints, lives in the project's dashboard changelog.</p>
+      <p class="small muted" style="margin:0">Every published version of this dashboard. Every version's files are kept in the guild's GitHub repo and can be restored. The full log, with file fingerprints, lives in the project's dashboard changelog.</p>
       <div id="releases"></div>
     </div>
     <div class="panel stack">
@@ -747,7 +747,6 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         <div class="field"><label for="audit-who">Who</label><select id="audit-who"><option value="">Everyone</option></select></div>
         <div class="field"><label for="audit-kind">Type</label><select id="audit-kind"><option value="">All changes</option></select></div>
         <div class="field" style="min-width:180px"><label for="audit-q">Search</label><input id="audit-q" type="search" placeholder="Player, round, field…"></div>
-        <button type="button" class="btn ghost" id="audit-older">Load older entries</button>
         <button type="button" class="btn ghost" id="audit-csv">Export (CSV)</button>
       </div>
       <div class="tablewrap"><table class="lb"><thead><tr><th>When</th><th>Who</th><th>What</th><th>How</th></tr></thead><tbody id="audit-body"></tbody></table></div>
@@ -2059,15 +2058,6 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
   for (const id of ["audit-who", "audit-kind"]) $(id).addEventListener("change", renderAuditMerged);
   $("audit-q").addEventListener("input", renderAuditMerged);
-  $("audit-older").addEventListener("click", async () => {
-    const b = $("audit-older"); if (!db) return; b.disabled = true; b.textContent = "Loading…";
-    try {
-      const out = [];
-      for (const d of lastAuditDocs) { const snap = await db.collection(`audit/${d.id}/months`).get(); for (const m of snap.docs) for (const e of ((m.data() || {}).events || [])) out.push({ by: d.id, role: "officer", ...e }); }
-      auditOlder = out; b.textContent = out.length ? `Older entries loaded (${out.length})` : "No older entries";
-      renderAuditMerged();
-    } catch { b.textContent = "Couldn't load older entries"; b.disabled = false; }
-  });
   $("audit-csv").addEventListener("click", () => {
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines = [["When", "Who", "Role", "Action", "Detail", "How", "Changes (before → after)", "Release", "Flag"].map(esc).join(",")];
@@ -2156,7 +2146,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   function subscribeAudit() {
     if (!db) { $("audit-status").textContent = "Open this page inside Claude to see activity."; return; }
     const t = setTimeout(() => { $("audit-status").textContent = "Can't reach the activity log yet."; }, 10000);
-    $("audit-older").hidden = true;   // v8: every month loads with the page
+    // v8: every officer's month records load with the page
     let rt = 0; const later = () => { clearTimeout(rt); rt = setTimeout(renderAuditMerged, 30); };
     db.collection("audit").onSnapshot((snap) => {
       if (!snap.metadata.fromCache) clearTimeout(t);
@@ -2171,7 +2161,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
 
   // ================= ROSTER =================
-  // Seed (roster-seed.json, shipped with the page) + officers' edits in the shared database (roster/<id>).
+  // v8: every member is a record at roster/<id> (copied from roster-seed.json once; the file is the fallback until then).
   // A member's database doc, once saved, replaces their seed entry. Calculated fields are never stored.
   // ----- Expedition preset sync: my Builds-tab "Expedition preset" <-> my linked roster profile -----
   // Newest wins, by time. Officers write the roster doc; members publish to presets/<their id> (rule: write own).
@@ -3065,10 +3055,11 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
 
   // ================= EXPEDITION =================
-  // Seed (expedition-seed.json) + officers' edits in the shared database: expedition/<week id> replaces a seed week,
+  // v8: weeks, rounds, opponents, scans, other guilds' matches and findings are database records (see docs/DATA-MODEL.md);
+  // expedition-seed.json is the one-time copy source and the fallback. Older notes: expedition/<week id> replaces a seed week,
   // opponents/<id> replaces a seed opponent. Everyone can view; officers edit.
   let EXP = { weeks: [], opponents: {}, observations: [], findings: [], mechanics: {} };
-  let expDb = {}, oppDb = {}, expWeekId = null, expRoundN = null, expSub = "rounds", expEditing = null, expPlayer = null, expSuggest = null;
+  let expDb = {}, oppDb = {}, expWeekId = null, expRoundN = null, expRoundPicked = false, expSub = "rounds", expEditing = null, expPlayer = null, expSuggest = null;
   const LANES = ["left", "middle", "right"];
   const LANE_LABEL = { left: "Left", middle: "Middle", right: "Right" };
   const oppId = (name) => "o-" + [...new TextEncoder().encode(name)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -3417,7 +3408,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     box.append(el("div", { class: "small muted", text: "Round data is kept by Claude from the screenshots Daby shares. Spot something wrong? Tell Daby." }));
     return box;
   }
-  $("exp-week").addEventListener("change", (e) => { expWeekId = e.target.value; expRoundN = null; expEditing = null; expSuggest = null; renderExpedition(); });
+  $("exp-week").addEventListener("change", (e) => { expWeekId = e.target.value; expRoundN = null; expRoundPicked = false; expEditing = null; expSuggest = null; renderExpedition(); });
   for (const b of $("exp-sub").querySelectorAll("button")) b.addEventListener("click", () => { expSub = b.dataset.sub; expPlayer = null; renderExpedition(); });
 
   // ----- rounds -----
@@ -3523,7 +3514,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     if (!w) { box.append(el("div", { class: "panel muted", text: "No weeks yet." })); return; }
     const rounds = w.rounds || [];
     // default: the current round (first one not played yet), or the last round once the week is over
-    if (!rounds.some(r => r.n === expRoundN)) { const cur = rounds.find(x => !x.result && x.status !== "done") || rounds[rounds.length - 1]; expRoundN = cur ? cur.n : 1; }
+    // until someone picks a round, keep choosing the current one (v8: rounds arrive one record at a time)
+    if ((!expRoundPicked && !expEditing) || !rounds.some(r => r.n === expRoundN)) { const cur = rounds.find(x => !x.result && x.status !== "done") || rounds[rounds.length - 1]; expRoundN = cur ? cur.n : 1; }
     const tabs = el("div", { class: "buildtabs roundcards", role: "group", "aria-label": "Rounds" });
     const curN = (rounds.find(x => !x.result && x.status !== "done") || {}).n;
     for (const r of rounds) {
@@ -3538,7 +3530,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const lanes = el("div", { class: "rclanes" }, ...LANES.map(l => { const res = r.laneResults?.[l]?.result;
         return el("span", { title: `${LANE_LABEL[l]}: ${res || "not played yet"}` }, el("i", { class: "rcdot " + (res === "won" ? "won" : res === "lost" ? "lost" : "open") }), LANE_LABEL[l][0]); }));
       tabs.append(el("button", { type: "button", class: "roundcard", "aria-pressed": String(r.n === expRoundN), "aria-label": `Round ${r.n} vs ${r.opponent || "unknown"}, ${chip.t}`,
-        onclick: () => { expRoundN = r.n; expEditing = null; expSuggest = null; renderExpedition(); } },
+        onclick: () => { expRoundN = r.n; expRoundPicked = true; expEditing = null; expSuggest = null; renderExpedition(); } },
         el("div", { class: "rcwhen" }, `Round ${r.n}`, day ? " · " + day : ""),
         el("div", { class: "rcopp", text: r.opponent || "Opponent not set" }),
         el("div", { class: "rcbottom" }, lanes, el("span", { class: "chip " + chip.c, text: chip.t }))));
@@ -4179,7 +4171,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         const dt = new Date(id + "T12:00:00");
         const w = { id, label: "Week of " + dt.toLocaleDateString(undefined, { month: "short", day: "numeric" }), group: [{ guild: "ArchAcademy" }, ...g.map(x => x.value.trim()).filter(Boolean).map(n => ({ guild: n }))], standings: [], final: false,
           rounds: [1, 2, 3].map(n => ({ n, opponent: g[n - 1].value.trim(), status: "planned", result: null, our: { left: { players: [] }, middle: { players: [] }, right: { players: [] } } })) };
-        try { await saveWeek(w, "created " + w.label); expWeekId = id; expRoundN = null; $("exp-new-week-box").hidden = true; renderExpedition(); } catch { msg.className = "small err"; msg.textContent = "Couldn't create."; }
+        try { await saveWeek(w, "created " + w.label); expWeekId = id; expRoundN = null; expRoundPicked = false; $("exp-new-week-box").hidden = true; renderExpedition(); } catch { msg.className = "small err"; msg.textContent = "Couldn't create."; }
       } }), msg));
   });
 

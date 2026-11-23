@@ -46,6 +46,8 @@ async def main():
         await pg.route("**/expedition-seed.json*", gone); await pg.route("**/roster-seed.json*", gone)
         await pg.goto("http://127.0.0.1:8799/index.html#expedition"); await pg.wait_for_timeout(2500)
         cards = await pg.eval_on_selector_all("#exp-rounds .roundcard", "bs=>bs.map(b=>b.innerText.replace(/\\n/g,' '))")
+        sel = await pg.eval_on_selector_all("#exp-rounds .roundcard", "bs=>bs.findIndex(b=>b.classList.contains('on')||b.getAttribute('aria-pressed')==='true'||b.getAttribute('aria-current'))")
+        check("latest round selected even though rounds arrive one at a time", sel == 2, str(sel))
         check("rounds from the database", len(cards) == 3 and "Holymoly" in cards[2] and "Won 3-0" in cards[2], str(cards))
         t = await pg.inner_text("#exp-rounds")
         check("round detail (lineups, stats, notes)", "Hago26" in t and "K/s" in t and "Artifact test" in t)

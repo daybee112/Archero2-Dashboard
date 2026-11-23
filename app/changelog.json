@@ -6,6 +6,18 @@
  },
  "releases": [
   {
+   "id": "v8.0.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Guild data moves into the database",
+   "changes": [
+    "Expedition rounds, opponents, roster scans, other guilds' matches, findings and the roster now live in the shared database as small separate records, so an edit touches only what changed. The first officer to open this version copies the starting data in once.",
+    "Each member's record is split: preset, account link, shared inventory, and an activity log with one record per month. Members' pages only ever add to their log; officers' pages keep a copy and flag anything changed or removed later.",
+    "Officers' activity log is one record per month, and every month loads with the page (the \"Older entries\" button is gone).",
+    "Older open tabs keep working: everything falls back to the old records, and a whole-week save from an older tab still shows if it's the newest."
+   ]
+  },
+  {
    "id": "v7.4.0",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",
