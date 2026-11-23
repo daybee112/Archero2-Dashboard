@@ -23,12 +23,13 @@ without logging it.
 ## Version numbering (per Daby, 2026-11-21)
 
 - **Major version** (v3, v4, …): new features, or other changes big enough to warrant it.
-- **Sub-version** (v3.1, v3.2, …): bug fixes and minor adjustments to the current major version.
-- **Patch** (added 2026-11-22 per Daby): releases that only change data files (round results, roster, opponent scans,
-  notes in the seed), with no change to the page itself. Edits officers make inside the tool aren't releases and get no
-  number; they're tracked in the activity log (see below). Earlier data-only releases (e.g. v6.3, v6.6) keep their numbers.
-- **Format** (per Daby 2026-11-22): **major.minor.patch, each part starting at 0**. A new major is v7.0.0; a page fix after
-  it is v7.1.0; a data-only release after that is v7.1.1. Releases before v6.8.0 used two numbers (v6.7 = v6.7.0).
+- **Minor version** (v3.1, v3.2, …): improvements and adjustments to the current major version (bug fixes go in a patch from v8.0.0).
+- **Patch** (per Daby, 2026-11-22, revised for v8.0.0): **maintenance and bug fixes.** Until v8.0.0 a patch meant a
+  release that only changed data files (round results, roster, opponent scans in the seed). From v8.0.0 that data lives
+  in the database, so data updates (weekly syncs, officers' edits) aren't releases and get no number; they're tracked in
+  the activity log and the database exports. Earlier data-only releases (e.g. v6.3, v6.6, v6.8.1) keep their numbers.
+- **Format** (per Daby 2026-11-22): **major.minor.patch, each part starting at 0**. A new major is v7.0.0; a page improvement
+  after it is v7.1.0; a bug fix or maintenance release after that is v7.1.1. Releases before v6.8.0 used two numbers (v6.7 = v6.7.0).
 
 ## Release process (every publish follows this)
 
@@ -131,7 +132,34 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v7.4.0 — 2026-11-22 — live
+### v8.0.0 — 2026-11-22 — live
+- **Type:** major (new data model: guild data in the database)
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v7.4.0 files exactly, platform version `1795393250-9fc3`)
+- **Database backup before publish:** `data/db-exports/2026-11-22/` (audit 1 doc, presets 1, roster 2).
+- **Headless test before publish:** v8 data model 27/27 (one-time copy, member page with seed files removed, pre-v8
+  records, older-tab saves, member record split, the published v7.4.0 page on v8 data); activity 24/24; shared
+  inventories 21/21; expedition 26/26; Expedition UX 28/28; weekly results 16/16; lanes 14/14; image/notes 11/11;
+  results 11/11; message 9/9; Help 14/14; full regression 66/67 (font unreachable in sandbox). Dress rehearsal on a copy
+  of the live database: clean.
+- **Platform version:** `1795400020-ba15`
+- **Files:**
+  - `index.html` · 353,498 bytes · sha256 `9a6b3b3a9e3ecedd65537dd9a0e2d37e6796dcb95b515497e8a884dda658af8f` (changed)
+  - `changelog.json` · 28,527 bytes · sha256 `edca673722c8197e55f2d210e47d2d7f27b4e53931771755d6562b6103a39327` (changed)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…`, `build-data.json` `6fd7eeda…` (unchanged; the
+    seeds are now only the one-time copy source and the fallback)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** see `docs/DATA-MODEL.md`. Rounds, opponents, scans, other guilds' matches, findings and the roster are
+  separate database records (first officer to open v8 copies the seeds in once; `meta/migration` records it). Members'
+  `presets/<id>` split into preset, `meta/link`, `meta/inventory`, `log/<yyyy-mm>` (append-only in the page; officers'
+  copies flag edits/removals). Officers' log is `audit/<id>/months/<yyyy-mm>`; "Load older entries" removed. Fallbacks
+  to the old records everywhere. Rounds tab keeps choosing the current round until one is tapped. Versions note points
+  at GitHub. Numbering: patch now means maintenance and bug fixes (per Daby).
+- **Known limit:** a v7.4 tab still open won't show rounds of weeks saved in v8 until it updates (automatic at its next
+  quiet moment).
+- **Archive:** GitHub `main`, commit "Release v8.0.0".
+
+### v7.4.0 — 2026-11-22
 - **Type:** minor (page adjustments)
 - **Requested by:** Daby · **Published by:** Claude
 - **Pre-publish audit:** clean (live matched v7.3.0 files exactly, platform version `1795391812-44ce`)

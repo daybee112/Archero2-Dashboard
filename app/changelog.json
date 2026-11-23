@@ -2,7 +2,7 @@
  "_meta": {
   "purpose": "Release notes shown on the dashboard's Changes tab. The authoritative log, with file fingerprints and rollback steps, is dashboard/CHANGELOG.md in the project.",
   "rule": "Every publish adds an entry here AND in dashboard/CHANGELOG.md, and archives the released files under dashboard/releases/<id>/ in the project.",
-  "numbering": "Versions are major.minor.patch, each part starting at 0 (per Daby 2026-11-22): major (v7.0.0) for new features, minor (v6.8.0) for page fixes and adjustments, patch (v6.8.1) for releases that only change data files (round results, roster, opponent scans). Releases before v6.8.0 used two numbers (v6.7 = v6.7.0). Versions before 2026-11-21's rename were called r1, r2, r2.1."
+  "numbering": "Versions are major.minor.patch, each part starting at 0 (per Daby 2026-11-22): major (v7.0.0) for new features, minor (v6.8.0) for page improvements and adjustments, patch (v6.8.1) for maintenance and bug fixes (from v8.0.0, per Daby; before that, patch meant a data-only release). From v8.0.0 guild data lives in the database, so data updates aren't releases. Releases before v6.8.0 used two numbers (v6.7 = v6.7.0). Versions before 2026-11-21's rename were called r1, r2, r2.1."
  },
  "releases": [
   {

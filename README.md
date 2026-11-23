@@ -22,7 +22,7 @@ The shared database lives inside the artifact (that's what members' dashboards r
 
 ## Releasing
 
-Versions are `major.minor.patch`, each part starting at 0: major = new features, minor = page fixes and improvements, patch = data-only changes.
+Versions are `major.minor.patch`, each part starting at 0: major = new features, minor = page improvements and adjustments, patch = maintenance and bug fixes. Guild data (rounds, roster, scans) is written straight to the database and isn't a release.
 
 1. Audit: the artifact's files and rules match the last tag.
 2. Add the release to `app/changelog.json` and bump the version check in `tests/run.py`.
