@@ -132,7 +132,29 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v8.1.1 — 2026-11-22 — live
+### v8.2.0 — 2026-11-22 — live
+- **Type:** minor (page improvements)
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v8.1.1 files exactly, platform version `1795406494-015d`)
+- **Headless test before publish:** weekly results/changelog 22/22 (Change log and Activity log tabs, names, #changelog,
+  #activity, old #changes, link follows the tab); Expedition UX 48/48 (player page spells out mixed gear); activity 24/24;
+  expedition 27/27; v8 data model 27/27; shared inventories 21/21; lanes 14/14; image/notes 11/11; results 11/11;
+  message 9/9; Help 14/14; full regression 66/67 (font unreachable in sandbox).
+- **Platform version:** `1795407371-681d`
+- **Files:**
+  - `index.html` · 363,509 bytes · sha256 `1ffd9aeb23b8194f711e94ee5649685472f924b8d3d324e8073c8b9d337e24d4` (changed)
+  - `changelog.json` · 31,069 bytes · sha256 `6ffd1de1d446a323db44cc4e187fdd8ab3680b1499f88eb3b19a3864af04bee5` (changed)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…`, `build-data.json` `6fd7eeda…` (unchanged)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** Version badge opens two sub-tabs (`#changes-sub`): Change log and Activity log; links `#changelog` and
+  `#activity` (old `#changes` still routes), tab switches update the link via replaceState. Activity log description
+  updated for v8 storage and "by Claude" entries. Expedition player page "Gear now" spells out mixed gear. Help tab
+  brought up to date with v8.0.0–v8.2.0 (round cards, Back button, Mixed, roster search, opponent tiles, the two tabs, who
+  changed something, officer inventory edits, 3 opponents a week, "by Claude" results, inventory visibility); both
+  Claude Docs guides updated to match.
+- **Archive:** GitHub `main`, commit "Release v8.2.0".
+
+### v8.1.1 — 2026-11-22
 - **Type:** patch (fixes)
 - **Requested by:** Daby · **Published by:** Claude
 - **Pre-publish audit:** clean (live matched v8.1.0 files exactly, platform version `1795404579-7efd`)
