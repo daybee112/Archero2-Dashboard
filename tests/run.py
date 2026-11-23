@@ -30,7 +30,7 @@ async def main():
         pg = await ctx.new_page(); errs = []
         pg.on("pageerror", lambda e: errs.append(str(e))); pg.on("console", lambda m: m.type == "error" and errs.append(m.text))
         await pg.goto("http://127.0.0.1:8765/index.html#inventory"); await pg.wait_for_timeout(1500)
-        check("badge shows v3", (await pg.text_content("#release-badge")).strip() == "v8.1.1")
+        check("badge shows v3", (await pg.text_content("#release-badge")).strip() == "v8.2.0")
         for v in ["inventory", "builds", "training", "roster", "expedition", "changes"]:
             await pg.click("#release-badge" if v == "changes" else f"#tab-{v}"); await pg.wait_for_timeout(150)
             vis = await pg.evaluate("[...document.querySelectorAll('section[id^=view-]')].filter(s=>!s.hidden).map(s=>s.id)")
@@ -183,7 +183,7 @@ async def main():
         td = await pg.evaluate("JSON.stringify(window.__store.get('roster/m-tuup'))")
         check("import applied to both players", hd and '"Revive"' in hd and td and '"Revive"' in td)
         # changes / audit
-        await pg.click("#release-badge"); await pg.wait_for_timeout(400)
+        await pg.click("#release-badge"); await pg.wait_for_timeout(400); await pg.click("#changes-sub button[data-sub=activity]"); await pg.wait_for_timeout(200)
         aud = await pg.inner_text("#audit-body")
         check("audit has roster events", "amulet Griffin Mythic+2 → Griffin Mythic+3" in aud and all(k in aud for k in ["edited roster", "linked account", "added member", "imported preset", "posted test"]), aud[:400])
         check("mocked: no JS errors", not [e for e in errs if "fonts" not in e and "ERR_TUNNEL" not in e], str(errs))

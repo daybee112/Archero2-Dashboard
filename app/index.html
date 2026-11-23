@@ -308,7 +308,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       <h1>ArchAcademy Dashboard</h1>
       <small>Guild tools for Archero 2 · built from the project's reference docs</small>
     </div>
-    <div class="small muted row"><span id="whoami"></span><span id="whoami-ign" class="muted"></span><a href="#changes" class="chip vbtn" id="release-badge" title="Changelog: release notes and the activity log" style="text-decoration:none">version …</a></div>
+    <div class="small muted row"><span id="whoami"></span><span id="whoami-ign" class="muted"></span><a href="#changes" class="chip vbtn" id="release-badge" title="Change log and activity log" style="text-decoration:none">version …</a></div>
   </header>
 
   <nav class="tabs" aria-label="Sections">
@@ -615,7 +615,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         <li><b>Roster:</b> every member's power, gear, artifacts and Expedition damage, whether they've linked their account, and a link to their inventory.</li>
         <li><b>Expedition:</b> each round's lineup, the plan, results, the week's results, and your damage history (under <b>Roster</b>).</li>
         <li><b>Training Ground:</b> test a build on the Training Dummy and post your score.</li>
-        <li><b>Version number</b> (top right): tap it for what's new in the dashboard and the activity log.</li>
+        <li><b>Version number</b> (top right): tap it for the <b>Change log</b> (what's new in the dashboard) and the <b>Activity log</b> (who changed shared data).</li>
       </ul>
       <h3>Good to know</h3>
       <ul>
@@ -645,7 +645,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
             <li><b>Played rounds are locked.</b> Round results come from the Details screenshots, so if something looks wrong, tell Daby instead of working around it.</li>
             <li><b>Don't edit or republish the dashboard page itself</b> from claude.ai, even though officers have editor access. Ask Daby, so every version stays logged and can be rolled back.</li>
           </ul>
-          <p><b>Made a mistake?</b> Every shared change is recorded in the activity log (tap the version number at the top), with who made it and when. Tell an officer or Daby and it can be put back.</p>
+          <p><b>Made a mistake?</b> Every shared change is recorded in the activity log (tap the version number at the top, then <b>Activity log</b>), with who made it and when. Tell an officer or Daby and it can be put back.</p>
         </div>
       </details>
       <details>
@@ -659,7 +659,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
               <tr><td><b>Roster</b></td><td>Every guild member: rank, power, character, gear by slot, runes, artifacts, lane HP, Expedition DPS</td><td>Sort by any column (tap more headings to break ties), search, open a profile, link your account, edit your own preset, open anyone's inventory (Inventory column), copy the table as an image</td></tr>
               <tr><td><b>Expedition</b></td><td>Guild Expedition planning and results</td><td>See lineups, officer messages, the week's results, opponents and your damage history</td></tr>
               <tr><td><b>Training Ground</b></td><td>A standard Training Dummy test (3 runs of 1 minute)</td><td>Test a build, post results to the guild leaderboard, keep a private tracker</td></tr>
-              <tr><td><b>Version number</b> (top right)</td><td>The changelog: release notes and the activity log</td><td>See what changed in the dashboard and who changed shared data</td></tr>
+              <tr><td><b>Version number</b> (top right)</td><td>Two tabs: Change log (release notes) and Activity log</td><td>See what changed in the dashboard and who changed shared data</td></tr>
             </tbody>
           </table></div>
           <p><b>Inside the Expedition tab:</b> pick a week at the top, then one of five views.</p>
@@ -687,7 +687,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       <details>
         <summary><b>For officers</b></summary>
         <div class="help-body">
-          <p>Officers (editors of the dashboard) can change shared data. Every change is recorded in the activity log (tap the version number at the top).</p>
+          <p>Officers (editors of the dashboard) can change shared data. Every change is recorded in the activity log (tap the version number at the top, then <b>Activity log</b>).</p>
           <ul>
             <li><b>Roster:</b> edit any profile, tap a gear piece to change its set and quality, add members, mark members inactive or left.</li>
             <li><b>Preset screenshots:</b> at the bottom of the Roster tab, import Expedition preset screenshots. Each screenshot needs the player's name typed in. The dashboard never guesses whose preset it is.</li>
@@ -736,14 +736,18 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     </div>
   </section>
   <section id="view-changes" class="stack" hidden>
-    <div class="panel stack">
-      <h2>Versions</h2>
+    <div class="row"><div class="seg" role="group" aria-label="Changelog section" id="changes-sub">
+      <button type="button" data-sub="log" aria-pressed="true">Change log</button>
+      <button type="button" data-sub="activity" aria-pressed="false">Activity log</button>
+    </div></div>
+    <div class="panel stack" id="changes-log">
+      <h2>Change log</h2>
       <p class="small muted" style="margin:0">Every published version of this dashboard. Every version's files are kept in the guild's GitHub repo and can be restored. The full log, with file fingerprints, lives in the project's dashboard changelog.</p>
       <div id="releases"></div>
     </div>
-    <div class="panel stack">
-      <h2>Activity</h2>
-      <p class="small muted" style="margin:0">Every change to shared data, newest first: who made it, when, how (typed in, screenshot import, Builds tab), and what changed, before → after. Officers' entries can only be written by that officer. Members' entries (their own preset updates and Training Ground posts) start in their own preset record and are copied into an officer's record the next time an officer has the dashboard open; if a member later edits or removes one, it's flagged here and the original is shown. Round results Claude adds from screenshots are logged with each release in the project's changelog.</p>
+    <div class="panel stack" id="changes-activity" hidden>
+      <h2>Activity log</h2>
+      <p class="small muted" style="margin:0">Every change to shared data, newest first: who made it, when, how (typed in, screenshot import, Builds tab, or by Claude), and what changed, before → after. Officers and members are listed together; members' entries say "(member)". Officers' entries can only be written by that officer. Members' entries (their own preset, link, inventory and Training Ground posts) go into their own monthly log, and an officer's open dashboard keeps a copy; if a member later edits or removes one, it's flagged here and the original is shown. Results Claude adds from screenshots show as "by Claude".</p>
       <div class="controls" id="audit-controls">
         <div class="field"><label for="audit-who">Who</label><select id="audit-who"><option value="">Everyone</option></select></div>
         <div class="field"><label for="audit-kind">Type</label><select id="audit-kind"><option value="">All changes</option></select></div>
@@ -830,7 +834,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     $("example-banner").classList.toggle("offtab", !["inventory", "builds", "training"].includes(cur));   // example notice only where it matters
     if (D) { if (cur === "builds") renderBuildsTab(); if (cur === "training") refreshTgSource(); if (cur === "roster") renderRoster(); if (cur === "expedition") renderExpedition(); }
   }
-  function route() { showView((location.hash || "#roster").slice(1)); }
+  function route() { const h = (location.hash || "#roster").slice(1); if (h === "activity") { showView("changes"); showChangesSub("activity"); return; } showView(h); }
   function goTo(v) {
     showView(v);
     try { if (location.hash !== "#" + v) location.hash = v; } catch {}
@@ -838,6 +842,12 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
   for (const v of VIEWS) if (v !== "changes") $("tab-" + v).addEventListener("click", (e) => { e.preventDefault(); goTo(v); });
   $("release-badge").addEventListener("click", (e) => { e.preventDefault(); goTo("changes"); });
+  // Changelog sub-tabs: Change log (release notes) and Activity log
+  function showChangesSub(sub) {
+    for (const b of $("changes-sub").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.sub === sub));
+    $("changes-log").hidden = sub !== "log"; $("changes-activity").hidden = sub !== "activity";
+  }
+  for (const b of $("changes-sub").querySelectorAll("button")) b.addEventListener("click", () => showChangesSub(b.dataset.sub));
   for (const a of document.querySelectorAll("#view-help [data-go]")) a.addEventListener("click", (e) => { e.preventDefault(); goTo(a.dataset.go); });
   // first visit: point new people at the Help tab (remembered per browser; storage can be unavailable)
   (() => {

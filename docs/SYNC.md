@@ -17,7 +17,7 @@ Daby starts a new chat for each Expedition week and sends screenshots there most
 2. Show Daby the differences and get his OK. Conflicts (an officer changed the same record) are called out, not overwritten.
 3. **Back up first:** export the collections being changed to `data/db-exports/<date>/` in the GitHub repo.
 4. Write the records with db_write (only what changed), then read them back and check them, and check the page shows them.
-5. **Log it:** append one entry per sync to the activity log at `audit/<Daby's id>/months/<yyyy-mm>` with `src: "claude"` (shows as "by Claude"), the action ("synced from weekly chat"), what changed, and before → after where it's short. Mark the staged entries as synced (date) in the staged file. Data syncs are **not releases**: no version number, no publish.
+5. **Log it:** append one entry per sync to the activity log at `audit/<Daby's id>/months/<yyyy-mm>` with `src: "claude"` (shows as "by Claude"; first make sure the marker `audit/<Daby's id>` exists, `{events: [], v: 3}`, since pages find the month records through it), the action ("synced from weekly chat"), what changed, and before → after where it's short. Mark the staged entries as synced (date) in the staged file. Data syncs are **not releases**: no version number, no publish.
 6. **Activity summary:** read the activity log (`audit/<id>/months/…`, `presets/<id>/log/…`) and add one line for the week under "Activity summaries" in `dashboard/CHANGELOG.md`: counts of in-tool changes by type and person, plus any tamper flags.
 
 ## Releases (page changes only)

@@ -6,6 +6,16 @@
  },
  "releases": [
   {
+   "id": "v8.2.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Change log and Activity log tabs",
+   "changes": [
+    "Tapping the version number now opens two tabs: Change log (what changed in each version) and Activity log (who changed shared data), instead of one long page. A link ending in #activity opens the Activity log directly.",
+    "The Activity log's description is updated for how logs are stored since v8, including entries added by Claude."
+   ]
+  },
+  {
    "id": "v8.1.1",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",
