@@ -4096,10 +4096,10 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       el("p", { class: "small", style: "margin:0", id: "players-summary" }, el("b", { text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}.` }), " Most players have no note: only big changes get one. Tap a player for their round-by-round history."),
       el("ul", { class: "tips muted", id: "players-key", style: "margin-top:0" }, ...[
         ["DPS", "damage ÷ seconds survived."],
-        ["Gear", "Mixed means pieces from more than one set (hover it for which)."],
-        ["Avg DPS", "their last 6 rounds on their current gear (hover it for how many)."],
-        ["Best DPS", "their best round on their current gear."],
-        ["Performance", "their last 6 played rounds on their own scale, newest on the right. Hover a dot for the week and round; hollow dots are rounds on another gear set or with partial stats, not in the average."]
+        ["Gear", "Mixed means pieces from more than one set."],
+        ["Avg DPS", "their last 6 rounds on their current build preset."],
+        ["Best DPS", "their best round on their current build preset."],
+        ["Performance", "their last 6 played rounds on their own scale, newest on the right. Hollow dots are rounds on another gear set or with partial stats, not in the average."]
       ].map(([k, v]) => el("li", { class: "small" }, el("b", { text: k + ": " }), v))),
       el("div", { class: "row" }, el("div", { class: "field", style: "flex:1;min-width:180px;max-width:360px" }, el("label", { for: "players-search", text: "Search" }), searchBox)),
       sortLine, el("div", { class: "tablewrap" }, t), rows.length ? null : el("p", { class: "small muted", text: `No players match "${pSearch}".` }),
