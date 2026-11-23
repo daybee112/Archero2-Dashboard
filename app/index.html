@@ -230,7 +230,7 @@ tr.tampered td { background: color-mix(in srgb, var(--bad) 7%, transparent); }
 .pchip.g-Griffin { border-color: var(--griffin); background: color-mix(in srgb, var(--griffin) 12%, var(--surface)); }
 .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
 .linkbtn.plink, .pchip .linkbtn { color: inherit; font-weight: 600; text-decoration: underline dotted; text-underline-offset: 2px; }
-.gearmix { display: inline-flex; flex-direction: column; gap: 2px; } .gearmix .set { font-weight: 600; white-space: nowrap; }
+.set.mixed { border-left-color: var(--muted); cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 .so { display: inline-block; font-size: .75rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; margin: 1px 4px 1px 0; white-space: nowrap; }
 .so.up { color: var(--good); } .so.down { color: var(--bad); } .so.info { color: var(--muted); }
 .gchip.assumed { border-style: dashed; font-style: italic; opacity: .8; }
@@ -666,7 +666,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           <ul>
             <li><b>Rounds:</b> each round's lanes for us and the opponent, the <b>Message to the officers</b> explaining the plan, notes and reasoning, and <b>Round details</b> with lane results, fight lengths and damage. Played rounds are read-only.</li>
             <li><b>Week results:</b> the week so far after each round (record, standings, each round's key notes, top DPS), then the final results and what we learned once Round 3 is in.</li>
-            <li><b>Roster:</b> everyone's gear (mixed sets show each set with its piece count), character and resonance, Avg DPS, best round, and a graph of their last 6 rounds. Tap a name for full round-by-round history.</li>
+            <li><b>Roster:</b> everyone's gear (hover or tap-and-hold <b>Mixed</b> to see which sets), character with resonance under it, Avg DPS, best round, and a graph of their last 6 rounds. Search by name, character or gear. Tap a name for full round-by-round history.</li>
             <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to add earlier ones below). Each tile is one guild in one week, so a guild we met in several weeks gets a tile per week. Tiles show their roster scans, lane history, each player's damage and seconds survived, and habits for that week.</li>
             <li><b>Findings:</b> what we've learned so far, how Expedition works, and the assumptions behind the numbers.</li>
           </ul>
@@ -2471,7 +2471,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     { key: "ign", label: "Player", val: m => m.ign.toLowerCase() },
     { key: "rank", label: "Rank", val: m => RANKS.indexOf(m.rank) },
     { key: "power", label: "Power", num: true, val: m => m.power?.m ?? -1 },
-    { key: "char", label: "Character", val: m => (m.preset?.chars?.[0]?.name || "~").toLowerCase() },
+    { key: "char", label: "Character", sub: "Resonance", val: m => (m.preset?.chars?.[0]?.name || "~").toLowerCase() },
     { key: "gear", label: "Gear by slot", val: m => gearSummary(m) },
     { key: "art", label: ["Mythic / Leg", "Artifacts"], num: true, val: m => (m.artifacts?.mythic ?? -1) * 100 + (m.artifacts?.leg ?? 0) },
     { key: "runes", label: "Runes", num: true, val: m => runeCount(m) },
@@ -2492,6 +2492,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const lines = Array.isArray(c.label) ? c.label : [c.label];
       const b = el("button", { type: "button", class: "sortbtn", title: c.calc ? "Calculated, read-only" : null, "aria-label": lines.join(" ") + (si < 0 ? "" : `, sort ${si + 1}, ${sd < 0 ? "high to low" : "low to high"}`) });
       lines.forEach((ln, i) => { if (i) b.append(el("br")); b.append(i === lines.length - 1 ? ln + arrow.replace(" ", "\u00a0") : ln); });
+      if (c.sub) b.append(el("br"), el("span", { class: "thsub", text: c.sub }));
       b.addEventListener("click", () => {
         // tapping the current main sort flips it; tapping another column makes it the main sort and keeps the rest as tie-breakers
         if (sortStack[0].key === c.key) sortStack[0] = { key: c.key, dir: -sortStack[0].dir };
@@ -2524,8 +2525,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const sortNames = sortStack.map(s => { const c = COLS.find(k => k.key === s.key); return (Array.isArray(c.label) ? c.label.join(" ") : c.label) + (s.dir < 0 ? " ↓" : " ↑"); });
     const rosterRows = rows;
     $("roster-img").replaceChildren(imgBtn("Copy as image", () => ({ title: "ArchAcademy roster", subtitle: `${rosterRows.length} players · ${`Sorted by ${sortNames.join(", then ")}`}`,
-      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Rank", w: 1.1 }, { label: "Power", align: "right", w: 0.8 }, { label: "Character", w: 1.2 }, { label: "Gear", w: 0.9 }, { label: "Mythic / Leg", align: "right", w: 0.9 }, { label: "Lane HP", align: "right", w: 0.8 }, { label: "Avg DPS", align: "right", w: 0.8 }],
-        rows: rosterRows.map(m => [{ text: m.ign, bold: true }, m.rank || "", m.power?.m != null ? m.power.m.toFixed(2) + "M" : "—", m.preset?.chars?.[0]?.name || "—", { text: weaponSet(m) || "—", bar: weaponSet(m) || "line" },
+      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Rank", w: 1.1 }, { label: "Power", align: "right", w: 0.8 }, { label: "Character / resonance", w: 1.9 }, { label: "Gear", w: 0.9 }, { label: "Mythic / Leg", align: "right", w: 0.9 }, { label: "Lane HP", align: "right", w: 0.8 }, { label: "Avg DPS", align: "right", w: 0.8 }],
+        rows: rosterRows.map(m => [{ text: m.ign, bold: true }, m.rank || "", m.power?.m != null ? m.power.m.toFixed(2) + "M" : "—", m.preset?.chars?.[0]?.name ? m.preset.chars[0].name + ((m.preset.chars || []).slice(1).filter(Boolean).length ? " · " + m.preset.chars.slice(1).filter(Boolean).map(c => c.name).join(", ") : "") : "—", { text: weaponSet(m) || "—", bar: weaponSet(m) || "line" },
           m.artifacts?.mythic != null ? `${m.artifacts.mythic} / ${m.artifacts.leg}` : "—", calcHp(m) != null ? "+" + Math.round(calcHp(m)) + "%" : "—", rosterDps(m) != null ? rosterDps(m) + " K/s" : "—"]) } }] })));
     const isDefault = sortStack.length === 1 && sortStack[0].key === "power" && sortStack[0].dir === -1;
     $("roster-sort").replaceChildren("Sorted by ",
@@ -3987,17 +3988,16 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const gm = gearMix(m);
     if (!gm.sets.length) return "—";
     if (!gm.mixed) return el("span", { class: "set " + gm.sets[0][0], text: gm.sets[0][0] });
-    return el("span", { class: "gearmix", title: `Mixed gear · weapon: ${weaponSet(m) || "unknown"}` },
-      ...gm.sets.map(([k, c]) => el("span", { class: "set " + k, text: `${k} ${c}` })));
+    return el("span", { class: "set mixed", tabindex: "0", title: `${gm.text} (weapon: ${weaponSet(m) || "unknown"})`, "aria-label": `Mixed gear: ${gm.text}`, text: "Mixed" });
   }
   const charOf = (m) => m.preset?.chars?.[0] || null;
   const resOf = (m) => (m.preset?.chars || []).slice(1).filter(Boolean);
   const presetStar = (c) => c.star != null ? ` ★${c.star}` : "";
+  let pSearch = "";   // Expedition roster search (name, gear, character, resonance), kept across re-renders
   const PCOLS = [
     { key: "ign", label: "Player", val: r => r.m.ign.toLowerCase() },
     { key: "gear", label: "Gear", val: r => (weaponSet(r.m) || "~").toLowerCase() + (gearMix(r.m).mixed ? "~mix" : "") },
-    { key: "char", label: "Character", val: r => (charOf(r.m)?.name || "~").toLowerCase() },
-    { key: "res", label: "Resonance", val: r => resOf(r.m).map(c => c.name).join(",").toLowerCase() || "~" },
+    { key: "char", label: "Character", sub: "Resonance", val: r => (charOf(r.m)?.name || "~").toLowerCase() },
     { key: "dps", label: "Avg DPS", num: true, val: r => r.avg5 ?? -1 },
     { key: "best", label: "Best DPS", num: true, title: "Best round on their current gear", val: r => r.best ?? -1 },
     { key: "perf", label: ["Performance", "last 6 played rounds"], nosort: true },
@@ -4006,7 +4006,9 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   function renderPlayers() {
     const box = $("exp-players"); box.replaceChildren();
     if (expPlayer) { box.append(playerDetail(expPlayer)); return; }
-    const rows = allMembers().filter(m => (m.status || "active") !== "left").map(m => {
+    const q = pSearch.trim().toLowerCase();
+    const rows = allMembers().filter(m => (m.status || "active") !== "left")
+      .filter(m => !q || [m.ign, weaponSet(m), gearMix(m).mixed ? "mixed " + gearMix(m).text : "", ...(m.preset?.chars || []).filter(Boolean).map(c => c.name), m.notes].join(" ").toLowerCase().includes(q)).map(m => {
       const ms = playerMatches(m.ign), c = ms.filter(x => x.counts), a = dpsAvg5(m.ign);
       return { m, played: ms.length, counted: c.length, avg5: a ? a.avg : null, avgN: a ? a.n : 0, best: c.length ? Math.max(...c.map(x => x.dps)) : null,
         last6: ms.filter(x => x.dps != null).slice(-6), so: standouts(m.ign) };
@@ -4025,6 +4027,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const b = el("button", { type: "button", class: "sortbtn", title: c.sortTitle || c.title || null, "aria-label": lines.join(" ") + (si < 0 ? "" : `, sort ${si + 1}, ${sd < 0 ? "high to low" : "low to high"}`) });
       if (c.key === "perf") b.append(lines[0] + arrow.replace(" ", " "), el("br"), el("span", { class: "thsub", text: lines[1] }));
       else lines.forEach((ln, i) => { if (i) b.append(el("br")); b.append(i === lines.length - 1 ? ln + arrow.replace(" ", " ") : ln); });
+      if (c.sub) b.append(el("br"), el("span", { class: "thsub", text: c.sub }));
       b.addEventListener("click", () => {
         if (pSortStack[0].key === c.key) pSortStack[0] = { key: c.key, dir: -pSortStack[0].dir };
         else pSortStack = [{ key: c.key, dir: c.num ? -1 : 1 }, ...pSortStack.filter(s => s.key !== c.key)].slice(0, 4);
@@ -4033,6 +4036,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       headRow.append(el("th", { class: c.num && c.key !== "perf" && !c.left ? "num" : null, "aria-sort": si === 0 ? (sd < 0 ? "descending" : "ascending") : null }, b));
     }
     const t = el("table", { class: "lb", id: "players-table" }, el("thead", {}, headRow));
+    const searchBox = el("input", { type: "text", id: "players-search", placeholder: "Name, character, gear…", value: pSearch });
+    searchBox.addEventListener("input", () => { pSearch = searchBox.value; const pos = searchBox.selectionStart; renderPlayers(); const i = $("players-search"); if (i) { i.focus(); i.setSelectionRange(pos, pos); } });
     const tb = el("tbody");
     for (const r of rows) {
       const tr = el("tr", { class: "rrow", tabindex: "0" });
@@ -4040,8 +4045,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       tr.addEventListener("click", open); tr.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
       const ch = charOf(r.m), rs = resOf(r.m);
       tr.append(el("td", {}, el("b", { text: r.m.ign })), el("td", {}, gearMixCell(r.m)),
-        el("td", { class: "small" }, ch ? ch.name + presetStar(ch) : "—"),
-        el("td", { class: "small" }, rs.length ? rs.map(c => c.name + presetStar(c)).join(", ") : "—"),
+        el("td", {}, ch ? ch.name + presetStar(ch) : "—", rs.length ? el("div", { class: "small muted", text: rs.map(c => c.name + presetStar(c)).join(", ") }) : null),
         el("td", { class: "num", title: r.avgN ? `Based on last ${r.avgN} played round${r.avgN === 1 ? "" : "s"}` : "No rounds yet", text: r.avg5 != null ? fmtRate(r.avg5) : "—" }),
         el("td", { class: "num", text: r.best != null ? fmtRate(r.best) : "—" }),
         el("td", { class: "perfcell" }, perfChart(r.last6)),
@@ -4056,12 +4060,13 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         isDefault ? null : el("button", { type: "button", class: "sortx", "aria-label": `Remove the ${sortNames[i]} sort`, title: "Remove this sort", text: "✕", onclick: () => { pSortStack = pSortStack.filter(x => x.key !== s.key); if (!pSortStack.length) pSortStack = [{ key: "dps", dir: -1 }]; renderPlayers(); } }))),
       isDefault ? el("span", { class: "muted", text: " · tap a column heading to sort by it" }) : el("button", { type: "button", class: "linkbtn", style: "margin-left:6px", text: "Reset to Avg DPS", onclick: () => { pSortStack = [{ key: "dps", dir: -1 }]; renderPlayers(); } }));
     const tableSpec = () => ({ title: "Player performance", subtitle: `Expedition DPS from every logged round · sorted by ${sortNames.join(", then ")}`,
-      sections: [{ table: { columns: [{ label: "Player", w: 1.5 }, { label: "Gear", w: 1.5 }, { label: "Character" }, { label: "Resonance", w: 1.4 }, { label: "Avg DPS", align: "right" }, { label: "Best DPS", align: "right" }, { label: "Notable", w: 1.8 }],
-        rows: rows.filter(r => r.played).map(r => { const s = r.so.filter(x => x.major)[0]; return [{ text: r.m.ign, bold: true }, { text: gearMix(r.m).text || "—", bar: weaponSet(r.m) || "line" }, charOf(r.m)?.name || "—", resOf(r.m).map(c => c.name).join(", ") || "—", r.avg5 != null ? fmtRate(r.avg5) : "—", r.best != null ? fmtRate(r.best) : "—", s ? { text: s.text, color: s.t === "up" ? "good" : "bad" } : ""]; }) } },
+      sections: [{ table: { columns: [{ label: "Player", w: 1.5 }, { label: "Gear" }, { label: "Character / resonance", w: 2 }, { label: "Avg DPS", align: "right" }, { label: "Best DPS", align: "right" }, { label: "Notable", w: 1.8 }],
+        rows: rows.filter(r => r.played).map(r => { const s = r.so.filter(x => x.major)[0]; return [{ text: r.m.ign, bold: true }, { text: gearMix(r.m).mixed ? "Mixed" : (gearMix(r.m).text || "—"), bar: gearMix(r.m).mixed ? "line" : (weaponSet(r.m) || "line") }, charOf(r.m) ? charOf(r.m).name + (resOf(r.m).length ? " · " + resOf(r.m).map(c => c.name).join(", ") : "") : "—", r.avg5 != null ? fmtRate(r.avg5) : "—", r.best != null ? fmtRate(r.best) : "—", s ? { text: s.text, color: s.t === "up" ? "good" : "bad" } : ""]; }) } },
         { text: "DPS = damage ÷ seconds survived. Avg DPS = last 6 rounds on their current gear." }] });
     box.append(el("div", { class: "panel stack" }, el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: "Player performance" }), el("div", { class: "row" }, imgBtn("Copy as image", tableSpec))),
       el("p", { class: "small muted", style: "margin:0", text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}. Most players have no note: only big changes get one. DPS = damage ÷ seconds survived; Avg DPS is their last 6 rounds on their current gear (hover it for how many); Best DPS is their best round on current gear. Performance shows each player's last 6 played rounds on their own scale, newest on the right: hover a dot for the week and round; hollow dots are rounds on another gear set or with partial stats, not in the average. Tap a player for their round-by-round history.` }),
-      sortLine, el("div", { class: "tablewrap" }, t),
+      el("div", { class: "row" }, el("div", { class: "field", style: "flex:1;min-width:180px;max-width:360px" }, el("label", { for: "players-search", text: "Search" }), searchBox)),
+      sortLine, el("div", { class: "tablewrap" }, t), rows.length ? null : el("p", { class: "small muted", text: `No players match "${pSearch}".` }),
       el("details", {}, el("summary", { class: "small", text: "How notes are picked" }), el("ul", { class: "tips" },
         ...["Only big changes get a note here, at most one per player; smaller ones show on the player's own page.",
             "⇄ gear switch: DPS at least doubled (or halved) since changing gear set.",
