@@ -132,7 +132,31 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v8.2.1 — 2026-11-23 — live
+### v9.0.0 — 2026-11-23 — live
+- **Type:** major (new feature: What's next)
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v8.2.1 files exactly, platform version `1795443035-eb42`)
+- **Headless test before publish:** What's next 28/28 (tab last after Help; sub-tab names; plain planner names and roles
+  idea; one-time copy of 25 items; officer add/edit/done/delete with confirm, logged; member sends idea + bug under their
+  own record, edits, withdraws; officer reply + status in triage; Add/Remove from Upcoming features buttons; filters;
+  phone width); weekly results/tabs 22/22; Expedition UX 49/49; expedition 27/27; v8 27/27; activity 24/24; shared
+  inventories 21/21; lanes 14/14; image/notes 11/11; results 11/11; message 9/9; Help 14/14; full regression 66/67 (font
+  unreachable in sandbox).
+- **Platform version:** `1795450144-c32b`
+- **Files:**
+  - `index.html` · 391,654 bytes · sha256 `aa4112f1ec40ae55849a6a61a07fb3b9fc312863a09ebf779196b5937bbf23ef` (changed)
+  - `changelog.json` · 32,790 bytes · sha256 `33aa286ae9e5acef9d2fc6c9d36695dd22596c964019b0e59952b5e311eceaea` (changed)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…`, `build-data.json` `6fd7eeda…` (unchanged)
+- **Permission rules:** unchanged from v7.0.0. New paths fit the existing rules: `roadmap/<id>` and `triage/<uid>__<id>`
+  (root rule: everyone reads, officers write), `meta/roadmap` (seed marker), `presets/<uid>/tickets/<id>` (member's own).
+- **Changes:** New last tab "What's next" with sub-tabs Upcoming features (roadmap grouped by status; officers add, edit,
+  delete; 25 starting items from the project docs and chats, copied in once by the first officer) and Ideas & bug reports
+  (anyone sends; edit/withdraw while New; officers reply with status and public note; Add/Remove from Upcoming features
+  buttons, credited to the sender; filters Open, Ideas, Bugs, Closed, Everything). All actions in the activity log. Help
+  and both Claude Docs guides updated.
+- **Archive:** GitHub `main`, commit "Release v9.0.0".
+
+### v8.2.1 — 2026-11-23
 - **Type:** patch (readability and wording)
 - **Requested by:** Daby · **Published by:** Claude
 - **Pre-publish audit:** clean (live matched v8.2.0 files exactly, platform version `1795407371-681d`)
