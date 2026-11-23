@@ -110,6 +110,10 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
   "archived in" a deleted folder, use the copy named here.
 - **Pruned 2026-11-22 (v6.8.0 publish):** v6.3 (4 docs). roster-seed.json (`9e63aecd…`) copied into `v6.4/` first; v6.3's
   own index.html (`c813f9b0…`) is gone with it. Kept then: v6.4–v6.8.0.
+- **Release archive moved to GitHub (2026-11-22, per Daby):** `daybee112/Archero2-Dashboard`. `main` holds the published
+  code; every release is a "Release vX.Y.Z" commit (tags are added on GitHub, since Claude's sessions can't push tags).
+  History goes back to v6.9.0 (restored from this project's archive; every file matched its fingerprint here). Older
+  versions survive only as entries in this log. The project's `dashboard/releases/` folders are no longer updated or pruned.
 - **Pruned 2026-11-22 (v7.3.0 publish):** v6.8.0 (2 docs). `v6.7/` still holds the carried data files v6.9.0 needs.
   Kept: v6.9.0–v7.3.0. Earliest rollback target: v6.9.0. From v8.0.0 on, releases are kept in the GitHub repo
   `daybee112/archero2-dashboard` (tags), not in this project.
@@ -127,7 +131,25 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v7.3.0 — 2026-11-22 — live
+### v7.4.0 — 2026-11-22 — live
+- **Type:** minor (page adjustments)
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v7.3.0 files exactly, platform version `1795391812-44ce`)
+- **Headless test before publish:** Expedition UX suite 28/28 (incl. Notable heading left-aligned); expedition 26/26 (main
+  Roster Avg DPS shows "165 K/s"); shared inventories 20/20; activity 19/19; weekly results 16/16; lanes 14/14;
+  image/notes 11/11; message 9/9; results 11/11; Help 14/14; full regression 66/67 (favicon/font unreachable in sandbox).
+- **Platform version:** `1795393250-9fc3`
+- **Files:**
+  - `index.html` · 338,668 bytes · sha256 `1bcf978bd8a3960166fd6a0951b863a62d5eac3d968a5a7f8957d50d7eb635d4` (changed)
+  - `changelog.json` · 27,470 bytes · sha256 `45b55347623dc0e72319f6125016e87a2c3417a62ae1623df04c9244bcb7da22` (changed)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…`, `build-data.json` `6fd7eeda…` (unchanged)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** "DPS avg"/"DPS Avg" → "Avg DPS" in every visible label (both rosters, player pages, image exports, Help,
+  Findings); main Roster Avg DPS cells show "N K/s" and the heading is one line; Expedition roster Notable heading
+  left-aligned (`left: true` on the column).
+- **Archive:** GitHub `main`, commit "Release v7.4.0".
+
+### v7.3.0 — 2026-11-22
 - **Type:** minor (page fixes)
 - **Requested by:** Daby · **Published by:** Claude
 - **Pre-publish audit:** clean (live matched v7.2.0 files exactly, platform version `1795389525-60c2`)

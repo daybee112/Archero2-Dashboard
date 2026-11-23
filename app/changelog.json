@@ -6,6 +6,17 @@
  },
  "releases": [
   {
+   "id": "v7.4.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Avg DPS labels and units",
+   "changes": [
+    "\"DPS avg\" is now \"Avg DPS\" everywhere (both rosters, player pages, images, Help).",
+    "Main Roster: Avg DPS shows its units (e.g. 264 K/s).",
+    "Expedition roster: the Notable heading is left-aligned."
+   ]
+  },
+  {
    "id": "v7.3.0",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",
