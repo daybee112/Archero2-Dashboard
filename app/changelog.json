@@ -6,6 +6,16 @@
  },
  "releases": [
   {
+   "id": "v8.1.0",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "One week per opponent tile, mixed gear and characters on the Expedition roster",
+   "changes": [
+    "Opponents: every tile is one guild in one week. With Show all guilds on, a guild we met in several weeks (like Happiness) gets a separate tile for each week, showing only that week's lanes, habits, player results and roster scan. Earlier weeks of this week's guilds come right after them.",
+    "Expedition roster: mixed gear shows every set with its piece count (for example Dragoon 3 · Oracle 2 · Griffin 1). New Character and Resonance columns, sortable like the rest."
+   ]
+  },
+  {
    "id": "v8.0.0",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",

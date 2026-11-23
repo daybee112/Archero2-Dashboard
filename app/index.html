@@ -230,6 +230,7 @@ tr.tampered td { background: color-mix(in srgb, var(--bad) 7%, transparent); }
 .pchip.g-Griffin { border-color: var(--griffin); background: color-mix(in srgb, var(--griffin) 12%, var(--surface)); }
 .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
 .linkbtn.plink, .pchip .linkbtn { color: inherit; font-weight: 600; text-decoration: underline dotted; text-underline-offset: 2px; }
+.gearmix { display: inline-flex; flex-direction: column; gap: 2px; } .gearmix .set { font-weight: 600; white-space: nowrap; }
 .so { display: inline-block; font-size: .75rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; margin: 1px 4px 1px 0; white-space: nowrap; }
 .so.up { color: var(--good); } .so.down { color: var(--bad); } .so.info { color: var(--muted); }
 .gchip.assumed { border-style: dashed; font-style: italic; opacity: .8; }
@@ -665,8 +666,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           <ul>
             <li><b>Rounds:</b> each round's lanes for us and the opponent, the <b>Message to the officers</b> explaining the plan, notes and reasoning, and <b>Round details</b> with lane results, fight lengths and damage. Played rounds are read-only.</li>
             <li><b>Week results:</b> the week so far after each round (record, standings, each round's key notes, top DPS), then the final results and what we learned once Round 3 is in.</li>
-            <li><b>Roster:</b> everyone's Expedition damage per second (DPS), best round, and trend. Tap a name for full round-by-round history.</li>
-            <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to add earlier ones below), with their roster scans, lane history, each player's damage and seconds survived, and habits.</li>
+            <li><b>Roster:</b> everyone's gear (mixed sets show each set with its piece count), character and resonance, Avg DPS, best round, and a graph of their last 6 rounds. Tap a name for full round-by-round history.</li>
+            <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to add earlier ones below). Each tile is one guild in one week, so a guild we met in several weeks gets a tile per week. Tiles show their roster scans, lane history, each player's damage and seconds survived, and habits for that week.</li>
             <li><b>Findings:</b> what we've learned so far, how Expedition works, and the assumptions behind the numbers.</li>
           </ul>
           <p>Guild names link to the Opponents view, and player names link to that player's history.</p>
@@ -3810,17 +3811,33 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     list.replaceChildren();
     const opps = allOpponents(), w = weekById(expWeekId);
     const inWeek = (n) => { const o = opps[n]; return !!w && ((o.weeks || []).includes(w.id) || (w.group || []).some(g => g.guild === n) || (w.rounds || []).some(r => r.opponent === n)); };
-    let names = Object.keys(opps).sort((a, z) => ((opps[z].weeks || []).slice(-1)[0] || "").localeCompare((opps[a].weeks || []).slice(-1)[0] || "") || a.localeCompare(z));
-    const mine = names.filter(inWeek), earlier = names.filter(n => !inWeek(n));
-    names = oppShowAll ? [...mine, ...earlier] : mine;
+    // every week a guild showed up in: faced by us, in our group, or seen in other guilds' matches
+    const weeksOf = (n) => { const ids = new Set(opps[n].weeks || []);
+      for (const x of allWeeks()) if ((x.group || []).some(g => g.guild === n) || (x.rounds || []).some(r => r.opponent === n)) ids.add(x.id);
+      for (const ob of EXP.observations) if (ob.guild === n) ids.add(ob.week);
+      return [...ids].filter(id => weekById(id)).sort().reverse(); };
+    const latest = (n) => weeksOf(n)[0] || "";
+    const names = Object.keys(opps).sort((a, z) => latest(z).localeCompare(latest(a)) || a.localeCompare(z));
+    const mine = names.filter(inWeek);
+    // One tile = one guild in one week (per Daby: never several weeks in one tile). Show all adds a tile for every other
+    // week each guild appeared in, this week's guilds first so their earlier weeks sit right under them.
+    const tiles = mine.map(n => ({ n, wk: w }));
+    if (oppShowAll) for (const n of [...mine, ...names.filter(n => !inWeek(n))]) {
+      const ws = weeksOf(n).filter(id => !w || id !== w.id);
+      if (ws.length) for (const id of ws) tiles.push({ n, wk: weekById(id), other: true });
+      else if (!mine.includes(n)) tiles.push({ n, wk: null, other: true });
+    }
     if (!mine.length) list.append(el("div", { class: "panel muted small", text: "No opponents for this week yet." + (oppShowAll ? "" : " Tap Show all guilds to see earlier ones.") }));
-    for (const n of names) {
-      if (oppShowAll && n === earlier[0]) list.append(el("h3", { class: "oppsec", text: "Other weeks" }));
-      const thisWeek = inWeek(n);
-      const weekOnly = !oppShowAll && thisWeek && !!w;   // selected week only, unless Show all guilds is on
+    const editorShown = new Set(), opened = new Set();
+    let secShown = false;
+    for (const { n, wk, other } of tiles) {
+      if (other && !secShown) { list.append(el("h3", { class: "oppsec", text: "Other weeks" })); secShown = true; }
+      const w = wk;   // this tile's week (shadows the selected week)
+      const weekOnly = !!w;
       const o = opps[n];
-      const card = el("details", { class: "inv" });
-      card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${weekOnly ? w.label : ((o.weeks || []).map(id => weekById(id)?.label || id).join(", ") || "not faced yet")}${o.power ? " · " + o.power.toFixed(1) + "M" : ""}` }))));
+      const gp = w ? ((w.group || []).find(g => g.guild === n) || {}).power : o.power;
+      const card = el("details", { class: "inv", "data-guild": n, "data-week": w ? w.id : "" });
+      card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${w ? w.label : "not faced yet"}${gp ? " · " + gp.toFixed(1) + "M" : ""}` }))));
       const body = el("div", { class: "body" }); card.append(body);
       // habits tagged "Week of <date>:" belong to that week; untagged ones apply every week
       const habits = (o.behavior || []).filter(b => { const m = b.match(/^Week of ([A-Z][a-z]+ \d+)/); return !weekOnly || !m || ("Week of " + m[1]) === w.label; });
@@ -3872,7 +3889,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       } else body.append(el("p", { class: "small muted", text: weekOnly ? "No lane history for this guild in this week." : "No lane history yet." }));
       // roster scan
       // roster scan: the one taken during the selected week (within 7 days of its start), or the latest when showing all
-      const inSel = (sc) => { const d = Date.parse(sc.date + "T12:00:00Z"), st = Date.parse(w.id + "T00:00:00Z"); return d >= st && d < st + 7 * 864e5; };
+      const inSel = (sc) => { if (!w) return true; const d = Date.parse(sc.date + "T12:00:00Z"), st = Date.parse(w.id + "T00:00:00Z"); return d >= st && d < st + 7 * 864e5; };
       const scan = weekOnly ? (o.scans || []).filter(inSel).slice(-1)[0] : (o.scans || []).slice(-1)[0];
       if (scan) {
         const rows = scan.players.map(p => ({ ...p, hp: p.mythic != null ? p.mythic * 18 + (p.leg || 0) * 1.8 : null, info: oppPlayerInfo(n, p.name) })).sort((a, z) => (z.hp ?? -1) - (a.hp ?? -1));
@@ -3883,10 +3900,11 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           el("td", { class: "num", text: p.info.dps ? `${fmtRate(p.info.dps)} (${p.info.seen})` : "—" }), el("td", { class: "small muted", text: p.note || "" })));
         t.append(tb);
         body.append(el("div", {}, el("h3", { text: `Roster scan (${scan.date}, ${scan.players.length} players)` }), el("div", { class: "tablewrap" }, t)));
-      } else body.append(el("p", { class: "small muted", text: weekOnly && (o.scans || []).length ? "No roster scan from this week. Tap Show all guilds to see the latest one." : "No roster scan yet." }));
-      if (isEditor) body.append(opponentEditor({ ...o, name: n }));   // seed opponents have no name field; without it the save went to a nameless doc
+      } else body.append(el("p", { class: "small muted", text: weekOnly && (o.scans || []).length ? "No roster scan from this week." : "No roster scan yet." }));
+      // the editor goes on each guild's first tile only (seed opponents have no name field; without it the save went to a nameless doc)
+      if (isEditor && !editorShown.has(n)) { editorShown.add(n); body.append(opponentEditor({ ...o, name: n })); }
       list.append(card);
-      if (expOpenOpp === n) { card.open = true; setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 0); }
+      if (expOpenOpp === n && !opened.has(n)) { opened.add(n); card.open = true; setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 0); }
     }
     expOpenOpp = null;
   }
@@ -3958,9 +3976,28 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   // Expedition roster: sorted like the main Roster (tap a heading; the newest tap leads, up to 4 tie-breakers).
   let pSortStack = [{ key: "dps", dir: -1 }];
   const notableVal = (r) => { const s = r.so.filter(x => x.major)[0]; return s ? (s.t === "up" ? 1 : s.t === "down" ? -1 : 0) * s.w : 0; };
+  // Gear sets across the six slots (filled from the weapon where unknown): one set, or each set with its piece count.
+  function gearMix(m) {
+    const g = m.preset?.gear || {}, n = {};
+    for (const { id } of (D ? D.gearSlots : [])) { const x = g[id]; if (x && x.set) n[x.set] = (n[x.set] || 0) + 1; }
+    const sets = Object.entries(n).sort((a, z) => z[1] - a[1] || (a[0] === weaponSet(m) ? -1 : z[0] === weaponSet(m) ? 1 : 0));
+    return { sets, mixed: sets.length > 1, text: sets.length > 1 ? sets.map(([k, c]) => `${k} ${c}`).join(" · ") : (sets[0] ? sets[0][0] : "") };
+  }
+  function gearMixCell(m) {
+    const gm = gearMix(m);
+    if (!gm.sets.length) return "—";
+    if (!gm.mixed) return el("span", { class: "set " + gm.sets[0][0], text: gm.sets[0][0] });
+    return el("span", { class: "gearmix", title: `Mixed gear · weapon: ${weaponSet(m) || "unknown"}` },
+      ...gm.sets.map(([k, c]) => el("span", { class: "set " + k, text: `${k} ${c}` })));
+  }
+  const charOf = (m) => m.preset?.chars?.[0] || null;
+  const resOf = (m) => (m.preset?.chars || []).slice(1).filter(Boolean);
+  const presetStar = (c) => c.star != null ? ` ★${c.star}` : "";
   const PCOLS = [
     { key: "ign", label: "Player", val: r => r.m.ign.toLowerCase() },
-    { key: "gear", label: "Gear", val: r => (weaponSet(r.m) || "~").toLowerCase() },
+    { key: "gear", label: "Gear", val: r => (weaponSet(r.m) || "~").toLowerCase() + (gearMix(r.m).mixed ? "~mix" : "") },
+    { key: "char", label: "Character", val: r => (charOf(r.m)?.name || "~").toLowerCase() },
+    { key: "res", label: "Resonance", val: r => resOf(r.m).map(c => c.name).join(",").toLowerCase() || "~" },
     { key: "dps", label: "Avg DPS", num: true, val: r => r.avg5 ?? -1 },
     { key: "best", label: "Best DPS", num: true, title: "Best round on their current gear", val: r => r.best ?? -1 },
     { key: "perf", label: ["Performance", "last 6 played rounds"], nosort: true },
@@ -4001,7 +4038,10 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const tr = el("tr", { class: "rrow", tabindex: "0" });
       const open = () => { expPlayer = r.m.ign; renderExpedition(); window.scrollTo({ top: 0 }); };
       tr.addEventListener("click", open); tr.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
-      tr.append(el("td", {}, el("b", { text: r.m.ign })), el("td", {}, weaponSet(r.m) ? el("span", { class: "set " + weaponSet(r.m), text: weaponSet(r.m) }) : "—"),
+      const ch = charOf(r.m), rs = resOf(r.m);
+      tr.append(el("td", {}, el("b", { text: r.m.ign })), el("td", {}, gearMixCell(r.m)),
+        el("td", { class: "small" }, ch ? ch.name + presetStar(ch) : "—"),
+        el("td", { class: "small" }, rs.length ? rs.map(c => c.name + presetStar(c)).join(", ") : "—"),
         el("td", { class: "num", title: r.avgN ? `Based on last ${r.avgN} played round${r.avgN === 1 ? "" : "s"}` : "No rounds yet", text: r.avg5 != null ? fmtRate(r.avg5) : "—" }),
         el("td", { class: "num", text: r.best != null ? fmtRate(r.best) : "—" }),
         el("td", { class: "perfcell" }, perfChart(r.last6)),
@@ -4016,8 +4056,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         isDefault ? null : el("button", { type: "button", class: "sortx", "aria-label": `Remove the ${sortNames[i]} sort`, title: "Remove this sort", text: "✕", onclick: () => { pSortStack = pSortStack.filter(x => x.key !== s.key); if (!pSortStack.length) pSortStack = [{ key: "dps", dir: -1 }]; renderPlayers(); } }))),
       isDefault ? el("span", { class: "muted", text: " · tap a column heading to sort by it" }) : el("button", { type: "button", class: "linkbtn", style: "margin-left:6px", text: "Reset to Avg DPS", onclick: () => { pSortStack = [{ key: "dps", dir: -1 }]; renderPlayers(); } }));
     const tableSpec = () => ({ title: "Player performance", subtitle: `Expedition DPS from every logged round · sorted by ${sortNames.join(", then ")}`,
-      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Gear" }, { label: "Avg DPS", align: "right" }, { label: "Best DPS", align: "right" }, { label: "Notable", w: 2.2 }],
-        rows: rows.filter(r => r.played).map(r => { const s = r.so.filter(x => x.major)[0]; return [{ text: r.m.ign, bold: true }, { text: weaponSet(r.m) || "—", bar: weaponSet(r.m) || "line" }, r.avg5 != null ? fmtRate(r.avg5) : "—", r.best != null ? fmtRate(r.best) : "—", s ? { text: s.text, color: s.t === "up" ? "good" : "bad" } : ""]; }) } },
+      sections: [{ table: { columns: [{ label: "Player", w: 1.5 }, { label: "Gear", w: 1.5 }, { label: "Character" }, { label: "Resonance", w: 1.4 }, { label: "Avg DPS", align: "right" }, { label: "Best DPS", align: "right" }, { label: "Notable", w: 1.8 }],
+        rows: rows.filter(r => r.played).map(r => { const s = r.so.filter(x => x.major)[0]; return [{ text: r.m.ign, bold: true }, { text: gearMix(r.m).text || "—", bar: weaponSet(r.m) || "line" }, charOf(r.m)?.name || "—", resOf(r.m).map(c => c.name).join(", ") || "—", r.avg5 != null ? fmtRate(r.avg5) : "—", r.best != null ? fmtRate(r.best) : "—", s ? { text: s.text, color: s.t === "up" ? "good" : "bad" } : ""]; }) } },
         { text: "DPS = damage ÷ seconds survived. Avg DPS = last 6 rounds on their current gear." }] });
     box.append(el("div", { class: "panel stack" }, el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: "Player performance" }), el("div", { class: "row" }, imgBtn("Copy as image", tableSpec))),
       el("p", { class: "small muted", style: "margin:0", text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}. Most players have no note: only big changes get one. DPS = damage ÷ seconds survived; Avg DPS is their last 6 rounds on their current gear (hover it for how many); Best DPS is their best round on current gear. Performance shows each player's last 6 played rounds on their own scale, newest on the right: hover a dot for the week and round; hollow dots are rounds on another gear set or with partial stats, not in the average. Tap a player for their round-by-round history.` }),

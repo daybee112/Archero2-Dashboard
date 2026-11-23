@@ -56,7 +56,7 @@ async def main():
         t = await pg.inner_text("#opp-list")
         check("opponents, habits, scans from the database", "LANE HABITS" in t.upper() and "ROSTER SCAN" in t.upper())
         await pg.click("#opp-all"); await pg.wait_for_timeout(300)
-        check("all 8 guilds", await pg.locator("#opp-list > details").count() == 8)
+        check("all 8 guilds", len(set(await pg.eval_on_selector_all("#opp-list > details", "d=>d.map(x=>x.dataset.guild)"))) == 8)
         await pg.click("#exp-sub button[data-sub=results]"); await pg.wait_for_timeout(300)
         t = await pg.inner_text("#exp-results")
         check("week results (other guilds' matches) from the database", "Happiness" in t and "1st" in t.lower() or "1ST" in t.upper())
