@@ -667,7 +667,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
             <li><b>Rounds:</b> each round's lanes for us and the opponent, the <b>Message to the officers</b> explaining the plan, notes and reasoning, and <b>Round details</b> with lane results, fight lengths and damage. Played rounds are read-only.</li>
             <li><b>Week results:</b> the week so far after each round (record, standings, each round's key notes, top DPS), then the final results and what we learned once Round 3 is in.</li>
             <li><b>Roster:</b> everyone's gear (hover or tap-and-hold <b>Mixed</b> to see which sets), character with resonance under it, Avg DPS, best round, and a graph of their last 6 rounds. Search by name, character or gear. Tap a name for full round-by-round history.</li>
-            <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to add earlier ones below). Each tile is one guild in one week, so a guild we met in several weeks gets a tile per week. Tiles show their roster scans, lane history, each player's damage and seconds survived, and habits for that week.</li>
+            <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to list every week, oldest first, in the order we faced them). Each tile is one guild in one week, so a guild we met in several weeks gets a tile per week. Tiles show their roster scans, lane history, each player's damage and seconds survived, and habits for that week.</li>
             <li><b>Findings:</b> what we've learned so far, how Expedition works, and the assumptions behind the numbers.</li>
           </ul>
           <p>Guild names link to the Opponents view, and player names link to that player's history.</p>
@@ -2643,7 +2643,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       (p.behavior?.range || p.behavior?.movement) ? el("span", { class: "muted", text: ` · behavior ${[p.behavior.range, p.behavior.movement].filter(Boolean).join(" / ")}` }) : null));
     const pm = playerMatches(m.ign);
     if (pm.length) box.append(el("div", { class: "row small" }, `${pm.length} logged Expedition round${pm.length > 1 ? "s" : ""}. `,
-      el("button", { type: "button", class: "linkbtn", text: "See round-by-round history", onclick: () => { expSub = "players"; expPlayer = m.ign; goTo("expedition"); } })));
+      el("button", { type: "button", class: "linkbtn", text: "See round-by-round history", onclick: () => { openPlayer(m.ign, { tab: "roster" }); goTo("expedition"); } })));
     if (m.notes) box.append(el("p", { class: "small", style: "margin:0" }, el("b", { text: "Notes: " }), m.notes));
     box.append(el("p", { class: "small muted", style: "margin:0", text: m.updatedAt ? `Last edited ${new Date(m.updatedAt).toLocaleString()}.` : (m.src || "") }));
   }
@@ -3062,6 +3062,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   // opponents/<id> replaces a seed opponent. Everyone can view; officers edit.
   let EXP = { weeks: [], opponents: {}, observations: [], findings: [], mechanics: {} };
   let expDb = {}, oppDb = {}, expWeekId = null, expRoundN = null, expRoundPicked = false, expSub = "rounds", expEditing = null, expPlayer = null, expSuggest = null;
+  let expBack = null;   // where a player page was opened from: { sub } (an Expedition view) or { tab } (another tab), plus scroll position
+  const openPlayer = (ign, from) => { expBack = { ...from, y: window.scrollY }; expSub = "players"; expPlayer = ign; };
   const LANES = ["left", "middle", "right"];
   const LANE_LABEL = { left: "Left", middle: "Middle", right: "Right" };
   const oppId = (name) => "o-" + [...new TextEncoder().encode(name)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -3387,7 +3389,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   }
   function playerLink(ign) {
     return el("button", { type: "button", class: "linkbtn plink", text: ign, title: `${ign}: round-by-round history`,
-      onclick: (e) => { e.stopPropagation(); expSub = "players"; expPlayer = ign; renderExpedition(); window.scrollTo({ top: 0 }); } });
+      onclick: (e) => { e.stopPropagation(); openPlayer(ign, { sub: expSub, round: expRoundN }); renderExpedition(); window.scrollTo({ top: 0 }); } });
   }
   // read-only round details
   function roundDetails(w, r) {
@@ -3820,19 +3822,23 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const latest = (n) => weeksOf(n)[0] || "";
     const names = Object.keys(opps).sort((a, z) => latest(z).localeCompare(latest(a)) || a.localeCompare(z));
     const mine = names.filter(inWeek);
-    // One tile = one guild in one week (per Daby: never several weeks in one tile). Show all adds a tile for every other
-    // week each guild appeared in, this week's guilds first so their earlier weeks sit right under them.
-    const tiles = mine.map(n => ({ n, wk: w }));
-    if (oppShowAll) for (const n of [...mine, ...names.filter(n => !inWeek(n))]) {
-      const ws = weeksOf(n).filter(id => !w || id !== w.id);
-      if (ws.length) for (const id of ws) tiles.push({ n, wk: weekById(id), other: true });
-      else if (!mine.includes(n)) tiles.push({ n, wk: null, other: true });
+    // One tile = one guild in one week (per Daby: never several weeks in one tile). Show all lists every guild-week in
+    // chronological order (oldest week first), then by the round we faced them; guilds we only saw in other matches last.
+    const roundIn = (n, wk) => { const r = wk && (wk.rounds || []).find(x => x.opponent === n); return r ? r.n : 99; };
+    const byRound = (wk) => (a, z) => roundIn(a.n, wk) - roundIn(z.n, wk) || a.n.localeCompare(z.n);
+    let tiles = mine.map(n => ({ n, wk: w })).sort(byRound(w));
+    if (oppShowAll) {
+      tiles = [];
+      for (const n of names) { const ws = weeksOf(n); if (ws.length) for (const id of ws) tiles.push({ n, wk: weekById(id) }); else tiles.push({ n, wk: null }); }
+      tiles.sort((a, z) => (a.wk ? 0 : 1) - (z.wk ? 0 : 1) || (a.wk && z.wk ? a.wk.id.localeCompare(z.wk.id) : 0) || roundIn(a.n, a.wk) - roundIn(z.n, z.wk) || a.n.localeCompare(z.n));
     }
     if (!mine.length) list.append(el("div", { class: "panel muted small", text: "No opponents for this week yet." + (oppShowAll ? "" : " Tap Show all guilds to see earlier ones.") }));
     const editorShown = new Set(), opened = new Set();
-    let secShown = false;
-    for (const { n, wk, other } of tiles) {
-      if (other && !secShown) { list.append(el("h3", { class: "oppsec", text: "Other weeks" })); secShown = true; }
+    // a guild opened by link: its tile for the selected week, else its latest
+    const openTile = expOpenOpp ? (tiles.find(t => t.n === expOpenOpp && w && t.wk && t.wk.id === w.id) || [...tiles].reverse().find(t => t.n === expOpenOpp)) : null;
+    let lastWeek; const selW = w;
+    for (const tile of tiles) { const { n, wk } = tile;
+      if (oppShowAll && (wk ? wk.id : "") !== lastWeek) { lastWeek = wk ? wk.id : ""; list.append(el("h3", { class: "oppsec", text: wk ? wk.label + (selW && wk.id === selW.id ? " (selected)" : "") : "Not faced yet" })); }
       const w = wk;   // this tile's week (shadows the selected week)
       const weekOnly = !!w;
       const o = opps[n];
@@ -3905,7 +3911,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       // the editor goes on each guild's first tile only (seed opponents have no name field; without it the save went to a nameless doc)
       if (isEditor && !editorShown.has(n)) { editorShown.add(n); body.append(opponentEditor({ ...o, name: n })); }
       list.append(card);
-      if (expOpenOpp === n && !opened.has(n)) { opened.add(n); card.open = true; setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 0); }
+      if (tile === openTile && !opened.has(n)) { opened.add(n); card.open = true; setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 0); }
     }
     expOpenOpp = null;
   }
@@ -4041,7 +4047,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const tb = el("tbody");
     for (const r of rows) {
       const tr = el("tr", { class: "rrow", tabindex: "0" });
-      const open = () => { expPlayer = r.m.ign; renderExpedition(); window.scrollTo({ top: 0 }); };
+      const open = () => { openPlayer(r.m.ign, { sub: "players" }); renderExpedition(); window.scrollTo({ top: 0 }); };
       tr.addEventListener("click", open); tr.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
       const ch = charOf(r.m), rs = resOf(r.m);
       tr.append(el("td", {}, el("b", { text: r.m.ign })), el("td", {}, gearMixCell(r.m)),
@@ -4106,7 +4112,15 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           rows: [...ms].reverse().map(x => [`${x.weekLabel} R${x.round} vs ${x.opponent}`, LANE_LABEL[x.lane] + (x.anchor ? " ⚓" : ""), fmtK(x.dmg), x.surv ? x.surv + "s" : "—", { text: x.dps != null ? fmtRate(x.dps) + (x.counts ? "" : " *") : "—", bold: x.counts }, x.index != null ? x.index.toFixed(2) + "×" : "—"]) } },
         ms.some(x => !x.counts && x.dps != null) ? { text: "* not counted in averages (different gear set or partial round)." } : null].filter(Boolean) });
     const tipsForImage = [];
-    panel.append(el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: ign }), el("div", { class: "row" }, imgBtn("Copy as image", detailSpec), el("button", { type: "button", class: "btn ghost", text: "All players", onclick: () => { expPlayer = null; renderExpedition(); } }))));
+    const back = expBack || { sub: "players" };
+    const backLabel = back.tab === "roster" ? "Back to Roster" : back.sub === "rounds" ? "Back to Rounds" : back.sub === "opponents" ? "Back to Opponents" : back.sub === "results" ? "Back to Week results" : "Back to Expedition roster";
+    const goBack = () => {
+      const y = back.y || 0; expPlayer = null; expBack = null;
+      if (back.tab) { goTo(back.tab); } else { expSub = back.sub || "players"; if (back.round != null) { expRoundN = back.round; expRoundPicked = true; } renderExpedition(); }
+      requestAnimationFrame(() => window.scrollTo({ top: y }));
+    };
+    panel.append(el("div", { class: "row" }, el("button", { type: "button", class: "btn ghost", id: "player-back", text: "← " + backLabel, onclick: goBack })));
+    panel.append(el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: ign }), el("div", { class: "row" }, imgBtn("Copy as image", detailSpec))));
     const stat = (k, v) => el("div", { class: "stat" }, el("div", { class: "k", text: k }), el("div", { class: "v", style: "font-size:1.15rem", text: v }));
     panel.append(el("div", { class: "stats" }, stat("Avg DPS", a ? fmtRate(a.avg) : "—"), stat("Rounds counted", `${c.length} of ${ms.length}`),
       stat("Best", c.length ? fmtRate(Math.max(...c.map(x => x.dps))) : "—"), stat("vs lane median", c.length ? median(c.map(x => x.index)).toFixed(2) + "×" : "—"),

@@ -6,6 +6,16 @@
  },
  "releases": [
   {
+   "id": "v8.1.1",
+   "date": "2026-11-22",
+   "by": "Daby (published by Claude)",
+   "title": "Opponents in order, back button on player pages",
+   "changes": [
+    "Opponents: Show all guilds lists every week in order, oldest first, with a heading per week; within a week, guilds are in the order we faced them (Round 1, 2, 3). The selected week alone is in round order too.",
+    "Player pages (from the Expedition roster, a round, or the main Roster) have a “← Back” button at the top that returns you where you were, scrolled to the same spot."
+   ]
+  },
+  {
    "id": "v8.1.0",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",

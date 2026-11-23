@@ -60,6 +60,13 @@ async def main():
         check("Notable header left-aligned", al in ("left", "start"), al)
         tip = await pg.get_attribute("#exp-players tbody tr:first-child td:nth-child(4)", "title")
         check("DPS avg tooltip", tip and tip.startswith("Based on last ") and "played round" in tip, str(tip))
+        await pg.evaluate("window.scrollTo(0, 600)"); await pg.wait_for_timeout(150)
+        await pg.evaluate("[...document.querySelectorAll('#players-table tbody tr')].find(r=>r.innerText.startsWith('Gaga94')).click()"); await pg.wait_for_timeout(300)
+        check("player page has a Back to Expedition roster button at the top", (await pg.inner_text("#player-back")).strip() == "← Back to Expedition roster")
+        await pg.click("#player-back"); await pg.wait_for_timeout(400)
+        y = await pg.evaluate("window.scrollY")
+        check("back returns to the roster at the same scroll position", await pg.locator("#players-table").count() == 1 and abs(y - 600) < 5, str(y))
+        await pg.evaluate("window.scrollTo(0, 0)")
         await pg.hover("#exp-players tbody tr:first-child .perfdot:last-of-type"); await pg.wait_for_timeout(150)
         pt = await pg.inner_text(".perftip")
         check("perf dot tooltip names week and round", "Week of Nov 16 · Round 3" in pt, pt)
@@ -79,6 +86,8 @@ async def main():
         # opponents
         await pg.click("#exp-sub button[data-sub=opponents]"); await pg.wait_for_timeout(300)
         t = await pg.inner_text("#opp-list"); n = await pg.locator("#opp-list > details").count(); check("week scope: 3 guilds", n == 3, str(n))
+        d3 = await pg.eval_on_selector_all("#opp-list > details > summary", "s=>s.map(x=>x.innerText.split(' · ')[0])")
+        check("week scope: in the round we faced them", d3 == ["UkraineArchers", "Happiness", "Holymoly"], str(d3))
         hap = pg.locator("#opp-list > details", has_text="Happiness").first
         await hap.locator(":scope > summary").click(); await pg.wait_for_timeout(200)
         ht = await hap.inner_text()
@@ -86,7 +95,8 @@ async def main():
         await pg.click("#opp-all"); await pg.wait_for_timeout(200)
         hap16 = pg.locator("#opp-list > details[data-guild='Happiness'][data-week='2026-11-16']")
         hap2 = pg.locator("#opp-list > details[data-guild='Happiness'][data-week='2026-11-02']")
-        check("show all: Happiness keeps its Nov 16 tile and gets a separate Nov 2 tile", await hap16.count() == 1 and await hap2.count() == 1)
+        dbg = await pg.eval_on_selector_all("#opp-list > details", "d=>d.map(x=>x.dataset.guild+'|'+x.dataset.week)")
+        check("show all: Happiness keeps its Nov 16 tile and gets a separate Nov 2 tile", await hap16.count() == 1 and await hap2.count() == 1, str(dbg) + await pg.inner_text("#opp-all"))
         ht16 = await hap16.inner_text()
         check("…Nov 16 tile still shows only Nov 16", "Week of Nov 2" not in ht16 and "rotated every round" not in ht16, ht16[:200])
         await hap2.locator(":scope > summary").click(); await pg.wait_for_timeout(200)
@@ -94,8 +104,13 @@ async def main():
         check("…Nov 2 tile shows only Nov 2 (lanes, habits)", "LANE HISTORY, WEEK OF NOV 2" in ht2.upper() and "Week of Nov 16" not in ht2 and "rotated every round" in ht2, ht2[:300])
         sums = await pg.eval_on_selector_all("#opp-list > details > summary", "s=>s.map(x=>x.innerText)")
         check("every tile names one week", all(x.count("Week of") <= 1 for x in sums) and len(sums) == len(set(sums)), str(sums))
-        order = [x.split(" · ")[0] for x in sums]
-        check("other weeks of this week's guilds come first", order.index("Happiness", 3) < order.index("PWNZ"), str(order))
+        wk = {"Week of Nov 2": 2, "Week of Nov 9": 9, "Week of Nov 16": 16}
+        seq = [wk.get(next((k for k in wk if (k + " ") in x + " " and (k + "6") not in x), ""), 99) for x in sums]
+        check("show all: chronological, oldest week first", seq == sorted(seq), str(list(zip(seq, sums))))
+        nov16 = [x.split(" · ")[0] for x in sums if "Week of Nov 16" in x]
+        check("…and within a week, in the round we faced them", nov16 == ["UkraineArchers", "Happiness", "Holymoly"], str(nov16))
+        heads = await pg.eval_on_selector_all("#opp-list > h3.oppsec", "h=>h.map(x=>x.innerText)")
+        check("…with a heading per week (selected week marked)", len(heads) >= 3 and "(selected)" in " ".join(heads).lower() and heads[0].lower().startswith("week of nov 2"), str(heads))
         await pg.click("#opp-all"); await pg.wait_for_timeout(200)
         lh = await pg.inner_text("#opp-list")
         check("no search or guild filter", await pg.locator("#opp-q, #opp-kind").count() == 0)
@@ -105,7 +120,7 @@ async def main():
         await pg.screenshot(path="/tmp/shots/ux2-opp.png", full_page=True)
         b0 = await pg.inner_text("#opp-all"); await pg.click("#opp-all"); await pg.wait_for_timeout(200)
         n = await pg.locator("#opp-list > details").count(); t = await pg.inner_text("#opp-list")
-        check("show all: this week's 3, then a tile per other guild-week", n > 8 and "Show all guilds (8)" in b0 and t.index("Holymoly") < t.upper().index("OTHER WEEKS") < t.index("PWNZ"), str(n))
+        check("show all: a tile per guild-week", n > 8 and "Show all guilds (8)" in b0, str(n))
         check("button flips to Hide", "Hide other weeks" in await pg.inner_text("#opp-all"))
         await pg.screenshot(path="/tmp/shots/ux2-opp-all.png", full_page=True)
         await pg.click("#opp-all"); await pg.wait_for_timeout(200)
