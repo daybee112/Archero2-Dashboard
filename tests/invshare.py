@@ -7,6 +7,7 @@ from playwright.async_api import async_playwright
 srv = http.server.ThreadingHTTPServer(("127.0.0.1", 8786), functools.partial(http.server.SimpleHTTPRequestHandler, directory=APP))
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 MOCK = open(_os.path.join(HERE, "mock.js")).read(); res = []
+EV = lambda pre: f"[...window.__store.entries()].filter(([k])=>k.startsWith('{pre}/')).flatMap(([k,v])=>v.events||[]).sort((a,z)=>a.at-z.at)"
 def check(n, c, x=""): res.append(c); print("PASS" if c else "FAIL", n, x)
 FUT = 4102444800000  # far future timestamp
 async def page(b, member=False, seed=""):
@@ -32,7 +33,7 @@ async def main():
         await pg.click("#btn-save-inv"); await pg.wait_for_timeout(700)
         d = json.loads(await pg.evaluate("JSON.stringify(window.__store.get('inventory/m-shoex')||null)") or "null") or {}
         check("saved to inventory/m-shoex as an officer edit", d.get("byOfficer") and d.get("inv", {}).get("chars", {}).get("Helix") == 6, str(d)[:120])
-        a = await pg.evaluate("JSON.stringify(window.__store.get('audit/u-officer').events.slice(-1)[0])")
+        a = await pg.evaluate(f"JSON.stringify({EV('audit/u-officer/months')}.slice(-1)[0])")
         check("logged with before -> after", "edited inventory" in a and "inv.chars.Helix: empty → 6" in a and "etched" not in a, a[:200])
         check("officer's own private inventory untouched", not await pg.evaluate("JSON.stringify(window.__store.get('data/users/u-officer/builds-account')||'').includes('Shoex')"))
         await pg.click("#inv-viewing >> text=Back to my inventory"); await pg.wait_for_timeout(200)
@@ -51,8 +52,10 @@ async def main():
         await mp.fill("#roster-search", "shoex"); await mp.click("#roster-body tr:first-child"); await mp.wait_for_timeout(300)
         await mp.click("text=This is me: link to my account"); await mp.wait_for_timeout(1200)
         pr = json.loads(await mp.evaluate("JSON.stringify(window.__store.get('presets/u-member')||null)") or "null") or {}
-        check("member's link is public (presets/<id>)", pr.get("memberId") == "m-shoex" and pr.get("linked") is True, str(pr)[:120])
-        mi = (json.loads(await mp.evaluate("JSON.stringify(window.__store.get('presets/u-member')||null)") or "null") or {}).get("shared") or {}
+        lk = json.loads(await mp.evaluate("JSON.stringify(window.__store.get('presets/u-member/meta/link')||null)") or "null") or {}
+        check("member's link is public (presets/<id>/meta/link)", lk.get("memberId") == "m-shoex" and lk.get("linked") is True, str(lk)[:120])
+        check("…with a copy on presets/<id> for older pages", pr.get("memberId") == "m-shoex" and pr.get("linked") is True and "shared" not in pr, str(pr)[:120])
+        mi = json.loads(await mp.evaluate("JSON.stringify(window.__store.get('presets/u-member/meta/inventory')||null)") or "null") or {}
         check("member never writes the inventory collection", await mp.evaluate("window.__store.get('inventory/u-member')") is None)
         check("member's inventory shared with memberId", mi.get("memberId") == "m-shoex", str(mi)[:120])
         priv = await mp.evaluate("JSON.stringify(window.__store.get('data/users/u-member/builds-account')||null)")
@@ -66,7 +69,7 @@ async def main():
         seed2 = """window.__store.set('data/users/u-member/builds-account', { inv: { chars: { Otta: 4 }, gear: {}, runes: {}, etched: 0, mystlings: {} }, ign: 'Shoex', builds: [], linkedMemberId: 'm-shoex', savedAt: 1795300000000, v: 3 });"""
         fp, ferrs = await page(b, member=True, seed=seed2)
         await fp.wait_for_timeout(800)
-        fi = (json.loads(await fp.evaluate("JSON.stringify(window.__store.get('presets/u-member')||null)") or "null") or {}).get("shared") or {}
+        fi = json.loads(await fp.evaluate("JSON.stringify(window.__store.get('presets/u-member/meta/inventory')||null)") or "null") or {}
         check("existing private inventory shared on first visit", fi.get("inv", {}).get("chars", {}).get("Otta") == 4, str(fi)[:120])
         await fp.click("#tab-inventory"); await fp.wait_for_timeout(200)
         check("one-time notice shown", "now visible to the whole guild" in await fp.inner_text("#inv-shared-note"))

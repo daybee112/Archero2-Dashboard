@@ -1647,8 +1647,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   async function shareInventoryFirstTime() {
     if (invShareChecked || !db || !myId) return; invShareChecked = true;
     try {
-      const snap = await db.doc("presets/" + myId).get();
-      if (!(snap.exists && (snap.data() || {}).shared) && !isExample && (ign || invFilled({ inv }))) {
+      const snap = await db.doc("presets/" + myId).get(), meta = await db.doc(`presets/${myId}/meta/inventory`).get();
+      if (!(snap.exists && (snap.data() || {}).shared) && !meta.exists && !isExample && (ign || invFilled({ inv }))) {
         await publishMyInventory("shared inventory (first time)");
         let seen = false; try { seen = localStorage.getItem("aa-inv-shared-notice") === "1"; } catch {}
         if (!seen) { const n = $("inv-shared-note"); n.textContent = "Heads up: inventories are now visible to the whole guild, so officers can plan with real data. Your builds stay private. Only you and officers can change your inventory."; n.hidden = false; try { localStorage.setItem("aa-inv-shared-notice", "1"); } catch {} }
@@ -1852,10 +1852,11 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
 
   // ================= audit trail (shared-data changes) =================
   // ----- activity log: every shared change, who / when / what (before -> after) / how -----
-  // Officers write audit/<their id> (only they can). Entries past 400 move to audit/<id>/months/<yyyy-mm>, oldest first, and are
-  // removed from the main doc only after the archive write succeeds, so nothing is ever dropped.
-  // Members can't write the activity log, so their changes go into their own presets/<id> doc ("log"); it's theirs to write, so a
-  // determined member could edit their own entries (officers' entries can't be touched by anyone else).
+  // v8: officers write one record per month, audit/<their id>/months/<yyyy-mm> (only they can). audit/<id> itself is kept as an
+  // empty marker so everyone's page can find the months; entries older pages wrote there are moved into the months.
+  // Members can't write the activity log, so their changes go into their own presets/<id>/log/<yyyy-mm>. The page only ever
+  // adds to it; the rules can't stop a determined member editing their own record, so officers' pages keep a copy and flag
+  // any later change or removal (officers' entries can't be touched by anyone else).
   const SRC = { typed: "typed in the tool", screenshot: "screenshot import", builds: "from the Builds tab", roster: "from the Roster", claude: "by Claude" };
   function shortVal(v) { if (v == null || v === "") return "empty"; const t = typeof v === "object" ? JSON.stringify(v) : String(v); return t.length > 60 ? t.slice(0, 57) + "…" : t; }
   const DIFF_SKIP = new Set(["updatedAt", "updatedBy", "v", "presetUpdatedAt"]);
@@ -1885,6 +1886,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     auditQ = auditQ.then(async () => {
       try {
         if (!isEditor) { await memberLog(ev); return; }
+        try { await moveMyAudit(); await appendMonth(`audit/${myId}/months/${monthKey(ev.at)}`, [ev]); return; }
+        catch { /* the month record was refused: fall back to the single record older pages use */ }
         const ref = db.doc("audit/" + myId);
         const snap = await ref.get();
         let events = snap.exists && Array.isArray((snap.data() || {}).events) ? snap.data().events : [];
@@ -1906,14 +1909,62 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     });
     return auditQ;
   }
+  const monthKey = (t) => new Date(t).toISOString().slice(0, 7);
+  const evKey = (e) => `${e.mirrorOf || ""}|${e.at}|${e.action}|${e.detail || ""}`;
+  // Add entries to a month record (read, add what's new, write). Nothing here ever edits or removes an entry.
+  async function appendMonth(path, list) {
+    const ref = db.doc(path), snap = await ref.get(), d = snap.exists ? (snap.data() || {}) : {};
+    const prev = Array.isArray(d.events) ? d.events : [], have = new Set(prev.map(evKey));
+    const add = list.filter(e => !have.has(evKey(e)));
+    if (add.length || !snap.exists) await ref.set({ month: path.split("/").pop(), events: prev.concat(add), v: 1 });
+  }
+  const groupByMonth = (list) => { const o = {}; for (const e of list) (o[monthKey(e.at)] = o[monthKey(e.at)] || []).push(e); return o; };
+  // Officers: move entries an older page left in audit/<id> into the month records, then empty it (only after the copies succeed).
+  let movedAudit = null;
+  function moveMyAudit() {
+    if (!movedAudit) movedAudit = (async () => {
+      const ref = db.doc("audit/" + myId), snap = await ref.get(), d = snap.exists ? (snap.data() || {}) : null;
+      const evs = d && Array.isArray(d.events) ? d.events : [];
+      if (d && d.v >= 3 && !evs.length) return;
+      for (const [k, list] of Object.entries(groupByMonth(evs))) await appendMonth(`audit/${myId}/months/${k}`, list);
+      await ref.set({ events: [], v: 3, movedAt: Date.now() });
+    })().catch(e => { movedAudit = null; throw e; });
+    return movedAudit;
+  }
+  // Members: presets/<id> keeps the preset (plus a copy of the link for pages older than v8); the link, shared inventory and
+  // log move to presets/<id>/meta/link, presets/<id>/meta/inventory and presets/<id>/log/<yyyy-mm>. create: make the record
+  // if it doesn't exist yet (other pages find the records under it through it).
+  let movedMine = null;
+  function moveMyRecords(create) {
+    if (!db || !myId) return Promise.resolve();
+    if (!movedMine) movedMine = (async () => {
+      const ref = db.doc("presets/" + myId), snap = await ref.get(), d = snap.exists ? (snap.data() || {}) : null;
+      if (!d) { if (!create) { movedMine = null; return; } await ref.set({ v: 2 }); return; }
+      if (d.v >= 2 && !d.log && !d.shared) return;
+      for (const [k, list] of Object.entries(groupByMonth(Array.isArray(d.log) ? d.log : []))) await appendMonth(`presets/${myId}/log/${k}`, list);
+      if (d.shared) {
+        const iref = db.doc(`presets/${myId}/meta/inventory`), cur = await iref.get();
+        if (!cur.exists || ((cur.data() || {}).at || 0) < (d.shared.at || 0)) await iref.set(d.shared);
+      }
+      if (d.memberId !== undefined || d.linked !== undefined) {
+        const lref = db.doc(`presets/${myId}/meta/link`), cur = await lref.get();
+        if (!cur.exists) await lref.set({ memberId: d.memberId ?? null, linked: d.linked !== false, at: Date.now() });
+      }
+      const top = { ...d }; delete top.log; delete top.shared; top.v = 2;
+      await ref.set(top);
+    })().catch(e => { movedMine = null; throw e; });
+    return movedMine;
+  }
   async function memberLog(ev) {
+    try { await moveMyRecords(true); await appendMonth(`presets/${myId}/log/${monthKey(ev.at)}`, [ev]); return; }
+    catch { /* refused: fall back to the single record older pages use */ }
     const ref = db.doc("presets/" + myId), snap = await ref.get();
     const d = snap.exists ? (snap.data() || {}) : {};
     const log = Array.isArray(d.log) ? d.log : [];
     log.push(ev);
     await ref.set({ ...d, log: log.slice(-300), v: 1 });
   }
-  let lastAuditDocs = [], auditOlder = [], tgActivity = [], auditRows = [];
+  let lastAuditDocs = [], auditOlder = [], tgActivity = [], auditRows = [], auditMonths = {}, auditMonthSubs = {};
   function renderAuditMerged() { renderAudit(lastAuditDocs); }
   function collectAudit(docs) {
     const rows = [];
@@ -1957,11 +2008,14 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     mirroring = true;
     auditQ = auditQ.then(async () => {
       try {
-        const ref = db.doc("audit/" + myId), snap = await ref.get();
-        const events = snap.exists && Array.isArray((snap.data() || {}).events) ? snap.data().events : [];
-        const mine = new Set(events.filter(e => e.mirrorOf).map(e => mirrorKey(e.mirrorOf, e)));
-        const add = todo.filter(e => !mine.has(mirrorKey(e.mirrorOf, e)));
-        if (add.length) await ref.set({ events: events.concat(add), v: 2 });
+        try { await moveMyAudit(); await appendMonth(`audit/${myId}/months/${monthKey(Date.now())}`, todo); }
+        catch {
+          const ref = db.doc("audit/" + myId), snap = await ref.get();
+          const events = snap.exists && Array.isArray((snap.data() || {}).events) ? snap.data().events : [];
+          const mine = new Set(events.filter(e => e.mirrorOf).map(e => mirrorKey(e.mirrorOf, e)));
+          const add = todo.filter(e => !mine.has(mirrorKey(e.mirrorOf, e)));
+          if (add.length) await ref.set({ events: events.concat(add), v: 2 });
+        }
       } catch { /* try again on the next update */ }
       mirroring = false;
     });
@@ -2102,7 +2156,16 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   function subscribeAudit() {
     if (!db) { $("audit-status").textContent = "Open this page inside Claude to see activity."; return; }
     const t = setTimeout(() => { $("audit-status").textContent = "Can't reach the activity log yet."; }, 10000);
-    db.collection("audit").onSnapshot((snap) => { if (!snap.metadata.fromCache) clearTimeout(t); renderAudit(snap.docs); },
+    $("audit-older").hidden = true;   // v8: every month loads with the page
+    let rt = 0; const later = () => { clearTimeout(rt); rt = setTimeout(renderAuditMerged, 30); };
+    db.collection("audit").onSnapshot((snap) => {
+      if (!snap.metadata.fromCache) clearTimeout(t);
+      for (const d of snap.docs) if (!auditMonthSubs[d.id]) auditMonthSubs[d.id] = db.collection(`audit/${d.id}/months`).onSnapshot((ms) => {
+        auditMonths[d.id] = ms.docs.flatMap(m => ((m.data() || {}).events || []).map(e => ({ by: d.id, role: "officer", ...e })));
+        auditOlder = Object.values(auditMonths).flat(); later();
+      }, () => {});
+      renderAudit(snap.docs);
+    },
       () => { clearTimeout(t); $("audit-status").textContent = "Couldn't load the activity log."; });
     db.collection("tg-results").orderBy("at", "desc").limit(300).onSnapshot((snap) => { tgActivity = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderAuditMerged(); }, () => {});
   }
@@ -2112,7 +2175,18 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   // A member's database doc, once saved, replaces their seed entry. Calculated fields are never stored.
   // ----- Expedition preset sync: my Builds-tab "Expedition preset" <-> my linked roster profile -----
   // Newest wins, by time. Officers write the roster doc; members publish to presets/<their id> (rule: write own).
-  let presetSubs = {};   // user id -> { memberId, ign, preset, at }
+  let presetSubs = {};   // user id -> { memberId, linked, ign, preset, at, shared, log }, merged from the records below
+  let presetTop = {}, presetMeta = {}, presetLog = {}, presetRecSubs = {};
+  // v8 records win; fields an older page still writes on presets/<id> are read too (newest inventory wins, logs combine).
+  function mergePreset(uidV) {
+    const top = presetTop[uidV] || {}, meta = presetMeta[uidV] || {}, out = { ...top };
+    if (meta.link) { out.memberId = meta.link.memberId; out.linked = meta.link.linked; }
+    if (meta.inventory && (!top.shared || (meta.inventory.at || 0) >= (top.shared.at || 0))) out.shared = meta.inventory;
+    const seen = new Set(), log = [];
+    for (const e of [...(presetLog[uidV] || []), ...(Array.isArray(top.log) ? top.log : [])]) { const k = evKey(e); if (!seen.has(k)) { seen.add(k); log.push(e); } }
+    out.log = log.sort((a, z) => a.at - z.at);
+    return out;
+  }
   const presetOf = (b) => ({ chars: clone(b.chars || [null, null, null]), gear: clone(b.gear || {}), runes: clone(b.runes || {}), mystling: b.mystling ? clone(b.mystling) : null, behavior: clone(b.behavior || { range: "", movement: "" }) });
   const presetKey = (p) => JSON.stringify({ c: (p?.chars || []).map(c => c ? c.name : null), g: D.gearSlots.map(s => { const x = (p?.gear || {})[s.id] || {}; return [x.set || "", x.q || ""]; }),
     r: RTYPES.map(t => (p?.runes?.[t] || []).filter(Boolean).map(r => r.name + "/" + (r.q || ""))), m: p?.mystling ? p.mystling.name : null, b: [p?.behavior?.range || "", p?.behavior?.movement || ""] });
@@ -2129,9 +2203,10 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const nm = clone(mm); nm.preset = presetOf(ex); nm.presetDate = localDate(at); nm.presetUpdatedAt = at; nm.presetSrc = "Updated by the player";
       await saveMember(nm, "updated own preset", `${mm.ign} (from the Builds tab)`);
     } else {
+      try { await moveMyRecords(true); } catch { /* the old single record still works */ }
       const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {};
       const changes = diffObj({ preset: clone(mm.preset || {}) }, { preset: presetOf(ex) });
-      await ref.set({ ...d, memberId: mm.id, ign: mm.ign, preset: presetOf(ex), at, v: 1 });
+      await ref.set({ ...d, memberId: mm.id, ign: mm.ign, preset: presetOf(ex), at, v: d.log || d.shared ? 1 : 2 });
       await logEvent("updated own preset", `${mm.ign} (from the Builds tab)`, { src: "builds", changes });
     }
     return "pushed";
@@ -2371,21 +2446,34 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   const invFilled = (x) => !!x && !!(x.ign || Object.keys(x.inv?.chars || {}).length || Object.values(x.inv?.gear || {}).some(g => Object.keys(g || {}).length) || Object.keys(x.inv?.runes || {}).length || Object.keys(x.inv?.mystlings || {}).length);
   async function publishMyInventory(why) {
     if (!db || !myId) return;
-    const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {}, prev = d.shared || {};
     const mm = myMember();
     const doc = { memberId: mm ? mm.id : null, ign, inv: clone(inv), at: Date.now(), by: myId, v: 1 };
-    const changes = diffObj({ ign: prev.ign || "", inv: normalizeInv(prev.inv) }, { ign: doc.ign, inv: doc.inv });
-    if (d.shared && !changes.length && prev.memberId === doc.memberId) return;
-    await ref.set({ ...d, shared: doc, v: 1 }); invSubs[myId] = doc;
+    const same = (prev) => !diffObj({ ign: prev.ign || "", inv: normalizeInv(prev.inv) }, { ign: doc.ign, inv: doc.inv }).length && prev.memberId === doc.memberId;
+    let changes;
+    try {
+      await moveMyRecords(true);
+      const iref = db.doc(`presets/${myId}/meta/inventory`), cur = await iref.get(), prev = cur.exists ? (cur.data() || {}) : null;
+      changes = diffObj({ ign: (prev || {}).ign || "", inv: normalizeInv((prev || {}).inv) }, { ign: doc.ign, inv: doc.inv });
+      if (prev && same(prev)) return;
+      await iref.set(doc);
+    } catch {
+      const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {}, prev = d.shared || {};
+      changes = diffObj({ ign: prev.ign || "", inv: normalizeInv(prev.inv) }, { ign: doc.ign, inv: doc.inv });
+      if (d.shared && same(prev)) return;
+      await ref.set({ ...d, shared: doc, v: 1 });
+    }
+    invSubs[myId] = doc;
     logEvent(why || "updated own inventory", `${mm ? mm.ign : (ign || "unlinked account")}`, { src: "typed", changes });
   }
   // A member's own link goes on their presets/<id> record so the roster can show it (officers' links stay on the roster doc).
   async function publishMyLink(memberIdOrNull) {
     if (!db || !myId || isEditor) return;
+    try { await moveMyRecords(true); } catch { /* the old single record still works */ }
     const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {};
-    const nd = { ...d, v: 1 };
+    const nd = { ...d, v: d.log || d.shared ? 1 : 2 };
     if (memberIdOrNull) { nd.memberId = memberIdOrNull; nd.linked = true; } else { nd.linked = false; }
-    await ref.set(nd);
+    try { await db.doc(`presets/${myId}/meta/link`).set({ memberId: nd.memberId ?? null, linked: nd.linked, at: Date.now() }); } catch { /* the copy below still works */ }
+    await ref.set(nd);   // copy for pages older than v8
   }
 
   const COLS = [
@@ -2953,10 +3041,21 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const next = {}; for (const d of snap.docs) next[d.id] = d.data();
       invDocs = next; rebuildInvSubs(); renderRoster(); if (invView && !invView.dirty) { const m = memberById(invView.memberId); invView.sh = m ? sharedInv(m) : null; renderInvViewing(); }
     }, () => {});
-    db.collection("presets").onSnapshot((snap) => {
-      const next = {}; for (const d of snap.docs) next[d.id] = d.data();
+    let pt = 0;
+    const rebuild = () => {
+      const next = {}; for (const uidV of Object.keys(presetTop)) next[uidV] = mergePreset(uidV);
       presetSubs = next; rebuildInvSubs(); renderRoster(); renderAuditMerged();
       if (invView && !invView.dirty) { const m = memberById(invView.memberId); invView.sh = m ? sharedInv(m) : null; renderInvViewing(); }
+    };
+    const later = () => { clearTimeout(pt); pt = setTimeout(rebuild, 30); };
+    db.collection("presets").onSnapshot((snap) => {
+      const next = {}; for (const d of snap.docs) next[d.id] = d.data();
+      presetTop = next;
+      for (const uidV of Object.keys(next)) if (!presetRecSubs[uidV]) presetRecSubs[uidV] = [
+        db.collection(`presets/${uidV}/meta`).onSnapshot((s) => { const m = {}; for (const d of s.docs) m[d.id] = d.data(); presetMeta[uidV] = m; later(); }, () => {}),
+        db.collection(`presets/${uidV}/log`).onSnapshot((s) => { presetLog[uidV] = s.docs.flatMap(d => (d.data() || {}).events || []); later(); }, () => {})
+      ];
+      later();
     }, () => {});
     db.collection("roster").onSnapshot((snap) => {
       const next = {};
@@ -2985,8 +3084,10 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     for (const [id, d] of Object.entries(oppDb)) {
       if (!d || !d.name) continue;
       // v8: scans live in opponents/<id>/scans/<date>; older records kept them in the guild record
-      const sc = oppScans[id] ? Object.values(oppScans[id]).sort((a, z) => (a.date || "").localeCompare(z.date || "")) : null;
-      out[d.name] = { ...d, scans: Array.isArray(d.scans) ? d.scans : (sc && sc.length ? sc : ((EXP.opponents[d.name] || {}).scans || [])) };
+      const sc = oppScans[id] ? Object.values(oppScans[id]).sort((a, z) => (a.date || "").localeCompare(z.date || "")) : [];
+      const legacy = Array.isArray(d.scans) && d.scans.length ? d.scans : null;
+      const useLegacy = legacy && (!sc.length || (d.v !== 3 && (d.updatedAt || 0) > Math.max(0, ...sc.map(x => x.updatedAt || 0))));
+      out[d.name] = { ...d, scans: useLegacy ? legacy : sc.length ? sc : ((EXP.opponents[d.name] || {}).scans || []) };
     }
     return out;
   }
@@ -4094,9 +4195,11 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   function rebuildExpDb() {
     const n = {};
     for (const [id, h] of Object.entries(expHead)) {
-      if (Array.isArray(h.rounds)) { n[id] = h; continue; }
       const rs = Object.values(expRounds[id] || {}).sort((a, z) => a.n - z.n);
-      n[id] = { ...h, rounds: rs.length ? rs : ((EXP.weeks.find(w => w.id === id) || {}).rounds || []) };
+      // a whole week saved by a page older than v8 (v below 3) after the newest round record is the latest copy
+      const legacy = Array.isArray(h.rounds) && h.rounds.length ? h.rounds : null;
+      const useLegacy = legacy && (!rs.length || (h.v !== 3 && (h.updatedAt || 0) > Math.max(0, ...rs.map(r => r.updatedAt || 0))));
+      n[id] = { ...h, rounds: useLegacy ? legacy : rs.length ? rs : ((EXP.weeks.find(w => w.id === id) || {}).rounds || []) };
     }
     expDb = n;
   }
@@ -4125,10 +4228,10 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const stored = oppScans[id] || {}, keep = new Set();
     (o.scans || []).forEach((sc, i) => {
       const k = scanId(sc.date, (o.scans || []).slice(0, i).filter(x => x.date === sc.date).length); keep.add(k);
-      if (!stored[k] || !sameData(stored[k], sc)) db.doc(`opponents/${id}/scans/${k}`).set({ ...clone(sc), v: 3 });
+      if (!stored[k] || !sameData(stored[k], sc)) db.doc(`opponents/${id}/scans/${k}`).set({ ...clone(sc), updatedAt: Date.now(), v: 3 });
     });
     for (const k of Object.keys(stored)) if (!keep.has(k)) db.doc(`opponents/${id}/scans/${k}`).delete();
-    oppDb[id] = head; oppScans[id] = Object.fromEntries((o.scans || []).map((sc, i) => [scanId(sc.date, i), clone(sc)])); renderExpedition();
+    oppDb[id] = head; oppScans[id] = Object.fromEntries((o.scans || []).map((sc, i) => [scanId(sc.date, (o.scans || []).slice(0, i).filter(x => x.date === sc.date).length), clone(sc)])); renderExpedition();
     logEvent("expedition", what, { changes: diffObj(before, { ...head, scans: o.scans || [] }) });
   }
   function subscribeExpedition() {
@@ -4162,6 +4265,10 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const put = async (path, data) => { const r = db.doc(path), g = await r.get(); if (g.exists) return 0; await r.set(data); return 1; };
     const counts = { weeks: 0, rounds: 0, opponents: 0, scans: 0, observations: 0, members: 0 };
     try {
+      // weeks and guilds officers saved before v8 keep rounds/scans inside the old record: give each its own record too
+      // (the old record is left as is, so pages older than v8 still see it; the next v8 save slims it)
+      for (const [id, h] of Object.entries(expHead)) for (const r of (Array.isArray(h.rounds) ? h.rounds : [])) counts.rounds += await put(`expedition/${id}/rounds/${r.n}`, { ...clone(r), v: 3 });
+      for (const [id, d] of Object.entries(oppDb)) for (const [i, sc] of (Array.isArray(d.scans) ? d.scans : []).entries()) counts.scans += await put(`opponents/${id}/scans/${scanId(sc.date, d.scans.slice(0, i).filter(x => x.date === sc.date).length)}`, { ...clone(sc), v: 3 });
       for (const w of SEEDX.weeks) {
         if (expHead[w.id]) continue;   // an officer's record of this week already exists
         const head = clone(w); delete head.id; delete head.rounds; head.v = 3; head.migratedAt = Date.now();
@@ -4341,6 +4448,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     subscribeNotes();
     renderRoster();
     if (isEditor) setTimeout(migrateToV8, 2500);   // after the first snapshots, so existing records are known
+    // v8: move this person's own records out of the old single records (members' presets/<id>, officers' audit/<id>)
+    setTimeout(() => { moveMyRecords(false).catch(() => {}); if (isEditor) moveMyAudit().catch(() => {}); }, 3000);
     if (!canSave) { setSaveMsg("Changes are kept in this browser only."); return; }
     const timer = setTimeout(() => { setSaveMsg("Couldn't reach your saved account yet."); }, 10000);
     try {

@@ -1,12 +1,13 @@
 (() => {
   const store = new Map(); const listeners = new Set(); let n = 0;
-  const fire = () => setTimeout(() => listeners.forEach(f => f()), 0);
   const segs = (p) => p.split("/").filter(Boolean);
+  // like the real database, a write only wakes listeners on the collection it's in (no path: wake everyone)
+  const fire = (p) => setTimeout(() => listeners.forEach(f => { if (!p || (p.startsWith(f.col + "/") && segs(p).length === segs(f.col).length + 1)) f(); }), 0);
   function docRef(path) {
     return { id: segs(path).pop(), path,
       async get() { const d = store.get(path); return { exists: !!d, id: segs(path).pop(), data: () => d && JSON.parse(JSON.stringify(d)) }; },
-      async set(o) { store.set(path, JSON.parse(JSON.stringify(o))); fire(); },
-      async delete() { store.delete(path); fire(); },
+      async set(o) { store.set(path, JSON.parse(JSON.stringify(o))); fire(path); },
+      async delete() { store.delete(path); fire(path); },
       collection(c) { return colRef(path + "/" + c); } };
   }
   function colRef(path, q = {}) {
@@ -19,13 +20,13 @@
       return { docs, metadata: { fromCache: false } };
     };
     return { path,
-      async add(o) { const id = "d" + (++n); store.set(path + "/" + id, JSON.parse(JSON.stringify(o))); fire(); return { id }; },
+      async add(o) { const id = "d" + (++n); store.set(path + "/" + id, JSON.parse(JSON.stringify(o))); fire(path + "/" + id); return { id }; },
       doc(id) { return docRef(path + "/" + id); },
       where(f, op, v) { return colRef(path, { ...q, where: [f, op, v] }); },
       orderBy(f, d) { return colRef(path, { ...q, order: [f, d] }); },
       limit(k) { return colRef(path, { ...q, limit: k }); },
       async get() { return run(); },
-      onSnapshot(cb) { const f = () => cb(run()); listeners.add(f); setTimeout(f, 0); return () => listeners.delete(f); } };
+      onSnapshot(cb) { const f = () => cb(run()); f.col = path; listeners.add(f); setTimeout(f, 0); return () => listeners.delete(f); } };
   }
   const db = { doc: docRef, collection: (p) => colRef(p) };
   const user = { async me() { return window.__member ? { id: "u-member", name: "Test Member", canEdit: false, isOwner: false } : { id: "u-officer", name: "Test Officer", canEdit: true, isOwner: false }; },
@@ -36,7 +37,7 @@
       '"runes": {"blessing": [{"name": "Revive", "quality": "Legendary"}, {"name": "Not A Rune", "quality": null}], "enhancement": [], "ability": [], "etched": []}, ' +
       '"behavior": {"range": "Long", "movement": "Offense"}, "unclear": ["etched runes cut off"]}' }; };
   sample.limits = async () => ({ images: true });
-  window.__store = store; window.__fire = fire;
+  window.__store = store; window.__fire = () => fire();
   // v8: pretend the one-time copy already ran, unless a test sets window.__migrate to exercise it
   if (!window.__migrate) store.set("meta/migration", { v: 8, at: 0, by: "test" });
   if (window.__preseed) for (const [k, v] of Object.entries(window.__preseed)) store.set(k, v);
