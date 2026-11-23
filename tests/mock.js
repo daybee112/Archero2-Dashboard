@@ -41,6 +41,8 @@
   // v8: pretend the one-time copy already ran, unless a test sets window.__migrate to exercise it
   if (!window.__migrate) store.set("meta/migration", { v: 8, at: 0, by: "test" });
   if (!window.__seedRoadmap) store.set("meta/roadmap", { seeded: false, at: 0, by: "test" });
+  // most tests open the page with no tab in the link; pretend this browser has been here before unless a test sets __firstVisit
+  if (!window.__firstVisit) { try { localStorage.setItem("aa-help-seen", "1"); } catch {} }
   if (window.__preseed) for (const [k, v] of Object.entries(window.__preseed)) store.set(k, v);
   window.claude = { use: async (name) => ({ db, user, sample }[name] || null) };
 })();
