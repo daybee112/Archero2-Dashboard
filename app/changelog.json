@@ -9,10 +9,12 @@
    "id": "v8.2.0",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",
-   "title": "Change log and Activity log tabs",
+   "title": "Change log and Activity log tabs, Help brought up to date",
    "changes": [
-    "Tapping the version number now opens two tabs: Change log (what changed in each version) and Activity log (who changed shared data), instead of one long page. A link ending in #activity opens the Activity log directly.",
-    "The Activity log's description is updated for how logs are stored since v8, including entries added by Claude."
+    "Tapping the version number now opens two tabs: Change log (what changed in each version) and Activity log (who changed shared data), instead of one long page. Links: #changelog and #activity (the old #changes still works), and switching tabs updates the link so a refresh stays put.",
+    "The Activity log's description is updated for how logs are stored since v8, including entries added by Claude.",
+    "Expedition player pages spell out mixed gear (e.g. Mixed: Dragoon 3 · Oracle 2 · Griffin 1), so phones can see it too.",
+    "Help brought up to date with everything since v8: round cards, the Back button, Mixed gear, roster search, one week per opponent tile, the two changelog tabs, how to see who changed something, officers editing inventories, up to 3 opponents a week, results added \"by Claude\", and who can see your inventory."
    ]
   },
   {

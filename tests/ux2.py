@@ -63,6 +63,8 @@ async def main():
         await pg.evaluate("window.scrollTo(0, 600)"); await pg.wait_for_timeout(150)
         await pg.evaluate("[...document.querySelectorAll('#players-table tbody tr')].find(r=>r.innerText.startsWith('Gaga94')).click()"); await pg.wait_for_timeout(300)
         check("player page has a Back to Expedition roster button at the top", (await pg.inner_text("#player-back")).strip() == "← Back to Expedition roster")
+        gn = await pg.inner_text("#exp-players")
+        check("player page spells out mixed gear (works on phones)", "Mixed: Dragoon 3 · Oracle 2 · Griffin 1" in gn, gn[:300])
         await pg.click("#player-back"); await pg.wait_for_timeout(400)
         y = await pg.evaluate("window.scrollY")
         check("back returns to the roster at the same scroll position", await pg.locator("#players-table").count() == 1 and abs(y - 600) < 5, str(y))

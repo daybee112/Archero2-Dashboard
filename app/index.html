@@ -308,7 +308,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       <h1>ArchAcademy Dashboard</h1>
       <small>Guild tools for Archero 2 · built from the project's reference docs</small>
     </div>
-    <div class="small muted row"><span id="whoami"></span><span id="whoami-ign" class="muted"></span><a href="#changes" class="chip vbtn" id="release-badge" title="Change log and activity log" style="text-decoration:none">version …</a></div>
+    <div class="small muted row"><span id="whoami"></span><span id="whoami-ign" class="muted"></span><a href="#changelog" class="chip vbtn" id="release-badge" title="Change log and activity log" style="text-decoration:none">version …</a></div>
   </header>
 
   <nav class="tabs" aria-label="Sections">
@@ -611,7 +611,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       </ol>
       <h3>The tabs</h3>
       <ul>
-        <li><b>Inventory and Builds:</b> your items and saved builds, plus build suggestions.</li>
+        <li><b>Inventory and Builds:</b> your items and saved builds, plus build suggestions. The whole guild can see your inventory, but only you and officers can change it. Your builds stay private, except the Expedition preset.</li>
         <li><b>Roster:</b> every member's power, gear, artifacts and Expedition damage, whether they've linked their account, and a link to their inventory.</li>
         <li><b>Expedition:</b> each round's lineup, the plan, results, the week's results, and your damage history (under <b>Roster</b>).</li>
         <li><b>Training Ground:</b> test a build on the Training Dummy and post your score.</li>
@@ -654,32 +654,33 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           <div class="table-wrap"><table>
             <thead><tr><th>Tab</th><th>What it's for</th><th>What you can do</th></tr></thead>
             <tbody>
-              <tr><td><b>Inventory</b></td><td>Everything you own, entered once: in-game name, characters, gear, runes, mystlings with stars</td><td>Add and update your items. Your builds only offer what's in here</td></tr>
+              <tr><td><b>Inventory</b></td><td>Everything you own, entered once: in-game name, characters, gear, runes, mystlings with stars</td><td>Add and update your items. Your builds only offer what's in here. The whole guild can see your inventory; only you and officers can change it</td></tr>
               <tr><td><b>Builds</b></td><td>Your saved builds: Main build, Expedition preset, and any custom builds</td><td>Edit and save builds, see warnings and synergies, ask for a suggested build</td></tr>
-              <tr><td><b>Roster</b></td><td>Every guild member: rank, power, character, gear by slot, runes, artifacts, lane HP, Expedition DPS</td><td>Sort by any column (tap more headings to break ties), search, open a profile, link your account, edit your own preset, open anyone's inventory (Inventory column), copy the table as an image</td></tr>
+              <tr><td><b>Roster</b></td><td>Every guild member: rank, power, character with resonance under it, gear by slot, runes, artifacts, lane HP, Expedition DPS, whether they've linked their account, and whether their inventory is filled in</td><td>Sort by any column (tap more headings to break ties), search, open a profile, link your account, edit your own preset, open anyone's inventory (Inventory column), copy the table as an image</td></tr>
               <tr><td><b>Expedition</b></td><td>Guild Expedition planning and results</td><td>See lineups, officer messages, the week's results, opponents and your damage history</td></tr>
               <tr><td><b>Training Ground</b></td><td>A standard Training Dummy test (3 runs of 1 minute)</td><td>Test a build, post results to the guild leaderboard, keep a private tracker</td></tr>
-              <tr><td><b>Version number</b> (top right)</td><td>Two tabs: Change log (release notes) and Activity log</td><td>See what changed in the dashboard and who changed shared data</td></tr>
+              <tr><td><b>Version number</b> (top right)</td><td>Two tabs: <b>Change log</b> (what's new in each version) and <b>Activity log</b> (every change to shared data)</td><td>See what changed in the dashboard; see who changed what, filter by person or type, search, export to CSV</td></tr>
             </tbody>
           </table></div>
           <p><b>Inside the Expedition tab:</b> pick a week at the top, then one of five views.</p>
           <ul>
-            <li><b>Rounds:</b> each round's lanes for us and the opponent, the <b>Message to the officers</b> explaining the plan, notes and reasoning, and <b>Round details</b> with lane results, fight lengths and damage. Played rounds are read-only.</li>
+            <li><b>Rounds:</b> each round's lanes for us and the opponent, the <b>Message to the officers</b> explaining the plan, notes and reasoning, and <b>Round details</b> with lane results, fight lengths and damage. Pick a round from the round cards at the top (date, opponent, which lanes we won, result); they stay pinned as you scroll. It opens on the current round, or the last one once the week is over. Played rounds are read-only.</li>
             <li><b>Week results:</b> the week so far after each round (record, standings, each round's key notes, top DPS), then the final results and what we learned once Round 3 is in.</li>
-            <li><b>Roster:</b> everyone's gear (hover or tap-and-hold <b>Mixed</b> to see which sets), character with resonance under it, Avg DPS, best round, and a graph of their last 6 rounds. Search by name, character or gear. Tap a name for full round-by-round history.</li>
+            <li><b>Roster:</b> everyone's gear set (<b>Mixed</b> means pieces from more than one set: hover it on a computer, or open the player's page, to see which), character with resonance under it, Avg DPS, best round, and a graph of their last 6 rounds (hover a dot for the week and round). Search by name, character, resonance or gear, and tap a column heading to sort. Tap a name for full round-by-round history; <b>← Back</b> at the top returns you to where you were.</li>
             <li><b>Opponents:</b> the three guilds we face in the selected week (tap <b>Show all guilds</b> to list the other weeks below it, newest first, each in the order we faced them). Each tile is one guild in one week, so a guild we met in several weeks gets a tile per week. Tiles show their roster scans, lane history, each player's damage and seconds survived, and habits for that week.</li>
             <li><b>Findings:</b> what we've learned so far, how Expedition works, and the assumptions behind the numbers.</li>
           </ul>
-          <p>Guild names link to the Opponents view, and player names link to that player's history.</p>
+          <p>Guild names link to the Opponents view, and player names link to that player's history (with a <b>← Back</b> button to return).</p>
         </div>
       </details>
       <details>
         <summary><b>Common tasks</b></summary>
         <div class="help-body">
           <p><b>Update your Expedition preset.</b> Change it on the Builds tab and save, or use <b>Edit my preset</b> in your Roster profile. The two stay in sync, and whichever you changed last wins. Do this whenever you change your in-game preset, since officers plan lanes from it.</p>
-          <p><b>Check how you did in Expedition.</b> Go to Expedition, then Roster, and tap your name. You'll see your damage, seconds survived and DPS for every round, plus your average over your last 6 rounds on your current gear.</p>
+          <p><b>Check how you did in Expedition.</b> Go to Expedition, then Roster, and tap your name. You'll see your damage, seconds survived and DPS for every round, plus your average over your last 6 rounds on your current gear. <b>← Back</b> at the top returns to the roster.</p>
           <p><b>Read the plan for a round.</b> Go to Expedition, then Rounds, and pick the round. The <b>Message to the officers</b> at the top explains the lineup. Tap <b>Show the full message</b> if it's cut off.</p>
           <p><b>Share something on Discord.</b> Look for the <b>Copy as image</b> buttons on the lineup, round results, officer message, player history, the Expedition roster table and the main Roster. The picture goes to your clipboard, ready to paste. If your browser blocks that, a preview opens with a <b>Download</b> button instead. On the officer message, <b>Copy text</b> copies it with its Discord formatting.</p>
+          <p><b>See who changed something.</b> Tap the version number at the top right, then <b>Activity log</b>. Filter by person or type of change, or search for a player or field. Each entry shows what changed, before → after. Members' entries say "(member)", and results Claude adds from screenshots say "by Claude". <b>Export (CSV)</b> downloads everything.</p>
           <p><b>Test a build.</b> On Training Ground, pick a saved build, run the Training Dummy 3 times for 1 minute each, and enter your results. Post them to the leaderboard or keep them private.</p>
           <p><b>Get a build idea.</b> On Builds, open <b>Want a suggestion?</b> and tap <b>Suggest a build</b>. It only uses what's in your Inventory, and it tells you what's missing for a better option.</p>
         </div>
@@ -690,14 +691,15 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
           <p>Officers (editors of the dashboard) can change shared data. Every change is recorded in the activity log (tap the version number at the top, then <b>Activity log</b>).</p>
           <ul>
             <li><b>Roster:</b> edit any profile, tap a gear piece to change its set and quality, add members, mark members inactive or left.</li>
+            <li><b>Inventories:</b> on the Roster, tap a player's Inventory cell to open it, edit, and press <b>Save to (their name)</b>. They get your changes the next time they open the dashboard, and the edit is logged.</li>
             <li><b>Preset screenshots:</b> at the bottom of the Roster tab, import Expedition preset screenshots. Each screenshot needs the player's name typed in. The dashboard never guesses whose preset it is.</li>
             <li><b>Lineups:</b> edit the lineup of a round that hasn't been played yet, slot by slot, or copy the previous round. Played rounds are locked.</li>
             <li><b>Message to the officers:</b> post a new message for a round. Pasting a Discord message keeps its formatting. Older messages move into the notes.</li>
             <li><b>Notes and reasoning:</b> add decisions or logic worth keeping, like why a player moved lanes. Notes can be added but not edited.</li>
             <li><b>Suggested lineups:</b> ask for a suggested lineup for an upcoming round and apply it with one tap.</li>
-            <li><b>Opponents:</b> add or update opponent guilds.</li>
+            <li><b>Opponents:</b> add each week's opponents (up to 3 per week) and update their details. Use <b>Edit this opponent</b> on the guild's tile.</li>
           </ul>
-          <p>Round results come from the Details screenshots shared after each round. Please keep sending all three Details screens, ours and theirs.</p>
+          <p>Round results come from the Details screenshots shared after each round. Please keep sending all three Details screens, ours and theirs. Daby's weekly chat collects them and Claude adds them to the dashboard in batches; those changes show in the Activity log as "by Claude".</p>
         </div>
       </details>
       <details>
@@ -714,7 +716,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
               <tr><td><b>ATK bonus</b></td><td>Your personal artifact attack bonus: 0.25% per Mythic star plus 0.025% per Legendary star.</td></tr>
               <tr><td><b>DPS</b></td><td>Damage per second in Expedition: your damage divided by the seconds you survived.</td></tr>
               <tr><td><b>Avg DPS</b></td><td>Your average DPS over your last 6 counted rounds. Rounds on a different gear set aren't counted.</td></tr>
-              <tr><td><b>Gear set</b></td><td>Dragoon, Oracle or Griffin, based on your weapon. On the dashboard the colors are red for Dragoon, blue for Oracle and gold for Griffin.</td></tr>
+              <tr><td><b>Gear set</b></td><td>Dragoon, Oracle or Griffin, based on your weapon. On the dashboard the colors are red for Dragoon, blue for Oracle and gold for Griffin. <b>Mixed</b> means pieces from more than one set.</td></tr>
               <tr><td><b>Notable</b></td><td>A flag on the Expedition roster for big changes only: a gear switch, a huge jump or drop, a new personal best, or a strong trend. Most players have none, and that's normal.</td></tr>
               <tr><td><b>Expedition preset</b></td><td>The separate loadout you use in Expedition. It's usually close to your main loadout, but not always.</td></tr>
             </tbody>
@@ -726,11 +728,12 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         <div class="help-body">
           <p><b>My info on the Roster is wrong. How do I fix it?</b> Update your Expedition preset on the Builds tab or with <b>Edit my preset</b> on your profile. For anything else, like rank or power, ping an officer.</p>
           <p><b>I saved my preset but the Roster didn't change.</b> Check that you linked the right profile with <b>This is me</b>. If it's still off, refresh the page, then ping an officer.</p>
+          <p><b>Who can see my inventory?</b> Everyone in the guild, so officers can plan with real data. Only you and officers can change it, and your builds stay private (except your Expedition preset).</p>
           <p><b>Why wasn't I deployed this round?</b> Lanes are picked mainly by gear set and your DPS average from recent rounds, then artifacts. Players on Mythic gear or with empty preset slots usually sit out. Strong rounds and a complete preset move you up.</p>
           <p><b>Why don't I have a DPS average?</b> You need at least one counted Expedition round. Rounds on a different gear set or with missing screenshots don't count.</p>
           <p><b>Can I see other guilds' characters?</b> No. We only record characters from our own preset screens, since profile screens aren't reliable.</p>
           <p><b>Do I need the dashboard to know the plan?</b> No. Officers post the plan in Discord, and anyone can share images from the dashboard there.</p>
-          <p><b>Something's broken or confusing.</b> Ping an officer or Daby in Discord. Tap the version number at the top first, since a recent update may explain it.</p>
+          <p><b>Something's broken or confusing.</b> Ping an officer or Daby in Discord. Tap the version number at the top first and check the <b>Change log</b>, since a recent update may explain it.</p>
         </div>
       </details>
     </div>
@@ -834,18 +837,26 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     $("example-banner").classList.toggle("offtab", !["inventory", "builds", "training"].includes(cur));   // example notice only where it matters
     if (D) { if (cur === "builds") renderBuildsTab(); if (cur === "training") refreshTgSource(); if (cur === "roster") renderRoster(); if (cur === "expedition") renderExpedition(); }
   }
-  function route() { const h = (location.hash || "#roster").slice(1); if (h === "activity") { showView("changes"); showChangesSub("activity"); return; } showView(h); }
+  // The changelog view's links are #changelog (Change log tab) and #activity (Activity log tab); the old #changes still works.
+  const hashOf = (v) => v === "changes" ? "changelog" : v;
+  function route() {
+    const h = (location.hash || "#roster").slice(1);
+    if (h === "activity" || h === "changelog" || h === "changes") { showView("changes"); showChangesSub(h === "activity" ? "activity" : "log", true); return; }
+    showView(h);
+  }
   function goTo(v) {
     showView(v);
-    try { if (location.hash !== "#" + v) location.hash = v; } catch {}
+    if (v === "changes") showChangesSub("log", true);
+    try { if (location.hash !== "#" + hashOf(v)) location.hash = hashOf(v); } catch {}
     if (window.scrollY > 0) window.scrollTo({ top: 0 });   // new tab starts at its top; the tab bar is always visible
   }
   for (const v of VIEWS) if (v !== "changes") $("tab-" + v).addEventListener("click", (e) => { e.preventDefault(); goTo(v); });
   $("release-badge").addEventListener("click", (e) => { e.preventDefault(); goTo("changes"); });
   // Changelog sub-tabs: Change log (release notes) and Activity log
-  function showChangesSub(sub) {
+  function showChangesSub(sub, fromRoute) {
     for (const b of $("changes-sub").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.sub === sub));
     $("changes-log").hidden = sub !== "log"; $("changes-activity").hidden = sub !== "activity";
+    if (!fromRoute) try { history.replaceState(null, "", "#" + (sub === "activity" ? "activity" : "changelog")); } catch {}   // a refresh stays on this tab
   }
   for (const b of $("changes-sub").querySelectorAll("button")) b.addEventListener("click", () => showChangesSub(b.dataset.sub));
   for (const a of document.querySelectorAll("#view-help [data-go]")) a.addEventListener("click", (e) => { e.preventDefault(); goTo(a.dataset.go); });
@@ -4135,7 +4146,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const stat = (k, v) => el("div", { class: "stat" }, el("div", { class: "k", text: k }), el("div", { class: "v", style: "font-size:1.15rem", text: v }));
     panel.append(el("div", { class: "stats" }, stat("Avg DPS", a ? fmtRate(a.avg) : "—"), stat("Rounds counted", `${c.length} of ${ms.length}`),
       stat("Best", c.length ? fmtRate(Math.max(...c.map(x => x.dps))) : "—"), stat("vs lane median", c.length ? median(c.map(x => x.index)).toFixed(2) + "×" : "—"),
-      stat("Gear now", m ? (weaponSet(m) || "—") : "—"), stat("Character now", m?.preset?.chars?.[0]?.name || "—")));
+      stat("Gear now", m ? (gearMix(m).mixed ? "Mixed: " + gearMix(m).text : (weaponSet(m) || "—")) : "—"), stat("Character now", m?.preset?.chars?.[0]?.name || "—")));
     // insights (rules, plain language)
     const tips = [];
     if (m && weaponSet(m) === "Oracle" && c.length) tips.push("On Oracle: across 10+ logged fights Dragoon players deal ~4-6x the DPS of Oracle players. A Dragoon switch is the biggest known lever.");
