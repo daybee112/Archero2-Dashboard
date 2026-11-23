@@ -105,12 +105,19 @@ async def main():
         sums = await pg.eval_on_selector_all("#opp-list > details > summary", "s=>s.map(x=>x.innerText)")
         check("every tile names one week", all(x.count("Week of") <= 1 for x in sums) and len(sums) == len(set(sums)), str(sums))
         wk = {"Week of Nov 2": 2, "Week of Nov 9": 9, "Week of Nov 16": 16}
-        seq = [wk.get(next((k for k in wk if (k + " ") in x + " " and (k + "6") not in x), ""), 99) for x in sums]
-        check("show all: chronological, newest week first", seq == sorted(seq, reverse=True) or seq == sorted(seq, key=lambda v: (v == 99, -v)), str(list(zip(seq, sums))))
+        seq = [next((v for k, v in sorted(wk.items(), key=lambda kv: -len(kv[0])) if k in x), 99) for x in sums]
+        check("show all: selected week first, then the rest newest first", seq[:3] == [16, 16, 16] and seq[3:] == sorted(seq[3:], key=lambda v: (v == 99, -v)), str(seq))
         nov16 = [x.split(" · ")[0] for x in sums if "Week of Nov 16" in x]
         check("…and within a week, in the round we faced them", nov16 == ["UkraineArchers", "Happiness", "Holymoly"], str(nov16))
         heads = await pg.eval_on_selector_all("#opp-list > h3.oppsec", "h=>h.map(x=>x.innerText)")
-        check("…with a heading per week (selected week marked)", len(heads) >= 3 and "(selected)" in " ".join(heads).lower() and heads[0].lower().startswith("week of nov 16"), str(heads))
+        check("…a heading per other week, none for the selected week", [h.lower() for h in heads][:2] == ["week of nov 9", "week of nov 2"] and not any("16" in h for h in heads), str(heads))
+        await pg.select_option("#exp-week", "2026-11-09"); await pg.wait_for_timeout(300)
+        if await pg.locator("#opp-all[aria-pressed=false]").count(): await pg.click("#opp-all"); await pg.wait_for_timeout(200)
+        s9 = await pg.eval_on_selector_all("#opp-list > details > summary", "s=>s.map(x=>x.innerText)")
+        h9 = await pg.eval_on_selector_all("#opp-list > h3.oppsec", "h=>h.map(x=>x.innerText.toLowerCase())")
+        check("older week selected: its guilds first, then Nov 16 and Nov 2 under headings", all("Nov 9" in x for x in s9[:3]) and h9[:2] == ["week of nov 16", "week of nov 2"], str(h9) + str(s9[:4]))
+        await pg.select_option("#exp-week", "2026-11-16"); await pg.wait_for_timeout(300)
+        if await pg.locator("#opp-all[aria-pressed=false]").count(): await pg.click("#opp-all"); await pg.wait_for_timeout(200)
         await pg.click("#opp-all"); await pg.wait_for_timeout(200)
         lh = await pg.inner_text("#opp-list")
         check("no search or guild filter", await pg.locator("#opp-q, #opp-kind").count() == 0)
