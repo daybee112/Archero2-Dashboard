@@ -6,6 +6,15 @@
  },
  "releases": [
   {
+   "id": "v8.2.1",
+   "date": "2026-11-23",
+   "by": "Daby (published by Claude)",
+   "title": "Readable key on the Expedition roster",
+   "changes": [
+    "Expedition roster: the note above the table is now a short summary (notable gains and drops) plus a bulleted key with one bold label per column (DPS, Gear, Avg DPS, Best DPS, Performance), instead of one long paragraph."
+   ]
+  },
+  {
    "id": "v8.2.0",
    "date": "2026-11-22",
    "by": "Daby (published by Claude)",

@@ -60,6 +60,8 @@ async def main():
         check("Notable header left-aligned", al in ("left", "start"), al)
         tip = await pg.get_attribute("#exp-players tbody tr:first-child td:nth-child(4)", "title")
         check("DPS avg tooltip", tip and tip.startswith("Based on last ") and "played round" in tip, str(tip))
+        keys = await pg.eval_on_selector_all("#players-key li b", "b=>b.map(x=>x.innerText.trim())")
+        check("roster key is a bulleted list with bold labels, not one paragraph", keys == ["DPS:", "Gear:", "Avg DPS:", "Best DPS:", "Performance:"] and "notable gain" in await pg.inner_text("#players-summary b"), str(keys))
         await pg.evaluate("window.scrollTo(0, 600)"); await pg.wait_for_timeout(150)
         await pg.evaluate("[...document.querySelectorAll('#players-table tbody tr')].find(r=>r.innerText.startsWith('Gaga94')).click()"); await pg.wait_for_timeout(300)
         check("player page has a Back to Expedition roster button at the top", (await pg.inner_text("#player-back")).strip() == "← Back to Expedition roster")

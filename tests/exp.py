@@ -122,8 +122,9 @@ async def main():
         t = await pg.inner_text("#exp-opponents")
         check("form closes at 3 opponents", await pg.locator("#opp-new-name").count() == 0 and "All 3 opponents for this week are set" in t, t[:200])
         hw = await pg.evaluate("Object.values(Object.fromEntries(window.__store)).filter(v=>v&&v.name==='Happiness').map(v=>v.weeks)")
-        hc = await pg.locator("#opp-list > details[data-guild='Happiness'][data-week='2026-11-23']").count(); hs = await pg.eval_on_selector_all("#opp-list > details > summary", "s=>s.map(x=>x.innerText)")
-        check("existing guild attached, not duplicated", hw == [["2026-11-02", "2026-11-16", "2026-11-23"]] and hc == 1, f"{hw} {hc} {hs}")
+        nw = hw[0][-1] if hw and hw[0] else ""   # the new week's id depends on today's date
+        hc = await pg.locator(f"#opp-list > details[data-guild='Happiness'][data-week='{nw}']").count(); hs = await pg.eval_on_selector_all("#opp-list > details > summary", "s=>s.map(x=>x.innerText)")
+        check("existing guild attached, not duplicated", len(hw) == 1 and hw[0][:2] == ["2026-11-02", "2026-11-16"] and len(hw[0]) == 3 and nw > "2026-11-16" and hc == 1, f"{hw} {hc} {hs}")
         check("no JS errors", not errs, str(errs))
         await b.close()
     print(sum(res), "/", len(res))

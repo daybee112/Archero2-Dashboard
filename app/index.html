@@ -4092,7 +4092,15 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         rows: rows.filter(r => r.played).map(r => { const s = r.so.filter(x => x.major)[0]; return [{ text: r.m.ign, bold: true }, { text: gearMix(r.m).mixed ? "Mixed" : (gearMix(r.m).text || "—"), bar: gearMix(r.m).mixed ? "line" : (weaponSet(r.m) || "line") }, charOf(r.m) ? charOf(r.m).name + (resOf(r.m).length ? " · " + resOf(r.m).map(c => c.name).join(", ") : "") : "—", r.avg5 != null ? fmtRate(r.avg5) : "—", r.best != null ? fmtRate(r.best) : "—", s ? { text: s.text, color: s.t === "up" ? "good" : "bad" } : ""]; }) } },
         { text: "DPS = damage ÷ seconds survived. Avg DPS = last 6 rounds on their current gear." }] });
     box.append(el("div", { class: "panel stack" }, el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: "Player performance" }), el("div", { class: "row" }, imgBtn("Copy as image", tableSpec))),
-      el("p", { class: "small muted", style: "margin:0", text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}. Most players have no note: only big changes get one. DPS = damage ÷ seconds survived; Avg DPS is their last 6 rounds on their current gear (hover it for how many); Best DPS is their best round on current gear. Performance shows each player's last 6 played rounds on their own scale, newest on the right: hover a dot for the week and round; hollow dots are rounds on another gear set or with partial stats, not in the average. Tap a player for their round-by-round history.` }),
+      // the key, as a short summary plus one bullet per column (was one long paragraph; per Daby)
+      el("p", { class: "small", style: "margin:0", id: "players-summary" }, el("b", { text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}.` }), " Most players have no note: only big changes get one. Tap a player for their round-by-round history."),
+      el("ul", { class: "tips muted", id: "players-key", style: "margin-top:0" }, ...[
+        ["DPS", "damage ÷ seconds survived."],
+        ["Gear", "Mixed means pieces from more than one set (hover it for which)."],
+        ["Avg DPS", "their last 6 rounds on their current gear (hover it for how many)."],
+        ["Best DPS", "their best round on their current gear."],
+        ["Performance", "their last 6 played rounds on their own scale, newest on the right. Hover a dot for the week and round; hollow dots are rounds on another gear set or with partial stats, not in the average."]
+      ].map(([k, v]) => el("li", { class: "small" }, el("b", { text: k + ": " }), v))),
       el("div", { class: "row" }, el("div", { class: "field", style: "flex:1;min-width:180px;max-width:360px" }, el("label", { for: "players-search", text: "Search" }), searchBox)),
       sortLine, el("div", { class: "tablewrap" }, t), rows.length ? null : el("p", { class: "small muted", text: `No players match "${pSearch}".` }),
       el("details", {}, el("summary", { class: "small", text: "How notes are picked" }), el("ul", { class: "tips" },
