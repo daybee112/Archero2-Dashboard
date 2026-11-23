@@ -132,7 +132,27 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 
 ## Releases (newest first)
 
-### v8.2.0 — 2026-11-22 — live
+### v8.2.1 — 2026-11-23 — live
+- **Type:** patch (readability and wording)
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v8.2.0 files exactly, platform version `1795407371-681d`)
+- **Headless test before publish:** Expedition UX 49/49 (roster key as bullets with bold labels); expedition 27/27 (new-week
+  check no longer hard-codes the date); v8 data model 27/27; activity 24/24; shared inventories 21/21; weekly results
+  22/22; lanes 14/14; image/notes 11/11; results 11/11; message 9/9; Help 14/14; full regression 66/67 (font unreachable
+  in sandbox).
+- **Platform version:** `1795443035-eb42`
+- **Files:**
+  - `index.html` · 363,914 bytes · sha256 `d1a4291adfeddce826549ce412d2800986ee79bd1492aedfcf75b7df363e6736` (changed)
+  - `changelog.json` · 31,631 bytes · sha256 `b746f77acfb0961bac216a61da7197cf2831d78a067f34ac4cfd6168a67b426d` (changed)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…`, `build-data.json` `6fd7eeda…` (unchanged)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** Expedition roster intro paragraph → bold summary (`#players-summary`, "Most players have no note…" removed)
+  plus a bulleted key with bold labels (`#players-key`), no hover hints. "on (their/your) current gear (set)" → "using
+  (their/your) current build preset" everywhere (key, Best DPS tooltip, image footer, "1 round using current build
+  preset", lane-comparison notes, Help); both Claude Docs guides match.
+- **Archive:** GitHub `main`, commit "Release v8.2.1".
+
+### v8.2.0 — 2026-11-22
 - **Type:** minor (page improvements)
 - **Requested by:** Daby · **Published by:** Claude
 - **Pre-publish audit:** clean (live matched v8.1.1 files exactly, platform version `1795406494-015d`)
