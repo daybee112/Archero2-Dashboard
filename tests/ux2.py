@@ -32,7 +32,7 @@ async def main():
         # Roster sub-tab
         await pg.click("#exp-sub button[data-sub=players]"); await pg.wait_for_timeout(300)
         ths = await pg.eval_on_selector_all("#exp-players thead th", "t=>t.map(x=>x.innerText)")
-        check("columns", [x.split("\n")[0].replace("\xa0▼","").replace(" ▼","").strip() for x in ths] == ["Player","Gear","Avg DPS","Best DPS","Performance","Notable"], str(ths))
+        check("columns", [("Performance" if x.startswith("Performance") else x.split("\n")[0].replace("\xa0▼","").replace(" ▼","").strip()) for x in ths] == ["Player","Gear","Avg DPS","Best DPS","Performance","Notable"], str(ths))
         al = await pg.evaluate("getComputedStyle(document.querySelector('#players-table thead th:last-child')).textAlign")
         check("Notable header left-aligned", al in ("left", "start"), al)
         tip = await pg.get_attribute("#exp-players tbody tr:first-child td:nth-child(3)", "title")

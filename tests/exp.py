@@ -50,7 +50,8 @@ async def main():
         await pg.wait_for_timeout(100)
         await pg.click("text=Save lineup"); await pg.wait_for_timeout(400)
         wk = await pg.evaluate("JSON.stringify(window.__store.get('expedition/2026-11-16'))")
-        check("lineup saved to db week doc", wk and '"Hago26"' in wk and len(json.loads(wk)["rounds"][2]["our"]["left"]["players"]) == 7)
+        r3 = await pg.evaluate("JSON.stringify(window.__store.get('expedition/2026-11-16/rounds/3'))")
+        check("lineup saved: week header + its own round record", wk and "rounds" not in json.loads(wk) and r3 and '"Hago26"' in r3 and len(json.loads(r3)["our"]["left"]["players"]) == 7)
         # played rounds: read-only, details button works, names link
         await pg.click("#exp-rounds .buildtabs button:nth-child(2)"); await pg.wait_for_timeout(200)
         t = await pg.inner_text("#exp-rounds")

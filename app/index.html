@@ -2982,7 +2982,12 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   const weekById = (id) => allWeeks().find(w => w.id === id);
   function allOpponents() {
     const out = { ...EXP.opponents };
-    for (const d of Object.values(oppDb)) if (d && d.name) out[d.name] = d;
+    for (const [id, d] of Object.entries(oppDb)) {
+      if (!d || !d.name) continue;
+      // v8: scans live in opponents/<id>/scans/<date>; older records kept them in the guild record
+      const sc = oppScans[id] ? Object.values(oppScans[id]).sort((a, z) => (a.date || "").localeCompare(z.date || "")) : null;
+      out[d.name] = { ...d, scans: Array.isArray(d.scans) ? d.scans : (sc && sc.length ? sc : ((EXP.opponents[d.name] || {}).scans || [])) };
+    }
     return out;
   }
   const parseNum = (v) => { const m = String(v ?? "").replace(/[,\s]/g, "").match(/^(\d+(?:\.\d+)?)([kmb])?$/i); return m ? Math.round(parseFloat(m[1]) * ({ k: 1e3, m: 1e6, b: 1e9 }[(m[2] || "").toLowerCase()] || 1)) : null; };
@@ -4077,26 +4082,105 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       } }), msg));
   });
 
+  // ----- v8 storage -----
+  // expedition/<week> = the week header (group, standings, lessons, final); expedition/<week>/rounds/<n> = one round.
+  // opponents/<id> = the guild (name, weeks, power, habits); opponents/<id>/scans/<date> = one roster scan.
+  // observations/<week>-r<n>-<id> = one match between other guilds; meta/findings = findings + mechanics.
+  // Records written before v8 (a whole week or guild in one record) are still read.
+  let expHead = {}, expRounds = {}, roundSubs = {}, oppScans = {}, scanSubs = {};
+  const strip = (o) => { const c = clone(o); delete c.updatedAt; delete c.updatedBy; delete c.v; delete c.id; return c; };
+  const sameData = (a, z) => JSON.stringify(strip(a || {})) === JSON.stringify(strip(z || {}));
+  const scanId = (date, i) => String(date || "undated").replace(/[^0-9A-Za-z-]/g, "-") + (i ? "-" + i : "");
+  function rebuildExpDb() {
+    const n = {};
+    for (const [id, h] of Object.entries(expHead)) {
+      if (Array.isArray(h.rounds)) { n[id] = h; continue; }
+      const rs = Object.values(expRounds[id] || {}).sort((a, z) => a.n - z.n);
+      n[id] = { ...h, rounds: rs.length ? rs : ((EXP.weeks.find(w => w.id === id) || {}).rounds || []) };
+    }
+    expDb = n;
+  }
   async function saveWeek(w, what) {
     if (!db || !isEditor) throw new Error("not allowed");
-    const doc = clone(w); delete doc.id; doc.updatedAt = Date.now(); doc.updatedBy = myId; doc.v = 1;
     const prev = weekById(w.id); const before = prev ? clone(prev) : {}; delete before.id;
-    await db.doc("expedition/" + w.id).set(doc);
-    expDb[w.id] = doc;   // show it right away; the snapshot confirms
-    logEvent("expedition", what, { changes: diffObj(before, doc) });
+    const head = clone(w); delete head.id; delete head.rounds; head.updatedAt = Date.now(); head.updatedBy = myId; head.v = 3;
+    await db.doc("expedition/" + w.id).set(head);
+    const stored = expRounds[w.id] || {};
+    for (const r of (w.rounds || [])) {
+      const cur = stored[r.n] || (prev && (prev.rounds || []).find(x => x.n === r.n));
+      if (stored[r.n] && sameData(cur, r)) continue;
+      await db.doc(`expedition/${w.id}/rounds/${r.n}`).set({ ...clone(r), updatedAt: Date.now(), updatedBy: myId, v: 3 });
+    }
+    for (const k of Object.keys(stored)) if (!(w.rounds || []).some(r => String(r.n) === k)) await db.doc(`expedition/${w.id}/rounds/${k}`).delete();
+    expHead[w.id] = head; expRounds[w.id] = Object.fromEntries((w.rounds || []).map(r => [r.n, clone(r)])); rebuildExpDb();   // show it right away
+    const after = clone(w); delete after.id;
+    logEvent("expedition", what, { changes: diffObj(before, after) });
   }
   async function saveOpponent(o, what) {
     if (!db || !isEditor) throw new Error("not allowed");
-    const doc = clone(o); doc.updatedAt = Date.now(); doc.updatedBy = myId;
+    const id = oppId(o.name);
     const before = clone(allOpponents()[o.name] || {});
-    await db.doc("opponents/" + oppId(o.name)).set(doc);
-    oppDb[oppId(o.name)] = doc; renderExpedition();
-    logEvent("expedition", what, { changes: diffObj(before, doc) });
+    const head = clone(o); delete head.scans; head.updatedAt = Date.now(); head.updatedBy = myId; head.v = 3;
+    await db.doc("opponents/" + id).set(head);
+    const stored = oppScans[id] || {}, keep = new Set();
+    (o.scans || []).forEach((sc, i) => {
+      const k = scanId(sc.date, (o.scans || []).slice(0, i).filter(x => x.date === sc.date).length); keep.add(k);
+      if (!stored[k] || !sameData(stored[k], sc)) db.doc(`opponents/${id}/scans/${k}`).set({ ...clone(sc), v: 3 });
+    });
+    for (const k of Object.keys(stored)) if (!keep.has(k)) db.doc(`opponents/${id}/scans/${k}`).delete();
+    oppDb[id] = head; oppScans[id] = Object.fromEntries((o.scans || []).map((sc, i) => [scanId(sc.date, i), clone(sc)])); renderExpedition();
+    logEvent("expedition", what, { changes: diffObj(before, { ...head, scans: o.scans || [] }) });
   }
   function subscribeExpedition() {
     if (!db) return;
-    db.collection("expedition").onSnapshot((snap) => { const n = {}; for (const d of snap.docs) n[d.id] = d.data(); expDb = n; if (!expEditing) renderExpedition(); renderRoster(); }, () => {});
-    db.collection("opponents").onSnapshot((snap) => { const n = {}; for (const d of snap.docs) n[d.id] = d.data(); oppDb = n; if (!expEditing) renderExpedition(); }, () => {});
+    const rer = () => { if (!expEditing) renderExpedition(); renderRoster(); };
+    db.collection("expedition").onSnapshot((snap) => {
+      const n = {}; for (const d of snap.docs) n[d.id] = d.data(); expHead = n;
+      for (const id of Object.keys(n)) if (!roundSubs[id] && !Array.isArray(n[id].rounds))
+        roundSubs[id] = db.collection(`expedition/${id}/rounds`).onSnapshot((rs) => { const m = {}; for (const d of rs.docs) { const r = d.data(); m[r.n ?? d.id] = r; } expRounds[id] = m; rebuildExpDb(); rer(); }, () => {});
+      rebuildExpDb(); rer();
+    }, () => {});
+    db.collection("opponents").onSnapshot((snap) => {
+      const n = {}; for (const d of snap.docs) n[d.id] = d.data(); oppDb = n;
+      for (const id of Object.keys(n)) if (!scanSubs[id] && !Array.isArray(n[id].scans))
+        scanSubs[id] = db.collection(`opponents/${id}/scans`).onSnapshot((ss) => { const m = {}; for (const d of ss.docs) m[d.id] = d.data(); oppScans[id] = m; if (!expEditing) renderExpedition(); }, () => {});
+      if (!expEditing) renderExpedition();
+    }, () => {});
+    db.collection("observations").onSnapshot((snap) => {
+      if (!snap.docs.length) return;   // nothing copied yet: keep the seed's list
+      EXP.observations = snap.docs.map(d => d.data()).sort((a, z) => a.week === z.week ? a.round - z.round || a.guild.localeCompare(z.guild) : (a.week < z.week ? -1 : 1));
+      if (!expEditing) renderExpedition();
+    }, () => {});
+    db.doc("meta/findings").get().then((d) => { if (d.exists) { const f = d.data() || {}; if (Array.isArray(f.findings)) EXP.findings = f.findings; if (f.mechanics) EXP.mechanics = f.mechanics; if (!expEditing) renderExpedition(); } }).catch(() => {});
+  }
+  // ----- one-time copy of the seed files into the database (the first officer to open v8 does it) -----
+  let SEEDX = null;   // the seed files as loaded, kept for the copy
+  async function migrateToV8() {
+    if (!db || !isEditor || !SEEDX) return;
+    const mref = db.doc("meta/migration");
+    try { const m = await mref.get(); if (m.exists && (m.data() || {}).v >= 8) return; } catch { return; }
+    const put = async (path, data) => { const r = db.doc(path), g = await r.get(); if (g.exists) return 0; await r.set(data); return 1; };
+    const counts = { weeks: 0, rounds: 0, opponents: 0, scans: 0, observations: 0, members: 0 };
+    try {
+      for (const w of SEEDX.weeks) {
+        if (expHead[w.id]) continue;   // an officer's record of this week already exists
+        const head = clone(w); delete head.id; delete head.rounds; head.v = 3; head.migratedAt = Date.now();
+        counts.weeks += await put("expedition/" + w.id, head);
+        for (const r of (w.rounds || [])) counts.rounds += await put(`expedition/${w.id}/rounds/${r.n}`, { ...clone(r), v: 3 });
+      }
+      for (const [name, o] of Object.entries(SEEDX.opponents)) {
+        const id = oppId(name);
+        if (oppDb[id]) continue;
+        const head = clone(o); delete head.scans; head.name = name; head.v = 3;
+        counts.opponents += await put("opponents/" + id, head);
+        for (const [i, sc] of (o.scans || []).entries()) counts.scans += await put(`opponents/${id}/scans/${scanId(sc.date, (o.scans || []).slice(0, i).filter(x => x.date === sc.date).length)}`, { ...clone(sc), v: 3 });
+      }
+      for (const ob of SEEDX.observations) counts.observations += await put(`observations/${ob.week}-r${ob.round}-${oppId(ob.guild)}`, { ...clone(ob), v: 3 });
+      await put("meta/findings", { findings: SEEDX.findings, mechanics: SEEDX.mechanics, v: 3 });
+      for (const m of SEEDX.members) if (!rosterDb[m.id]) counts.members += await put("roster/" + m.id, { ...clone(m), v: 3 });
+      await mref.set({ v: 8, at: Date.now(), by: myId, counts });
+      logEvent("migrated data", `copied the starting data into the database for v8 (${Object.entries(counts).map(([k, n]) => n + " " + k).join(", ")})`, { src: "typed" });
+    } catch { /* partial copy is safe: every record is written only if missing, so the next officer's visit finishes it */ }
   }
 
   // ================= SHARE AS IMAGE =================
@@ -4256,6 +4340,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     subscribeExpedition();
     subscribeNotes();
     renderRoster();
+    if (isEditor) setTimeout(migrateToV8, 2500);   // after the first snapshots, so existing records are known
     if (!canSave) { setSaveMsg("Changes are kept in this browser only."); return; }
     const timer = setTimeout(() => { setSaveMsg("Couldn't reach your saved account yet."); }, 10000);
     try {
@@ -4283,8 +4368,8 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       return;
     }
     try { const r = await fetch("changelog.json", { cache: "no-store" }); renderReleases(r.ok ? await r.json() : null); } catch { renderReleases(null); }
-    try { const r = await fetch("expedition-seed.json", { cache: "no-store" }); if (r.ok) { const s = await r.json(); EXP = { weeks: s.weeks || [], opponents: s.opponents || {}, observations: s.observations || [], findings: s.findings || [], mechanics: s.mechanics || {} }; } } catch { /* Expedition tab shows officers' entries only */ }
-    try { const r = await fetch("roster-seed.json", { cache: "no-store" }); if (r.ok) { const s = await r.json(); SEED = Array.isArray(s.members) ? s.members : []; SEED_META = s._meta || {}; } } catch { /* roster shows officers' entries only */ }
+    try { const r = await fetch("expedition-seed.json", { cache: "no-store" }); if (r.ok) { const s = await r.json(); EXP = { weeks: s.weeks || [], opponents: s.opponents || {}, observations: s.observations || [], findings: s.findings || [], mechanics: s.mechanics || {} }; SEEDX = { ...clone(EXP), members: [] }; } } catch { /* Expedition tab shows officers' entries only */ }
+    try { const r = await fetch("roster-seed.json", { cache: "no-store" }); if (r.ok) { const s = await r.json(); SEED = Array.isArray(s.members) ? s.members : []; SEED_META = s._meta || {}; if (SEEDX) SEEDX.members = clone(SEED); } } catch { /* roster shows officers' entries only */ }
     buildInventoryUI();
     let draft = null;
     try { draft = JSON.parse(localStorage.getItem("aa-profile-draft") || "null"); } catch {}
