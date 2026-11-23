@@ -555,7 +555,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         <span class="small" id="add-msg"></span>
       </div>
       <div class="tablewrap" id="roster-wrap"><table class="lb" id="roster-table"><thead><tr id="roster-head"></tr></thead><tbody id="roster-body"></tbody></table></div>
-      <p class="small muted" style="margin:0">Tap a player for their full profile. ⚓ marks the top 5 anchors (highest Lane HP). <b>Gear by slot</b> (officers, and players on their own row: tap a piece to change it): ⚔️ weapon, 📿 amulet, 💍 ring, ⛑️ helmet, 🛡️ armor, 👢 boots; letter = set (<span class="gk g-Dragoon">D</span> Dragoon, <span class="gk g-Oracle">O</span> Oracle, <span class="gk g-Griffin">G</span> Griffin, ? unknown); then quality (C Chaotic, M+3 Mythic+3, L+2 Legendary+2, GF5 Godforge ★5). <b>ATK bonus</b> and <b>Lane HP</b> are calculated from artifact stars (0.25% ATK and 18% HP per Mythic star, 0.025% and 1.8% per Legendary star). <b>Runes</b> counts filled rune slots out of 13 (open the profile to see or edit them). <b>DPS Avg</b> is the average of their last 6 Expedition rounds on their current gear (Expedition tab). Calculated values can't be edited.</p>
+      <p class="small muted" style="margin:0">Tap a player for their full profile. ⚓ marks the top 5 anchors (highest Lane HP). <b>Gear by slot</b> (officers, and players on their own row: tap a piece to change it): ⚔️ weapon, 📿 amulet, 💍 ring, ⛑️ helmet, 🛡️ armor, 👢 boots; letter = set (<span class="gk g-Dragoon">D</span> Dragoon, <span class="gk g-Oracle">O</span> Oracle, <span class="gk g-Griffin">G</span> Griffin, ? unknown); then quality (C Chaotic, M+3 Mythic+3, L+2 Legendary+2, GF5 Godforge ★5). <b>ATK bonus</b> and <b>Lane HP</b> are calculated from artifact stars (0.25% ATK and 18% HP per Mythic star, 0.025% and 1.8% per Legendary star). <b>Runes</b> counts filled rune slots out of 13 (open the profile to see or edit them). <b>Avg DPS</b> is the average of their last 6 Expedition rounds on their current gear (Expedition tab). Calculated values can't be edited.</p>
     </div>
 
     <div class="panel stack" id="member-panel" hidden></div>
@@ -712,7 +712,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
               <tr><td><b>Lane HP</b></td><td>The anchor's HP bonus: 18% per Mythic artifact star plus 1.8% per Legendary star.</td></tr>
               <tr><td><b>ATK bonus</b></td><td>Your personal artifact attack bonus: 0.25% per Mythic star plus 0.025% per Legendary star.</td></tr>
               <tr><td><b>DPS</b></td><td>Damage per second in Expedition: your damage divided by the seconds you survived.</td></tr>
-              <tr><td><b>DPS avg</b></td><td>Your average DPS over your last 6 counted rounds. Rounds on a different gear set aren't counted.</td></tr>
+              <tr><td><b>Avg DPS</b></td><td>Your average DPS over your last 6 counted rounds. Rounds on a different gear set aren't counted.</td></tr>
               <tr><td><b>Gear set</b></td><td>Dragoon, Oracle or Griffin, based on your weapon. On the dashboard the colors are red for Dragoon, blue for Oracle and gold for Griffin.</td></tr>
               <tr><td><b>Notable</b></td><td>A flag on the Expedition roster for big changes only: a gear switch, a huge jump or drop, a new personal best, or a strong trend. Most players have none, and that's normal.</td></tr>
               <tr><td><b>Expedition preset</b></td><td>The separate loadout you use in Expedition. It's usually close to your main loadout, but not always.</td></tr>
@@ -2398,7 +2398,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     { key: "runes", label: "Runes", num: true, val: m => runeCount(m) },
     { key: "atk", label: ["ATK", "bonus"], num: true, calc: true, val: m => calcAtk(m) ?? -1 },
     { key: "hp", label: ["Lane HP", "(if anchor)"], num: true, calc: true, val: m => calcHp(m) ?? -1 },
-    { key: "dps", label: ["DPS Avg", "(K/s)"], num: true, calc: true, val: m => rosterDps(m) ?? -1 },
+    { key: "dps", label: "Avg DPS", num: true, calc: true, val: m => rosterDps(m) ?? -1 },
     { key: "upd", label: ["Last", "updated"], val: m => lastUpdated(m) },
     { key: "preset", label: "Preset", val: m => PSTATUS.indexOf(m.presetStatus) },
     { key: "acct", label: ["Account", "linked"], val: m => publicLink(m) ? 0 : 1 },
@@ -2445,7 +2445,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const sortNames = sortStack.map(s => { const c = COLS.find(k => k.key === s.key); return (Array.isArray(c.label) ? c.label.join(" ") : c.label) + (s.dir < 0 ? " ↓" : " ↑"); });
     const rosterRows = rows;
     $("roster-img").replaceChildren(imgBtn("Copy as image", () => ({ title: "ArchAcademy roster", subtitle: `${rosterRows.length} players · ${`Sorted by ${sortNames.join(", then ")}`}`,
-      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Rank", w: 1.1 }, { label: "Power", align: "right", w: 0.8 }, { label: "Character", w: 1.2 }, { label: "Gear", w: 0.9 }, { label: "Mythic / Leg", align: "right", w: 0.9 }, { label: "Lane HP", align: "right", w: 0.8 }, { label: "DPS avg", align: "right", w: 0.8 }],
+      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Rank", w: 1.1 }, { label: "Power", align: "right", w: 0.8 }, { label: "Character", w: 1.2 }, { label: "Gear", w: 0.9 }, { label: "Mythic / Leg", align: "right", w: 0.9 }, { label: "Lane HP", align: "right", w: 0.8 }, { label: "Avg DPS", align: "right", w: 0.8 }],
         rows: rosterRows.map(m => [{ text: m.ign, bold: true }, m.rank || "", m.power?.m != null ? m.power.m.toFixed(2) + "M" : "—", m.preset?.chars?.[0]?.name || "—", { text: weaponSet(m) || "—", bar: weaponSet(m) || "line" },
           m.artifacts?.mythic != null ? `${m.artifacts.mythic} / ${m.artifacts.leg}` : "—", calcHp(m) != null ? "+" + Math.round(calcHp(m)) + "%" : "—", rosterDps(m) != null ? rosterDps(m) + " K/s" : "—"]) } }] })));
     const isDefault = sortStack.length === 1 && sortStack[0].key === "power" && sortStack[0].dir === -1;
@@ -2473,7 +2473,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         runeCell(m),
         el("td", { class: "num", text: atk != null ? atk.toFixed(2) + "%" : "—" }),
         el("td", { class: "num", text: hp != null ? "+" + Math.round(hp) + "%" : "—" }),
-        el("td", { class: "num", text: rosterDps(m) != null ? String(rosterDps(m)) : "—" }),
+        el("td", { class: "num", text: rosterDps(m) != null ? rosterDps(m) + " K/s" : "—" }),
         el("td", { class: "small muted", text: lastUpdated(m) ? shortDate(lastUpdated(m)) : "—", title: lastUpdated(m) || null }),
         el("td", {}, m.presetStatus ? el("span", { class: "chip " + (m.presetStatus === "Complete" ? "good" : m.presetStatus === "Bare" ? "bad" : "warn"), text: m.presetStatus }) : ""),
         el("td", {}, publicLink(m) ? el("span", { class: "chip good", title: linkedTo(m) ? "Linked by an officer" : "Linked by the player", text: "🔗 Linked" }) : el("span", { class: "small muted", text: "Not linked" })),
@@ -2531,7 +2531,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       kv("Artifacts (Mythic / Leg ★)", m.artifacts?.mythic != null ? `${m.artifacts.mythic} / ${m.artifacts.leg}` : "—", m.artifacts?.date || ""),
       kv("ATK bonus", atk != null ? atk.toFixed(2) + "%" : "—", "calculated"),
       kv("Lane HP if anchor", hp != null ? "+" + Math.round(hp) + "%" : "—", "calculated"),
-      kv("DPS avg", rosterDps(m) != null ? `${rosterDps(m)} K/s` : "—", (dpsAvg5(m.ign) || {}).n ? `${dpsAvg5(m.ign).n} matches · calculated` : m.dps?.matches ? `${m.dps.matches} matches · calculated` : "no tracked matches")));
+      kv("Avg DPS", rosterDps(m) != null ? `${rosterDps(m)} K/s` : "—", (dpsAvg5(m.ign) || {}).n ? `${dpsAvg5(m.ign).n} matches · calculated` : m.dps?.matches ? `${m.dps.matches} matches · calculated` : "no tracked matches")));
     // preset
     const p = m.preset || {};
     const chars = el("div", { class: "chars" });
@@ -3319,7 +3319,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const m = memberById(memberId(ign));
     const ws = m ? weaponSet(m) : "";
     const a = dpsAvg5(ign);
-    return el("span", { class: "pchip" + (ws ? " g-" + ws : ""), title: `${ign}${ws ? " · " + ws : ""}${a ? ` · DPS avg ${fmtRate(a.avg)} (${a.n})` : " · no DPS yet"}` },
+    return el("span", { class: "pchip" + (ws ? " g-" + ws : ""), title: `${ign}${ws ? " · " + ws : ""}${a ? ` · Avg DPS ${fmtRate(a.avg)} (${a.n})` : " · no DPS yet"}` },
       el("b", { text: ws ? ws[0] : "?" }), " ", playerLink(ign), extra || "");
   }
   // Lanes lock at 12:00 UTC on the round's day (4:00 AM PT). Before that we're preparing; after it, locked until results come in.
@@ -3477,7 +3477,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
       const ourCard = el("div", { class: "lanecard ours" },
         el("div", { class: "small" }, el("b", {}, guildLink("ArchAcademy")), r.our?.[ln]?.role ? el("span", { class: "chip neutral", style: "margin-left:6px", text: r.our[ln].role }) : null, r.our?.[ln]?.tier ? el("span", { class: "chip neutral", style: "margin-left:6px", text: r.our[ln].tier + " tier" }) : null),
         el("div", { class: "small muted", text: `⚓ ${(r.result && recAnchor) || os.anchor || "—"} +${Math.round(os.hp)}% · DR ${os.sg.toFixed(1)}% · ${os.dragoon}/${os.n} Dragoon · ${os.power.toFixed(1)}M` }),
-        el("div", { class: "small muted", text: `DPS avg sum ${fmtRate(os.dps)}${os.estimated ? ` (${os.estimated} estimated)` : ""}` }));
+        el("div", { class: "small muted", text: `Avg DPS sum ${fmtRate(os.dps)}${os.estimated ? ` (${os.estimated} estimated)` : ""}` }));
       if (editing) {
         const used = new Set(LANES.flatMap(l => draft[l]).filter(Boolean));
         for (let i = 0; i < 8; i++) {
@@ -3863,10 +3863,10 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
   const PCOLS = [
     { key: "ign", label: "Player", val: r => r.m.ign.toLowerCase() },
     { key: "gear", label: "Gear", val: r => (weaponSet(r.m) || "~").toLowerCase() },
-    { key: "dps", label: "DPS avg", num: true, val: r => r.avg5 ?? -1 },
+    { key: "dps", label: "Avg DPS", num: true, val: r => r.avg5 ?? -1 },
     { key: "best", label: "Best DPS", num: true, title: "Best round on their current gear", val: r => r.best ?? -1 },
     { key: "perf", label: ["Performance", "last 6 played rounds"], nosort: true },
-    { key: "so", label: "Notable", num: true, sortTitle: "High to low = biggest gains first; low to high = biggest drops first", val: r => notableVal(r) }
+    { key: "so", label: "Notable", num: true, left: true, sortTitle: "High to low = biggest gains first; low to high = biggest drops first", val: r => notableVal(r) }
   ];
   function renderPlayers() {
     const box = $("exp-players"); box.replaceChildren();
@@ -3895,7 +3895,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         else pSortStack = [{ key: c.key, dir: c.num ? -1 : 1 }, ...pSortStack.filter(s => s.key !== c.key)].slice(0, 4);
         renderPlayers();
       });
-      headRow.append(el("th", { class: c.num && c.key !== "perf" ? "num" : null, "aria-sort": si === 0 ? (sd < 0 ? "descending" : "ascending") : null }, b));
+      headRow.append(el("th", { class: c.num && c.key !== "perf" && !c.left ? "num" : null, "aria-sort": si === 0 ? (sd < 0 ? "descending" : "ascending") : null }, b));
     }
     const t = el("table", { class: "lb", id: "players-table" }, el("thead", {}, headRow));
     const tb = el("tbody");
@@ -3916,13 +3916,13 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const sortLine = el("div", { class: "small", id: "players-sort" }, "Sorted by ",
       ...pSortStack.map((s, i) => el("span", { class: "sortchip" }, sortNames[i],
         isDefault ? null : el("button", { type: "button", class: "sortx", "aria-label": `Remove the ${sortNames[i]} sort`, title: "Remove this sort", text: "✕", onclick: () => { pSortStack = pSortStack.filter(x => x.key !== s.key); if (!pSortStack.length) pSortStack = [{ key: "dps", dir: -1 }]; renderPlayers(); } }))),
-      isDefault ? el("span", { class: "muted", text: " · tap a column heading to sort by it" }) : el("button", { type: "button", class: "linkbtn", style: "margin-left:6px", text: "Reset to DPS avg", onclick: () => { pSortStack = [{ key: "dps", dir: -1 }]; renderPlayers(); } }));
+      isDefault ? el("span", { class: "muted", text: " · tap a column heading to sort by it" }) : el("button", { type: "button", class: "linkbtn", style: "margin-left:6px", text: "Reset to Avg DPS", onclick: () => { pSortStack = [{ key: "dps", dir: -1 }]; renderPlayers(); } }));
     const tableSpec = () => ({ title: "Player performance", subtitle: `Expedition DPS from every logged round · sorted by ${sortNames.join(", then ")}`,
-      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Gear" }, { label: "DPS avg", align: "right" }, { label: "Best DPS", align: "right" }, { label: "Notable", w: 2.2 }],
+      sections: [{ table: { columns: [{ label: "Player", w: 1.6 }, { label: "Gear" }, { label: "Avg DPS", align: "right" }, { label: "Best DPS", align: "right" }, { label: "Notable", w: 2.2 }],
         rows: rows.filter(r => r.played).map(r => { const s = r.so.filter(x => x.major)[0]; return [{ text: r.m.ign, bold: true }, { text: weaponSet(r.m) || "—", bar: weaponSet(r.m) || "line" }, r.avg5 != null ? fmtRate(r.avg5) : "—", r.best != null ? fmtRate(r.best) : "—", s ? { text: s.text, color: s.t === "up" ? "good" : "bad" } : ""]; }) } },
-        { text: "DPS = damage ÷ seconds survived. DPS avg = last 6 rounds on their current gear." }] });
+        { text: "DPS = damage ÷ seconds survived. Avg DPS = last 6 rounds on their current gear." }] });
     box.append(el("div", { class: "panel stack" }, el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: "Player performance" }), el("div", { class: "row" }, imgBtn("Copy as image", tableSpec))),
-      el("p", { class: "small muted", style: "margin:0", text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}. Most players have no note: only big changes get one. DPS = damage ÷ seconds survived; DPS avg is their last 6 rounds on their current gear (hover it for how many); Best DPS is their best round on current gear. Performance shows each player's last 6 played rounds on their own scale, newest on the right: hover a dot for the week and round; hollow dots are rounds on another gear set or with partial stats, not in the average. Tap a player for their round-by-round history.` }),
+      el("p", { class: "small muted", style: "margin:0", text: `${ups} notable gain${ups === 1 ? "" : "s"}, ${downs} notable drop${downs === 1 ? "" : "s"}. Most players have no note: only big changes get one. DPS = damage ÷ seconds survived; Avg DPS is their last 6 rounds on their current gear (hover it for how many); Best DPS is their best round on current gear. Performance shows each player's last 6 played rounds on their own scale, newest on the right: hover a dot for the week and round; hollow dots are rounds on another gear set or with partial stats, not in the average. Tap a player for their round-by-round history.` }),
       sortLine, el("div", { class: "tablewrap" }, t),
       el("details", {}, el("summary", { class: "small", text: "How notes are picked" }), el("ul", { class: "tips" },
         ...["Only big changes get a note here, at most one per player; smaller ones show on the player's own page.",
@@ -3957,7 +3957,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const m = memberById(memberId(ign));
     const ms = playerMatches(ign), c = ms.filter(x => x.counts), a = dpsAvg5(ign);
     const panel = el("div", { class: "panel stack" });
-    const detailSpec = () => ({ title: `${ign}: Expedition history`, subtitle: `DPS avg ${a ? fmtRate(a.avg) : "—"} · ${c.length} of ${ms.length} rounds counted · gear ${m ? (weaponSet(m) || "—") : "—"}`,
+    const detailSpec = () => ({ title: `${ign}: Expedition history`, subtitle: `Avg DPS ${a ? fmtRate(a.avg) : "—"} · ${c.length} of ${ms.length} rounds counted · gear ${m ? (weaponSet(m) || "—") : "—"}`,
       sections: [tipsForImage.length ? { heading: "What stands out", bullets: tipsForImage } : null,
         { table: { columns: [{ label: "Round", w: 2 }, { label: "Lane" }, { label: "Damage", align: "right" }, { label: "Survived", align: "right" }, { label: "DPS", align: "right" }, { label: "vs lane", align: "right" }],
           rows: [...ms].reverse().map(x => [`${x.weekLabel} R${x.round} vs ${x.opponent}`, LANE_LABEL[x.lane] + (x.anchor ? " ⚓" : ""), fmtK(x.dmg), x.surv ? x.surv + "s" : "—", { text: x.dps != null ? fmtRate(x.dps) + (x.counts ? "" : " *") : "—", bold: x.counts }, x.index != null ? x.index.toFixed(2) + "×" : "—"]) } },
@@ -3965,7 +3965,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     const tipsForImage = [];
     panel.append(el("div", { class: "row", style: "justify-content:space-between" }, el("h2", { text: ign }), el("div", { class: "row" }, imgBtn("Copy as image", detailSpec), el("button", { type: "button", class: "btn ghost", text: "All players", onclick: () => { expPlayer = null; renderExpedition(); } }))));
     const stat = (k, v) => el("div", { class: "stat" }, el("div", { class: "k", text: k }), el("div", { class: "v", style: "font-size:1.15rem", text: v }));
-    panel.append(el("div", { class: "stats" }, stat("DPS avg", a ? fmtRate(a.avg) : "—"), stat("Rounds counted", `${c.length} of ${ms.length}`),
+    panel.append(el("div", { class: "stats" }, stat("Avg DPS", a ? fmtRate(a.avg) : "—"), stat("Rounds counted", `${c.length} of ${ms.length}`),
       stat("Best", c.length ? fmtRate(Math.max(...c.map(x => x.dps))) : "—"), stat("vs lane median", c.length ? median(c.map(x => x.index)).toFixed(2) + "×" : "—"),
       stat("Gear now", m ? (weaponSet(m) || "—") : "—"), stat("Character now", m?.preset?.chars?.[0]?.name || "—")));
     // insights (rules, plain language)
@@ -4023,7 +4023,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         "The past-lanes check uses today's DPS averages, which include those same fights, so it flatters the model. Treat it as a sanity check, not a backtest."]],
       ["DPS", [
         "DPS = damage ÷ seconds survived. A player alive at the end gets the full fight length.",
-        "DPS Avg = plain average of the last 6 counted rounds (raw numbers, so it can differ by about 1K from the tracker sheet, which averaged rounded values).",
+        "Avg DPS = plain average of the last 6 counted rounds (raw numbers, so it can differ by about 1K from the tracker sheet, which averaged rounded values).",
         "Not counted: rounds on a different gear set (KatieCarmine's Oracle rounds, Zeuzo on Nov 6) and rounds with partial stats (Nov 7 and Nov 8, no survival times).",
         "Players with no counted match use an estimate by weapon set: Dragoon 60K/s, Oracle 15K/s, Griffin 15K/s, mixed 30K/s, other or unknown 20-30K/s (from the logged medians). Marked \"estimated\" or \"?\".",
         "Opponent DPS = average of every match we saw them in (vs us or vs others). Without a sighting, the same gear-based estimate is used.",
@@ -4039,7 +4039,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         "Nov 22 vs Holymoly: their lanes are predicted to repeat R1/R2 (they used the identical 24 twice).",
         "Opponent predictions assume their Expedition preset matches their main profile (we can only see their profiles). Opponent characters are never recorded."]],
       ["Suggested lineups", [
-        "Anchors = our top 3 by Mythic stars. The other 21 = highest DPS Avg (or estimate) among eligible players.",
+        "Anchors = our top 3 by Mythic stars. The other 21 = highest Avg DPS (or estimate) among eligible players.",
         "Eligible = active, preset not bare, fewer than 4 Mythic-quality gear pieces (Daby's rule against Mythic / mostly-Mythic gear). Missing resonances or mystlings aren't checked yet.",
         "Spread: one anchor per lane, damage dealers snake-drafted. Stack two, concede one: top 14 split across the two best anchors, the third anchor plus the next 7 concede. Every lane-to-position arrangement is scored and the best kept.",
         "Spread is recommended unless stacking gains more than 0.1 expected flags."]],

@@ -103,7 +103,7 @@ async def main():
         await pg.click("#tab-roster"); await pg.wait_for_timeout(300)
         await pg.fill("#roster-search", "michelo"); await pg.wait_for_timeout(100)
         rt = await pg.inner_text("#roster-body")
-        check("roster DPS comes from expedition data (6-round avg)", "165" in rt, rt[-60:])
+        check("roster Avg DPS from expedition data, with units", "165 K/s" in rt, rt[-60:])
         # new week
         await pg.click("#tab-expedition"); await pg.click("#exp-new-week"); await pg.wait_for_timeout(100)
         await pg.click("text=Create week"); await pg.wait_for_timeout(400)
