@@ -23,7 +23,8 @@ The shared database lives inside the artifact (that's what members' dashboards r
 
 ## Branches (from v9.0.0, per Daby)
 
-- **`main`** is always exactly what's live. Nothing lands on `main` except a release.
+- **`main`** always matches what's live: `app/` on `main` changes only in a "Release vX.Y.Z" commit. Docs-only commits
+  (README, process docs, database exports) can go straight to `main`.
 - **Feature branches:** every piece of work gets its own branch off `main`: `feature/<short-name>` for new features and
   improvements, `fix/<short-name>` for bug fixes and maintenance. Commit and run the tests on the branch; push it so the
   work is backed up. Keep it current with `main` (merge `main` in) if a release lands meanwhile.

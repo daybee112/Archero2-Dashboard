@@ -34,7 +34,7 @@ without logging it.
 ## Branches and batched releases (from v9.0.0, per Daby)
 
 v9.0.0 is the first stable release. Work now happens on GitHub feature branches (`feature/…`, `fix/…`) off `main`, and
-releases ship in batches when appropriate rather than after every change. `main` always equals what's live. The batch's
+releases ship in batches when appropriate rather than after every change. `app/` on `main` always equals what's live (docs-only commits are fine). The batch's
 biggest change sets the version: any new feature → major, else page improvements → minor, else fixes only → patch. An
 urgent fix can still ship alone as a patch. Details in the repo README.
 
