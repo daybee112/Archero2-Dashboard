@@ -18,6 +18,15 @@ EXPECT = {
                                         "Frostshock Touch", "Arrow Rain", "Ring of Agony", "Circle"]),
   "profile-daybee-small.jpg": ("profile", ["Sprite Multishot", "Sprite Link", "Sharp Arrow", "Flamenox Seal", "Revive", "Lucky Shadow", "Sprite Assist", "Sprite's Awe", "Arrow of Echoes",
                                            "Melee Sprite", "Healing Sprite", "Arrow Rain", "Flamenox Touch"]),
+  # other players' profiles from the pilot video (blue window, character and glow in front of some runes); not used as references
+  "profile-video-12.jpg": ("profile", ["Dragonflight Sword", "Sawblade Circle", "Potion Magnet", "Spin SPD Up", "Revive", "Lucky Shadow", "Pulsing Orb", None, "Swordstrike Aerie",
+                                       "Circle", "Ring of Agony", "Sword of Time", "Arrow Rain"]),
+  "profile-video-27.jpg": ("profile", ["Sharp Arrow", "Frostshock Seal", "Potion Magnet", "Flamenox Seal", "Revive", "Lucky Shadow", "Arrow of Echoes", "Elemental Crit", "Sprite's Awe",
+                                       None, "Arrow Rain", "Flamenox Touch", "Frostshock Touch"]),
+  "profile-video-35.jpg": ("profile", ["Sharp Arrow", "Sprite Link", "Potion Magnet", "Sprite Multishot", "Intelligence", "Rabbit's Foot", "Arrow of Echoes", "Sprite's Awe", "Sprite Assist",
+                                       "Arrow Rain", "Ring of Agony", "Melee Sprite", "Healing Sprite"]),
+  "profile-video-45.jpg": ("profile", ["Sharp Arrow", "Potion Magnet", "Frostshock Seal", "Sprite Multishot", "Revive", "Guardian", None, "Sprite's Awe", "Arrow of Echoes",
+                                       "Arrow Rain", "Melee Sprite", "Frostshock Touch", "Healing Sprite"]),
 }
 async def main():
     async with async_playwright() as p:
@@ -34,7 +43,8 @@ async def main():
             wrong = [(e, g) for e, g in zip(names, got) if g is not None and g != e]
             check(f"{f}: no wrong names", not wrong, str(wrong))
             known = sum(1 for e, g in zip(names, got) if g is not None and g == e)
-            check(f"{f}: at least 11 of 13 read", known >= 11, f"{known} read; blanks at {[i for i, g in enumerate(got) if g is None]}")
+            need = 10 if f.startswith("profile-video") else 11
+            check(f"{f}: at least {need} of 13 read", known >= need, f"{known} read; blanks at {[i for i, g in enumerate(got) if g is None]}")
             if f == "preset-hago26.png":
                 check("Mythic tier from the red frame (Sharp Arrow, Arrow Rain)", r["slots"][0]["q"] == "Mythic" and r["slots"][10]["q"] == "Mythic", str([s["q"] for s in r["slots"]]))
         check("no page errors", not errs, str(errs[:3]))
