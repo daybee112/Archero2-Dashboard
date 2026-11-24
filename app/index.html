@@ -305,9 +305,14 @@ tr.rrow:hover td, tr.rrow.sel td { background: color-mix(in srgb, var(--accent) 
 #roster-float-corner th { box-shadow: inset -1px 0 0 var(--line), inset 0 -1px 0 var(--line); }
 #roster-float th .sortbtn { text-align: inherit; }
 tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.envbar { display: none; margin: -4px 0 10px; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 13px;
+  color: #3b2a00; background: repeating-linear-gradient(-45deg, #ffd54a, #ffd54a 12px, #ffe58a 12px, #ffe58a 24px); }
+body.env-staging .envbar { display: block; }
 </style>
+<script src="env.js"></script>
 </head>
 <body>
+<script>if (window.AA_ENV === "staging") { document.body.classList.add("env-staging"); document.title = "STAGING · " + document.title; }</script>
 <div class="wrap">
   <div class="topbar">
   <header class="top">
@@ -318,6 +323,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     <div class="small muted row"><span id="whoami"></span><span id="whoami-ign" class="muted"></span><a href="#changelog" class="chip vbtn" id="release-badge" title="Change log and activity log" style="text-decoration:none">version …</a></div>
   </header>
 
+  <div class="envbar" id="envbar" role="note">Staging: a test copy of the dashboard. Nothing here touches the live dashboard or the guild's data.</div>
   <nav class="tabs" aria-label="Sections">
     <a href="#inventory" id="tab-inventory">Inventory</a>
     <a href="#builds" id="tab-builds">Builds</a>
@@ -545,6 +551,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
         <h2>Roster</h2>
         <div class="row" id="roster-officer" hidden>
           <button type="button" class="btn ghost" id="btn-add-member">Add member</button>
+          <button type="button" class="btn ghost" id="btn-vid">Import profile video</button>
           <button type="button" class="btn" id="btn-import">Import preset screenshot</button>
         </div>
       </div>
@@ -568,6 +575,21 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     </div>
 
     <div class="panel stack" id="member-panel" hidden></div>
+    <div class="panel stack" id="vid-panel" hidden>
+      <div class="row" style="justify-content:space-between"><h2>Import a profile video</h2><button type="button" class="btn ghost" id="btn-vid-close">Close</button></div>
+      <ol class="steps small">
+        <li>In game, open the guild's member list and <b>screen-record</b> while you go through players one at a time: tap a player, then show their <b>Namecard</b>, <b>Gear</b>, <b>Runes</b>, <b>Mystling</b> and every <b>Artifact</b> page (scroll until you reach the Epic artifacts), then go back to the list for the next player. Pause about a second on each screen.</li>
+        <li>Pick whose roster it is and the video. The video stays on this device: the dashboard pulls out one still picture per screen and only those go to Claude (uses some of your Claude usage).</li>
+        <li>Check the results table. Nothing saves until you tap <b>Apply</b>. Unclear values stay blank.</li>
+      </ol>
+      <div class="controls">
+        <div class="field"><label for="vid-target">Whose roster</label><select id="vid-target"></select></div>
+        <div class="field" id="vid-newopp-f" hidden><label for="vid-newopp">Opponent guild name</label><input type="text" id="vid-newopp" maxlength="40"></div>
+        <div class="field"><label for="vid-file">Video</label><input type="file" id="vid-file" accept="video/*"></div>
+      </div>
+      <div class="row"><button type="button" class="btn" id="btn-vid-read" disabled>Read video</button><button type="button" class="btn ghost" id="btn-vid-stop" hidden>Stop</button><span id="vid-status" class="small"></span></div>
+      <div id="vid-result" class="stack"></div>
+    </div>
     <div class="panel stack" id="import-panel" hidden>
       <div class="row" style="justify-content:space-between"><h2>Import Expedition presets</h2><button type="button" class="btn ghost" id="btn-import-close">Close</button></div>
       <ol class="steps small">
@@ -3021,6 +3043,217 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     }
     btn.disabled = false;
   });
+  // ================= Profile video import =================
+  // A screen recording of players' profile screens -> one still per screen (on this device) -> Claude reads each still ->
+  // grouped by player (a Namecard starts each player) -> review table -> Apply. Opponents: never characters, only
+  // power, artifacts and gear set. Our guild: power and artifact stars (gear on the profile isn't the Expedition preset).
+  const VID = { STEP: 1 / 6, W: 118, H: 256, STILL: 0.12, MIN: 2, SAME: 0.04, BATCH: 6, OUT_H: 1568 };
+  let vidCtl = null;
+  function vidTargets() {
+    const sel = $("vid-target"), cur = sel.value;
+    sel.replaceChildren(el("option", { value: "__us", text: "Our guild (update the roster)" }),
+      ...Object.keys(allOpponents()).sort((a, z) => a.localeCompare(z)).map(n => el("option", { value: n, text: `Opponent: ${n}` })),
+      el("option", { value: "__new", text: "New opponent guild…" }));
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+    $("vid-newopp-f").hidden = sel.value !== "__new";
+  }
+  function vidReady() { $("btn-vid-read").disabled = !$("vid-file").files.length || ($("vid-target").value === "__new" && !$("vid-newopp").value.trim()); }
+  $("btn-vid").addEventListener("click", () => { vidTargets(); vidReady(); $("vid-panel").hidden = false; $("vid-panel").scrollIntoView({ block: "start", behavior: "smooth" }); });
+  $("btn-vid-close").addEventListener("click", () => { vidCtl?.abort(); $("vid-panel").hidden = true; });
+  $("vid-target").addEventListener("change", () => { $("vid-newopp-f").hidden = $("vid-target").value !== "__new"; vidReady(); });
+  $("vid-newopp").addEventListener("input", vidReady);
+  $("vid-file").addEventListener("change", () => { $("vid-result").replaceChildren(); $("vid-status").textContent = ""; vidReady(); });
+  $("btn-vid-stop").addEventListener("click", () => vidCtl?.abort());
+
+  // Pull one still per screen: step through the video, find stretches where under 12% of the picture changes
+  // (the animated 3D character doesn't count as movement), keep one frame per stretch, drop repeats of the last screen.
+  async function videoStills(file, signal, onProgress) {
+    const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto";
+    const url = URL.createObjectURL(file); v.src = url;
+    try {
+      await new Promise((ok, bad) => { v.onloadeddata = ok; v.onerror = () => bad(new Error("format")); setTimeout(() => bad(new Error("format")), 20000); });
+      const dur = v.duration; if (!isFinite(dur) || dur <= 0) throw new Error("format");
+      const sc = document.createElement("canvas"); sc.width = VID.W; sc.height = VID.H; const sx = sc.getContext("2d", { willReadFrequently: true });
+      const scale = Math.min(1, VID.OUT_H / v.videoHeight);
+      const bc = document.createElement("canvas"); bc.width = Math.round(v.videoWidth * scale); bc.height = Math.round(v.videoHeight * scale); const bx = bc.getContext("2d");
+      const seek = (t) => new Promise((ok) => { const done = () => { v.removeEventListener("seeked", done); ok(); }; v.addEventListener("seeked", done); v.currentTime = t; });
+      const gray = () => { sx.drawImage(v, 0, 0, VID.W, VID.H); const d = sx.getImageData(0, 0, VID.W, VID.H).data, g = new Uint8Array(VID.W * VID.H);
+        for (let i = 0; i < g.length; i++) g[i] = (d[i * 4] * 299 + d[i * 4 + 1] * 587 + d[i * 4 + 2] * 114) / 1000; return g; };
+      const changed = (a, b) => { let n = 0; for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 20) n++; return n / a.length; };
+      const out = []; let prev = null, run = 0, lastKept = null, grabbed = false;
+      for (let t = 0; t < dur; t += VID.STEP) {
+        if (signal.aborted) throw new Error("stopped");
+        await seek(t); const g = gray();
+        const still = prev && changed(g, prev) < VID.STILL;
+        run = still ? run + 1 : 0; if (!still) grabbed = false;
+        if (run >= VID.MIN && !grabbed) {
+          grabbed = true;
+          if (!lastKept || changed(g, lastKept) >= VID.SAME) {
+            bx.drawImage(v, 0, 0, bc.width, bc.height);
+            const blob = await new Promise((ok) => bc.toBlob(ok, "image/jpeg", 0.9));
+            out.push({ t, blob, url: URL.createObjectURL(blob) }); lastKept = g;
+          }
+        }
+        prev = g; onProgress(Math.min(1, t / dur), out.length);
+      }
+      return out;
+    } finally { URL.revokeObjectURL(url); v.removeAttribute("src"); v.load(); }
+  }
+  function vidPrompt(n, first) {
+    return `You are reading ${n} screenshots, in order (numbered ${first} to ${first + n - 1}), from a screen recording of the mobile game Archero 2. ` +
+      "Most show a player's \"Personal Info\" window. For EACH screenshot say which screen it is and extract only what is clearly visible. " +
+      "If anything is unclear, cut off or not shown, use null. Never guess.\n\n" +
+      "Screen types:\n" +
+      "- namecard: Namecard tab, shows the player's name, guild and Power. Give name (exact spelling, keep any non-Latin characters) and power in millions.\n" +
+      "- gear: Profile > Gear tab, six gear pieces. For each slot give set and quality. Set by color/style: red/crimson pieces = Dragoon, silver-blue pieces = Oracle, black-and-yellow pieces = Griffin. " +
+      "Quality by frame: dark red/purple frame with a gold S = Chaotic; red frame = Mythic (a number badge N = Mythic+N); gold frame = Legendary.\n" +
+      "- runes: Profile > Runes tab. Nothing to extract.\n" +
+      "- mystling: Profile > Mystling tab. Give only the mystling marked \"In use\" (its name if you can tell, else null) and its star count: five star icons, gold stars count 1 each; colors go yellow, teal, red, purple/pink/blue fade, dark red with five per color (3 red + 2 teal = 13). Null if unsure.\n" +
+      "- artifacts: Profile > Artifact tab. List EVERY artifact you can see with its exact name, its tier from the cushion color (red cushion = Mythic, orange cushion = Legendary, purple or blue cushion = Epic) " +
+      "and its star count: gold stars count 1 to 5; red stars replace gold ones and the first red counts as 6 (5 + number of red); blue stars count 10 + number of blue; empty slots count 0.\n" +
+      "- roster_list: the guild's member list (not a Personal Info window).\n" +
+      "- other: anything else.\n" +
+      "Do NOT describe or name any characters or heroes shown in the pictures.\n\n" +
+      'Reply with ONLY this JSON, no other text:\n{"screens":[{"i":' + first + ',"type":"namecard|gear|runes|mystling|artifacts|roster_list|other","name":null,"power_m":null,' +
+      '"gear":{"weapon":{"set":null,"quality":null},"amulet":{"set":null,"quality":null},"ring":{"set":null,"quality":null},"helmet":{"set":null,"quality":null},"armor":{"set":null,"quality":null},"boots":{"set":null,"quality":null}},' +
+      '"mystling":{"name":null,"stars":null},"artifacts":[{"name":"","tier":"Mythic|Legendary|Epic","stars":0}]}]}\nOnly fill the fields that belong to that screen type.';
+  }
+  // Group the read screens into players: a namecard starts a player; everything after it belongs to that player until the next namecard or the list.
+  function vidGroup(screens) {
+    const players = []; let cur = null; const loose = [];
+    for (const sc of screens) {
+      if (sc.type === "namecard") { cur = { name: (sc.name || "").trim() || null, power: typeof sc.power_m === "number" && sc.power_m > 0.5 && sc.power_m < 100 ? Math.round(sc.power_m * 100) / 100 : null, gear: {}, mystling: null, arts: {}, sawEpic: false, frames: [sc.i] }; players.push(cur); continue; }
+      if (sc.type === "roster_list" || sc.type === "other" || sc.type === "runes") { if (sc.type === "roster_list") cur = null; else if (cur) cur.frames.push(sc.i); continue; }
+      if (!cur) { loose.push(sc.i); continue; }
+      cur.frames.push(sc.i);
+      if (sc.type === "gear") for (const { id } of D.gearSlots) { const g = (sc.gear || {})[id] || {}; const set = SETS.includes(g.set) ? g.set : null, q = D.gearQualities.includes(g.quality) ? g.quality : null; if (set || q) cur.gear[id] = { set, q }; }
+      if (sc.type === "mystling" && sc.mystling) cur.mystling = { name: D.mystlings.some(m => m.name === sc.mystling.name) ? sc.mystling.name : null, stars: Number.isInteger(sc.mystling.stars) && sc.mystling.stars >= 0 && sc.mystling.stars <= D.mystlingMaxStars ? sc.mystling.stars : null };
+      if (sc.type === "artifacts") for (const a of (Array.isArray(sc.artifacts) ? sc.artifacts : [])) {
+        const nm = String(a && a.name || "").trim(); if (!nm) continue;
+        if (a.tier === "Epic") { cur.sawEpic = true; continue; }
+        if (a.tier !== "Mythic" && a.tier !== "Legendary") continue;
+        const st = Number.isInteger(a.stars) && a.stars >= 0 && a.stars <= 15 ? a.stars : null;
+        const k = nm.toLowerCase(); if (!cur.arts[k] || (cur.arts[k].stars == null && st != null)) cur.arts[k] = { name: nm, tier: a.tier, stars: st };
+      }
+    }
+    for (const p of players) {
+      const arts = Object.values(p.arts), unknown = arts.filter(a => a.stars == null).length;
+      p.artCount = arts.length;
+      p.mythic = arts.length && !unknown ? arts.filter(a => a.tier === "Mythic").reduce((x, a) => x + a.stars, 0) : null;
+      p.leg = arts.length && !unknown ? arts.filter(a => a.tier === "Legendary").reduce((x, a) => x + a.stars, 0) : null;
+      p.artsComplete = arts.length > 0 && !unknown && p.sawEpic;
+      const sets = Object.values(p.gear).map(g => g.set).filter(Boolean), qs = Object.values(p.gear).map(g => g.q).filter(Boolean);
+      const cnt = {}; for (const x of sets) cnt[x] = (cnt[x] || 0) + 1;
+      const top = Object.entries(cnt).sort((a, z) => z[1] - a[1])[0];
+      p.gearSet = !top ? null : top[1] === sets.length ? top[0] : `${top[0]} (mixed)`;
+      p.gearNote = top && top[1] < sets.length ? D.gearSlots.filter(({ id }) => p.gear[id]?.set && p.gear[id].set !== top[0]).map(({ id, label }) => `${p.gear[id].set} ${label.toLowerCase()}`).join(" + ") : "";
+      p.gearQ = qs.length && qs.every(q => q === qs[0]) ? `all ${qs[0]}` : qs.length ? "mixed quality" : "";
+    }
+    return { players, loose };
+  }
+  $("btn-vid-read").addEventListener("click", async () => {
+    const st = $("vid-status"), res = $("vid-result"); res.replaceChildren();
+    const file = $("vid-file").files[0]; if (!file) return;
+    const target = $("vid-target").value, oppName = target === "__new" ? $("vid-newopp").value.trim() : target;
+    const sample = window.claude && typeof claude.use === "function" ? await claude.use("sample") : null;
+    if (!sample) { st.className = "small err"; st.textContent = "Reading videos isn't available here. Open this page inside Claude."; return; }
+    try { const lim = await sample.limits(); if (!lim || !lim.images) { st.className = "small err"; st.textContent = "Image reading isn't available on this account."; return; } } catch {}
+    vidCtl?.abort(); vidCtl = new AbortController(); const signal = vidCtl.signal;
+    $("btn-vid-read").disabled = true; $("btn-vid-stop").hidden = false; st.className = "small";
+    try {
+      let stills;
+      try { stills = await videoStills(file, signal, (f, n) => { st.textContent = `Finding screens in the video… ${Math.round(f * 100)}% (${n} so far)`; }); }
+      catch (e) { if (e.message === "stopped") throw e; st.className = "small err"; st.textContent = "This browser couldn't open the video. On iPhone, set Settings → Camera → Formats to Most Compatible and record again."; return; }
+      if (!stills.length) { st.className = "small err"; st.textContent = "No still screens found. Pause about a second on each screen while recording."; return; }
+      const screens = [];
+      for (let i = 0; i < stills.length; i += VID.BATCH) {
+        const part = stills.slice(i, i + VID.BATCH);
+        st.textContent = `Reading screens ${i + 1}–${i + part.length} of ${stills.length}…`;
+        let got = [];
+        try {
+          const r = await sample(vidPrompt(part.length, i + 1), { images: part.map(x => x.blob), signal, modelTier: "default" });
+          got = (parseJsonLoose(r.text).screens || []).filter(x => x && Number.isInteger(x.i));
+        } catch (e) {
+          if (e && e.code === "cancelled") throw new Error("stopped");
+          if (e && (e.code === "rate_limited" || e.code === "not_granted" || e.code === "sampling_disabled")) { st.className = "small err"; st.textContent = SAMPLE_ERR[e.code]; return; }
+        }
+        for (let k = 0; k < part.length; k++) screens.push(got.find(x => x.i === i + 1 + k) || { i: i + 1 + k, type: "unread" });
+      }
+      const { players, loose } = vidGroup(screens);
+      st.textContent = `Found ${stills.length} screens and ${players.length} player${players.length === 1 ? "" : "s"}. Check them, then apply.`;
+      renderVidResult(players, loose, screens, stills, target === "__us" ? null : oppName);
+    } catch (e) {
+      st.className = "small"; st.textContent = e && e.message === "stopped" ? "Stopped." : "Something went wrong reading the video.";
+    } finally { $("btn-vid-read").disabled = false; $("btn-vid-stop").hidden = true; vidReady(); }
+  });
+  function renderVidResult(players, loose, screens, stills, oppName) {
+    const res = $("vid-result"); res.replaceChildren();
+    const us = !oppName, today = localDate(Date.now());
+    const unread = screens.filter(x => x.type === "unread").length;
+    if (unread) res.append(el("div", { class: "hintbox err small", text: `${unread} screen${unread > 1 ? "s" : ""} couldn't be read; players on them may be missing values.` }));
+    if (loose.length) res.append(el("div", { class: "small muted", text: `Screens ${loose.join(", ")} came before any namecard, so they aren't matched to a player.` }));
+    const rows = players.map((p, i) => {
+      const m = us && p.name ? findIgn(p.name) : null;
+      return { p, i, m, on: el("input", { type: "checkbox" }) };
+    });
+    const t = el("table", { class: "lb", style: "min-width:0" }, el("thead", {}, el("tr", {}, ...["", "Player", "Power", "Mythic / Leg stars", us ? "Mystling" : "Gear", "Screens"].map(h => el("th", { text: h })))));
+    const b = el("tbody");
+    for (const r of rows) {
+      const { p, m } = r;
+      const ok = p.name && (!us || m) && (p.power != null || (p.artsComplete && p.mythic != null));
+      r.on.checked = !!ok; r.on.disabled = !p.name || (us && !m);
+      const nowP = m?.power?.m != null ? m.power.m.toFixed(2) + "M" : "—", nowA = m?.artifacts?.mythic != null ? `${m.artifacts.mythic} / ${m.artifacts.leg}` : "—";
+      const art = p.mythic != null ? `${p.mythic} / ${p.leg}` : "—";
+      const artTxt = (us ? `${nowA} → ` : "") + art + (p.artCount && !p.artsComplete ? " (incomplete: didn't reach the Epic artifacts)" : "");
+      b.append(el("tr", { "data-vid": String(r.i) },
+        el("td", {}, r.on),
+        el("td", { class: "small" }, el("b", { text: p.name || "name unclear" }), us && p.name && !m ? el("span", { class: "err", text: " · not on the roster" }) : null),
+        el("td", { class: "small", text: (us ? `${nowP} → ` : "") + (p.power != null ? p.power.toFixed(2) + "M" : "—") }),
+        el("td", { class: "small" + (p.artCount && !p.artsComplete ? " err" : ""), text: artTxt }),
+        el("td", { class: "small", text: us ? (p.mystling ? `${p.mystling.name || "?"}${p.mystling.stars != null ? " ★" + p.mystling.stars : ""}` : "—") : [p.gearSet, p.gearQ, p.gearNote].filter(Boolean).join(" · ") || "—" }),
+        el("td", { class: "small muted", text: p.frames.join(", ") })));
+    }
+    t.append(b); res.append(el("div", { class: "tablewrap" }, t));
+    res.append(el("p", { class: "small muted", style: "margin:0", text: us
+      ? "Applying updates power and artifact stars (artifact stars only when every Mythic and Legendary artifact was shown). Gear on the profile is the main build, not the Expedition preset, so it isn't applied."
+      : `Applying saves a new scan for ${oppName} dated ${today}: power, artifact stars and gear set for each ticked player. Characters are never recorded.` }));
+    const msg = el("span", { class: "small" }), apply = el("button", { type: "button", class: "btn", text: us ? "Apply to roster" : `Save scan for ${oppName}` });
+    apply.addEventListener("click", async () => {
+      const picked = rows.filter(r => r.on.checked && !r.on.disabled);
+      if (!picked.length) { msg.textContent = "Tick at least one player."; return; }
+      apply.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
+      try {
+        if (us) {
+          let n = 0;
+          for (const { p, m } of picked) {
+            const nm = clone(memberById(m.id)); let ch = false;
+            if (p.power != null) { nm.power = { m: p.power, date: today, src: "profile video" }; ch = true; }
+            if (p.artsComplete && p.mythic != null) { nm.artifacts = { ...(nm.artifacts || {}), mythic: p.mythic, leg: p.leg, date: today }; ch = true; }
+            if (p.mystling && (p.mystling.name || p.mystling.stars != null)) { nm.mystlingSeen = `${p.mystling.name || "?"}${p.mystling.stars != null ? " ★" + p.mystling.stars : ""} (profile video ${today})`; ch = true; }
+            if (ch) { await saveMember(nm, "edited roster", `${m.ign}: from a profile video`); n++; }
+          }
+          msg.className = "small ok-msg"; msg.textContent = `Updated ${n} player${n === 1 ? "" : "s"}.`;
+        } else {
+          const o = clone(allOpponents()[oppName] || { name: oppName, weeks: [], scans: [] }); o.name = oppName; o.scans = o.scans || [];
+          o.scans.push({ date: today, source: "profile video", players: picked.map(({ p }) => {
+            const x = { name: p.name }; if (p.power != null) x.power = p.power;
+            if (p.artsComplete && p.mythic != null) { x.mythic = p.mythic; x.leg = p.leg; }
+            if (p.gearSet) x.gear = p.gearSet + (p.gearQ ? `, ${p.gearQ}` : "");
+            if (p.gearNote) x.note = p.gearNote;
+            return x; }) });
+          await saveOpponent(o, `scan of ${oppName} from a profile video (${picked.length} players)`);
+          msg.className = "small ok-msg"; msg.textContent = `Saved a scan of ${picked.length} player${picked.length === 1 ? "" : "s"} for ${oppName}.`;
+          vidTargets();
+        }
+      } catch { msg.className = "small err"; msg.textContent = "Couldn't save. Only officers can do this."; apply.disabled = false; }
+    });
+    res.append(el("div", { class: "row" }, apply, msg));
+    const det = el("details", {}, el("summary", { class: "small", text: `See the ${stills.length} screens it found` }));
+    const g = el("div", { class: "shots" });
+    stills.forEach((x, k) => g.append(el("figure", { style: "margin:0;text-align:center" }, el("img", { src: x.url, alt: "", style: "height:120px;border-radius:6px" }),
+      el("figcaption", { class: "small muted", text: `${k + 1} · ${screens[k]?.type || "?"}` }))));
+    det.append(g); res.append(det);
+  }
   // One result block per preset. Returns its apply function (for "Apply all").
   function renderImportResult(r, g) {
     const res = $("imp-result");
