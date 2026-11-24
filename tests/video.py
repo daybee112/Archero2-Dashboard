@@ -28,6 +28,10 @@ window.__vidScript = (i) => {
     9: { type: "roster_list" },
     10: { type: "namecard", name: "NotAMember", power_m: 10.15 },
     11: gear("mix"),
+    12: { type: "namecard", name: "NotAMember", power_m: 10.15 },   // same card again: no new row
+    13: { type: "roster_list" },
+    14: { type: "namecard", name: "daybee", power_m: 11.07 },       // daybee visited a second time: merges into the first row
+    15: { type: "namecard", name: null, power_m: null },
   };
   return Object.assign({ i }, map[i] || { type: "other" });
 };
@@ -67,7 +71,7 @@ async def main():
         check("read in batches of at most 6", batches and max(batches) <= 6 and sum(batches) == n, str(batches))
         rows = await pg.eval_on_selector_all("#vid-result tbody tr", "r=>r.map(x=>x.innerText.replace(/\\s+/g,' '))")
         print(rows)
-        check("two players found", len(rows) == 2, str(len(rows)))
+        check("two players found (repeat namecards and a second visit merged, no duplicates)", len(rows) == 2, str(len(rows)))
         check("daybee: power and artifact totals (Mythic 15, Leg 15) with no double count", "11.07M" in rows[0] and "→ 15 / 15" in rows[0] and "incomplete" not in rows[0], rows[0])
         check("daybee: mystling", "Death Mage ★14" in rows[0])
         import re as _re
