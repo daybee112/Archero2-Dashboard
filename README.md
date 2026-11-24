@@ -45,7 +45,11 @@ nothing done there touches the live dashboard or the guild's data, and a striped
 
 - **How it differs:** only `env.js`. Live serves `app/env.js` (`AA_ENV = "live"`); staging is published with
   `tools/staging/env.js` (`AA_ENV = "staging"`) in its place, which turns the banner on.
-- **Publishing a branch to staging:** `publish_files` to the staging slug with every file in `app/` except `env.js`, plus
+- **What it shows:** live plus everything waiting for the next release. The `staging` branch is rebuilt as `main` with
+  every finished feature/fix branch merged in (`git checkout -B staging main`, then merge each branch), tested, pushed and
+  published to the staging copy. Rebuild it whenever a branch is finished or `main` moves. Never merge `staging` into
+  `main`: releases still merge the feature branches themselves.
+- **Publishing to staging:** `publish_files` to the staging slug with every file in `app/` except `env.js`, plus
   `tools/staging/env.js` served as `env.js`. No version bump, no changelog entry, no OK needed: it's a sandbox.
 - **Its data:** the first officer visit copies the starting data in from the seed files (the same migration live ran),
   so it starts with older real data. Anything can be added, broken or wiped there.
