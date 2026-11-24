@@ -85,6 +85,7 @@ async def main():
         mb = doc.get("mainBuild") or {}
         check("main build saved: gear, runes, incomplete, preset untouched", mb.get("incomplete") is True and mb.get("gear", {}).get("weapon", {}).get("set") == "Dragoon"
               and sum(len(v) for v in mb.get("runes", {}).values()) >= 9 and doc["preset"]["chars"][0]["name"] == "Helix", json.dumps(mb)[:300])
+        check("main build includes the mystling", mb.get("mystling") == {"name": "Death Mage", "stars": 14}, json.dumps(mb.get("mystling")))
         inv = (await pg.evaluate("window.__store.get('inventory/m-daybee')"))["inv"]
         check("inventory: Mythic rune not lowered, +3 rune not lowered", inv["runes"].get("Sharp Arrow") == "Mythic" and inv["runes"].get("Sprite Link") == "Legendary+3", json.dumps(inv["runes"]))
         check("inventory: new rune added at its tier", inv["runes"].get("Sprite Multishot") == "Legendary" and inv["runes"].get("Revive") == "Legendary")
