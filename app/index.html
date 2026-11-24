@@ -3065,6 +3065,40 @@ body.env-staging .envbar { display: block; }
   $("vid-file").addEventListener("change", () => { $("vid-result").replaceChildren(); $("vid-status").textContent = ""; vidReady(); });
   $("btn-vid-stop").addEventListener("click", () => vidCtl?.abort());
 
+  let lastVid = null;
+  // Read the given screens (1-based numbers) into `screens`, a batch per call. A batch that fails for a reason other than
+  // permission/limits is split once into single screens, so one bad picture or a too-long answer doesn't lose its neighbours.
+  async function vidReadInto(screens, nums, stills, sample, signal, maxImgs, say) {
+    const out = { last: "", fatal: "" };
+    const call = async (part) => {
+      const r = await sample(vidPrompt(part), { images: part.map(n => stills[n - 1].blob), signal, modelTier: "default" });
+      const got = (parseJsonLoose(r.text).screens || []).filter(x => x && Number.isInteger(x.i));
+      if (r.truncated && got.length < part.length) throw { code: "truncated", message: "answer cut short" };
+      for (const n of part) { const g = got.find(x => x.i === n); if (g) screens[n - 1] = g; }
+    };
+    const stop = (e) => { if (e && e.code === "cancelled") throw new Error("stopped");
+      if (e && ["rate_limited", "not_granted", "sampling_disabled", "session_expired", "images_unavailable"].includes(e.code)) { out.fatal = SAMPLE_ERR[e.code] || "Claude can't read images here right now."; return true; } return false; };
+    const why = (e) => ({ image_rejected: "a picture was rejected", truncated: "the answer was cut short", upstream_error: "a connection problem", refused: "Claude declined" }[e && e.code] || (e && e.message) || "an unreadable answer");
+    for (let k = 0; k < nums.length; k += maxImgs) {
+      const part = nums.slice(k, k + maxImgs);
+      say(`Reading screens ${k + 1}–${k + part.length} of ${nums.length}…`);
+      try { await call(part); }
+      catch (e) {
+        if (stop(e)) return out;
+        if (part.length === 1) { screens[part[0] - 1] = { i: part[0], type: "unread", why: why(e) }; continue; }
+        for (const n of part) {
+          say(`Reading screen ${n} on its own…`);
+          try { await call([n]); } catch (e2) { if (stop(e2)) return out; screens[n - 1] = { i: n, type: "unread", why: why(e2) }; }
+        }
+      }
+    }
+    return out;
+  }
+  function vidShow(lastErr) {
+    const { stills, screens, oppName } = lastVid;
+    const { players, loose } = vidGroup(screens);
+    renderVidResult(players, loose, screens, stills, oppName, lastErr);
+  }
   // Pull one still per screen: step through the video, find stretches where under 12% of the picture changes
   // (the animated 3D character doesn't count as movement), keep one frame per stretch, drop repeats of the last screen.
   async function videoStills(file, signal, onProgress) {
@@ -3099,8 +3133,9 @@ body.env-staging .envbar { display: block; }
       return out;
     } finally { URL.revokeObjectURL(url); v.removeAttribute("src"); v.load(); }
   }
-  function vidPrompt(n, first) {
-    return `You are reading ${n} screenshots, in order (numbered ${first} to ${first + n - 1}), from a screen recording of the mobile game Archero 2. ` +
+  function vidPrompt(nums) {
+    const n = nums.length, first = nums[0];
+    return `You are reading ${n} screenshot${n > 1 ? "s" : ""}, in order (numbered ${nums.join(", ")}), from a screen recording of the mobile game Archero 2. ` +
       "Most show a player's \"Personal Info\" window. For EACH screenshot say which screen it is and extract only what is clearly visible. " +
       "If anything is unclear, cut off or not shown, use null. Never guess.\n\n" +
       "Screen types:\n" +
@@ -3114,7 +3149,7 @@ body.env-staging .envbar { display: block; }
       "- roster_list: the guild's member list (not a Personal Info window).\n" +
       "- other: anything else.\n" +
       "Do NOT describe or name any characters or heroes shown in the pictures.\n\n" +
-      'Reply with ONLY this JSON, no other text:\n{"screens":[{"i":' + first + ',"type":"namecard|gear|runes|mystling|artifacts|roster_list|other","name":null,"power_m":null,' +
+      'Reply with ONLY this JSON (one entry per screenshot, using its number as i), no other text:\n{"screens":[{"i":' + first + ',"type":"namecard|gear|runes|mystling|artifacts|roster_list|other","name":null,"power_m":null,' +
       '"gear":{"weapon":{"set":null,"quality":null},"amulet":{"set":null,"quality":null},"ring":{"set":null,"quality":null},"helmet":{"set":null,"quality":null},"armor":{"set":null,"quality":null},"boots":{"set":null,"quality":null}},' +
       '"mystling":{"name":null,"stars":null},"artifacts":[{"name":"","tier":"Mythic|Legendary|Epic","stars":0}]}]}\nOnly fill the fields that belong to that screen type.';
   }
@@ -3165,32 +3200,41 @@ body.env-staging .envbar { display: block; }
       try { stills = await videoStills(file, signal, (f, n) => { st.textContent = `Finding screens in the video… ${Math.round(f * 100)}% (${n} so far)`; }); }
       catch (e) { if (e.message === "stopped") throw e; st.className = "small err"; st.textContent = "This browser couldn't open the video. On iPhone, set Settings → Camera → Formats to Most Compatible and record again."; return; }
       if (!stills.length) { st.className = "small err"; st.textContent = "No still screens found. Pause about a second on each screen while recording."; return; }
-      const screens = [];
-      for (let i = 0; i < stills.length; i += VID.BATCH) {
-        const part = stills.slice(i, i + VID.BATCH);
-        st.textContent = `Reading screens ${i + 1}–${i + part.length} of ${stills.length}…`;
-        let got = [];
-        try {
-          const r = await sample(vidPrompt(part.length, i + 1), { images: part.map(x => x.blob), signal, modelTier: "default" });
-          got = (parseJsonLoose(r.text).screens || []).filter(x => x && Number.isInteger(x.i));
-        } catch (e) {
-          if (e && e.code === "cancelled") throw new Error("stopped");
-          if (e && (e.code === "rate_limited" || e.code === "not_granted" || e.code === "sampling_disabled")) { st.className = "small err"; st.textContent = SAMPLE_ERR[e.code]; return; }
-        }
-        for (let k = 0; k < part.length; k++) screens.push(got.find(x => x.i === i + 1 + k) || { i: i + 1 + k, type: "unread" });
-      }
-      const { players, loose } = vidGroup(screens);
+      let maxImgs = VID.BATCH; try { const lim = await sample.limits(); maxImgs = Math.max(1, Math.min(VID.BATCH, lim?.images?.maxCount || VID.BATCH)); } catch {}
+      const screens = stills.map((_, k) => ({ i: k + 1, type: "unread" }));
+      const errs = await vidReadInto(screens, screens.map(x => x.i), stills, sample, signal, maxImgs, (t) => { st.textContent = t; });
+      if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; return; }
+      lastVid = { stills, screens, oppName: target === "__us" ? null : oppName, maxImgs };
+      const { players } = vidGroup(screens);
       st.textContent = `Found ${stills.length} screens and ${players.length} player${players.length === 1 ? "" : "s"}. Check them, then apply.`;
-      renderVidResult(players, loose, screens, stills, target === "__us" ? null : oppName);
+      vidShow(errs.last);
     } catch (e) {
       st.className = "small"; st.textContent = e && e.message === "stopped" ? "Stopped." : "Something went wrong reading the video.";
     } finally { $("btn-vid-read").disabled = false; $("btn-vid-stop").hidden = true; vidReady(); }
   });
-  function renderVidResult(players, loose, screens, stills, oppName) {
+  function renderVidResult(players, loose, screens, stills, oppName, lastErr) {
     const res = $("vid-result"); res.replaceChildren();
     const us = !oppName, today = localDate(Date.now());
-    const unread = screens.filter(x => x.type === "unread").length;
-    if (unread) res.append(el("div", { class: "hintbox err small", text: `${unread} screen${unread > 1 ? "s" : ""} couldn't be read; players on them may be missing values.` }));
+    const unreadNums = screens.filter(x => x.type === "unread").map(x => x.i), unread = unreadNums.length;
+    const reasons = [...new Set(screens.filter(x => x.type === "unread" && x.why).map(x => x.why))];
+    if (unread) {
+      const retry = el("button", { type: "button", class: "btn ghost", text: `Try the ${unread} unread screen${unread > 1 ? "s" : ""} again` });
+      retry.addEventListener("click", async () => {
+        const sample = window.claude && typeof claude.use === "function" ? await claude.use("sample") : null; if (!sample) return;
+        vidCtl?.abort(); vidCtl = new AbortController(); retry.disabled = true; $("btn-vid-stop").hidden = false;
+        const st = $("vid-status"); st.className = "small";
+        try {
+          const errs = await vidReadInto(lastVid.screens, unreadNums, lastVid.stills, sample, vidCtl.signal, lastVid.maxImgs, (t) => { st.textContent = t; });
+          if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; }
+          else { const n = vidGroup(lastVid.screens).players.length; st.textContent = `Found ${lastVid.stills.length} screens and ${n} player${n === 1 ? "" : "s"}. Check them, then apply.`; }
+          vidShow(errs.last);
+        } catch (e) { st.textContent = e && e.message === "stopped" ? "Stopped." : "Something went wrong."; }
+        finally { $("btn-vid-stop").hidden = true; retry.disabled = false; }
+      });
+      res.append(el("div", { class: "hintbox err small stack" },
+        el("span", { text: `${unread} of ${screens.length} screens couldn't be read${reasons.length ? ` (${reasons.join("; ")})` : ""}: screen${unread > 1 ? "s" : ""} ${unreadNums.join(", ")}. Players on them may be missing values.` }),
+        el("div", { class: "row" }, retry)));
+    }
     if (loose.length) res.append(el("div", { class: "small muted", text: `Screens ${loose.join(", ")} came before any namecard, so they aren't matched to a player.` }));
     const rows = players.map((p, i) => {
       const m = us && p.name ? findIgn(p.name) : null;
