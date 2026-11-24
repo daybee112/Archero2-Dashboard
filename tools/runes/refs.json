@@ -1,0 +1,278 @@
+[
+ {
+  "file": "ref/00_Sprite_Multishot.png",
+  "name": "Sprite Multishot",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_002.png"
+ },
+ {
+  "file": "ref/01_Sprite_Link.png",
+  "name": "Sprite Link",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_004.png"
+ },
+ {
+  "file": "ref/02_Sharp_Arrow.png",
+  "name": "Sharp Arrow",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_006.png"
+ },
+ {
+  "file": "ref/03_Flamenox_Seal.png",
+  "name": "Flamenox Seal",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_008.png"
+ },
+ {
+  "file": "ref/04_Melee_Sprite.png",
+  "name": "Melee Sprite",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_010.png"
+ },
+ {
+  "file": "ref/05_Healing_Sprite.png",
+  "name": "Healing Sprite",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_012.png"
+ },
+ {
+  "file": "ref/06_Arrow_Rain.png",
+  "name": "Arrow Rain",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_014.png"
+ },
+ {
+  "file": "ref/07_Flamenox_Touch.png",
+  "name": "Flamenox Touch",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_016.png"
+ },
+ {
+  "file": "ref/08_Devil_Pact.png",
+  "name": "Devil Pact",
+  "type": "blessing",
+  "src": "/home/claude/runes/full/s_018.png"
+ },
+ {
+  "file": "ref/09_Lucky_Shadow.png",
+  "name": "Lucky Shadow",
+  "type": "blessing",
+  "src": "/home/claude/runes/full/s_020.png"
+ },
+ {
+  "file": "ref/10_Sprite_Assist.png",
+  "name": "Sprite Assist",
+  "type": "etched",
+  "src": "/home/claude/runes/full/s_022.png"
+ },
+ {
+  "file": "ref/11_Sprites_Awe.png",
+  "name": "Sprite's Awe",
+  "type": "etched",
+  "src": "/home/claude/runes/full/s_024.png"
+ },
+ {
+  "file": "ref/12_Elemental_Crit.png",
+  "name": "Elemental Crit",
+  "type": "etched",
+  "src": "/home/claude/runes/full/s_026.png"
+ },
+ {
+  "file": "ref/13_Sawblade_Circle.png",
+  "name": "Sawblade Circle",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_028.png"
+ },
+ {
+  "file": "ref/14_Spin_SPD_Up.png",
+  "name": "Spin SPD Up",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_030.png"
+ },
+ {
+  "file": "ref/15_Dragonflight_Sword.png",
+  "name": "Dragonflight Sword",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_032.png"
+ },
+ {
+  "file": "ref/16_Ricochet_Strike.png",
+  "name": "Ricochet Strike",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_034.png"
+ },
+ {
+  "file": "ref/17_Giant_Meteor.png",
+  "name": "Giant Meteor",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_036.png"
+ },
+ {
+  "file": "ref/18_Potion_Magnet.png",
+  "name": "Potion Magnet",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_038.png"
+ },
+ {
+  "file": "ref/19_Frostshock_Seal.png",
+  "name": "Frostshock Seal",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_040.png"
+ },
+ {
+  "file": "ref/20_Rootguard.png",
+  "name": "Rootguard",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_042.png"
+ },
+ {
+  "file": "ref/21_Circle.png",
+  "name": "Circle",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_044.png"
+ },
+ {
+  "file": "ref/22_Ring_of_Agony.png",
+  "name": "Ring of Agony",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_046.png"
+ },
+ {
+  "file": "ref/23_Sword_of_Time.png",
+  "name": "Sword of Time",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_048.png"
+ },
+ {
+  "file": "ref/24_Strike_Potion.png",
+  "name": "Strike Potion",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_050.png"
+ },
+ {
+  "file": "ref/25_Star_of_Time.png",
+  "name": "Star of Time",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_052.png"
+ },
+ {
+  "file": "ref/26_Star_of_Fury.png",
+  "name": "Star of Fury",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_054.png"
+ },
+ {
+  "file": "ref/27_Frostshock_Touch.png",
+  "name": "Frostshock Touch",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_056.png"
+ },
+ {
+  "file": "ref/28_Vine_Bind.png",
+  "name": "Vine Bind",
+  "type": "enhancement",
+  "src": "/home/claude/runes/full/s_058.png"
+ },
+ {
+  "file": "ref/29_Circle.png",
+  "name": "Circle",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_060.png"
+ },
+ {
+  "file": "ref/30_Plant_Summon.png",
+  "name": "Plant Summon",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_062.png"
+ },
+ {
+  "file": "ref/31_Equinox_Bloom.png",
+  "name": "Equinox Bloom",
+  "type": "ability",
+  "src": "/home/claude/runes/full/s_064.png"
+ },
+ {
+  "file": "ref/32_Guardian.png",
+  "name": "Guardian",
+  "type": "blessing",
+  "src": "/home/claude/runes2/full/s_002.png"
+ },
+ {
+  "file": "ref/33_Rabbits_Foot.png",
+  "name": "Rabbit's Foot",
+  "type": "blessing",
+  "src": "/home/claude/runes2/full/s_004.png"
+ },
+ {
+  "file": "ref/34_Resilience.png",
+  "name": "Resilience",
+  "type": "blessing",
+  "src": "/home/claude/runes2/full/s_006.png"
+ },
+ {
+  "file": "ref/35_Intelligence.png",
+  "name": "Intelligence",
+  "type": "blessing",
+  "src": "/home/claude/runes2/full/s_008.png"
+ },
+ {
+  "file": "ref/36_Rabbits_Foot.png",
+  "name": "Rabbit's Foot",
+  "type": "blessing",
+  "src": "/home/claude/runes2/full/s_010.png"
+ },
+ {
+  "file": "ref/37_Lucky_Shadow.png",
+  "name": "Lucky Shadow",
+  "type": "blessing",
+  "src": "/home/claude/runes2/full/s_012.png"
+ },
+ {
+  "file": "ref/38_Revive.png",
+  "name": "Revive",
+  "type": "blessing",
+  "src": "/home/claude/runes2/full/s_014.png"
+ },
+ {
+  "file": "ref/39_Arrow_of_Echoes.png",
+  "name": "Arrow of Echoes",
+  "type": "etched",
+  "src": "/home/claude/runes2/full/s_016.png"
+ },
+ {
+  "file": "ref/40_Pulsing_Orb.png",
+  "name": "Pulsing Orb",
+  "type": "etched",
+  "src": "/home/claude/runes2/full/s_018.png"
+ },
+ {
+  "file": "ref/41_Elemental_Domain.png",
+  "name": "Elemental Domain",
+  "type": "etched",
+  "src": "/home/claude/runes2/full/s_020.png"
+ },
+ {
+  "file": "ref/42_Life_Surge.png",
+  "name": "Life Surge",
+  "type": "etched",
+  "src": "/home/claude/runes2/full/s_022.png"
+ },
+ {
+  "file": "ref/43_Plant_Crit.png",
+  "name": "Plant Crit",
+  "type": "etched",
+  "src": "/home/claude/runes2/full/s_024.png"
+ },
+ {
+  "file": "ref/44_Sword_Strike_Split.png",
+  "name": "Sword Strike Split",
+  "type": "etched",
+  "src": "/home/claude/runes2/full/s_027.png"
+ },
+ {
+  "file": "ref/45_Swordstrike_Aerie.png",
+  "name": "Swordstrike Aerie",
+  "type": "etched",
+  "src": "/home/claude/runes2/full/s_029.png"
+ }
+]

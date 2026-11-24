@@ -95,12 +95,12 @@
       {"name": "Spin SPD Up", "tier": "A", "family": "Circle"},
       {"name": "Sprite Multishot", "formerly": "Fairy Multishot", "tier": "A", "family": "Sprite"},
       {"name": "Sprite Link", "formerly": "Fairy Combo", "tier": "A", "family": "Sprite"},
-      {"name": "Root Guard", "tier": "A", "family": "Plant"},
+      {"name": "Rootguard", "tier": "A", "family": "Plant"},
       {"name": "Vine Bind", "tier": "A", "family": "Plant"},
       {"name": "Giant Meteor", "tier": "B", "family": "Meteor"},
-      {"name": "Potion Gravity", "alt": "Potion Magnet", "tier": "B", "family": "Meteor"},
+      {"name": "Potion Magnet", "tier": "B", "family": "Meteor"},
       {"name": "Dragonflight Sword", "tier": "NR", "family": "Sword Strike"},
-      {"name": "Blade Bounce", "tier": "NR", "family": "Sword Strike"}
+      {"name": "Ricochet Strike", "tier": "NR", "family": "Sword Strike"}
     ],
     "ability": [
       {"name": "Arrow Rain", "tier": "S", "family": "Main Weapon"},
@@ -131,7 +131,7 @@
       {"name": "Elemental Domain", "tier": "NR", "family": "Elemental"},
       {"name": "Echo Scythe", "alt": "Echo Sickle", "tier": "NR", "family": "Main Weapon"},
       {"name": "Sword Strike Split", "tier": "NR", "family": "Sword Strike"},
-      {"name": "Sword Strike Aerie", "alt": "Swordstrike Aerie", "tier": "NR", "family": "Sword Strike"}
+      {"name": "Swordstrike Aerie", "alt": "Swordstrike Aerie", "tier": "NR", "family": "Sword Strike"}
     ],
     "tierNote": "Rune tiers are archero2hub.com's PvP tier list. No separate PvE rune tier list is documented."
   },
@@ -144,8 +144,8 @@
     {"name": "Death Mage", "skill": "8 bouncing scythes applying random debuffs", "tags": ["damage"]},
     {"name": "Snowy Owl", "skill": "Self-buff: CRIT DMG/CRIT Rate for 3s, 20s cooldown", "tags": ["crit-buff"]}
   ],
-  "runeRenames": {"Fairy Multishot": "Sprite Multishot", "Fairy Combo": "Sprite Link"},
-  "runeRenamesNote": "Per Daby 2026-11-21: use the in-game names Sprite Multishot and Sprite Link. Saved accounts using the old names are migrated on load.",
+  "runeRenames": {"Fairy Multishot": "Sprite Multishot", "Fairy Combo": "Sprite Link", "Root Guard": "Rootguard", "Potion Gravity": "Potion Magnet", "Blade Bounce": "Ricochet Strike", "Sword Strike Aerie": "Swordstrike Aerie"},
+  "runeRenamesNote": "Per Daby 2026-11-21: use the in-game names Sprite Multishot and Sprite Link. Saved accounts using the old names are migrated on load. Per Daby 2026-11-23 (rune icon recordings): Root Guard is Rootguard, Potion Gravity is Potion Magnet, Blade Bounce is Ricochet Strike and Sword Strike Aerie is Swordstrike Aerie in game.",
   "mystlingMaxStars": 25,
   "mystlingStarColors": ["yellow", "teal", "red", "purple/pink/blue fade", "dark red"],
   "mystlingStarColorsNote": "Per Daby 2026-11-21: five star icons; each color tier holds 5 stars (yellow 1-5, teal 6-10, red 11-15, purple/pink/blue fade 16-20, dark red 21-25).",
@@ -166,7 +166,7 @@
       "why": "Getting hit drops Hearts (Griffin Amulet), looting Hearts can grant 2s invincibility (Oracle Armor).",
       "needsQuality": "Chaotic", "supersededBy": "invincible-archetype-core"},
     {"id": "dragoon-meteor-runes", "label": "Dragoon gear + Meteor runes", "confidence": "confirmed", "modes": ["pvp", "pve"],
-      "when": [{"gearSetCount": {"set": "Dragoon", "min": 2}}, {"rune": ["Giant Meteor", "Potion Gravity", "Meteor Split", "Star of Fury", "Star of Time", "Potion Spring"]}],
+      "when": [{"gearSetCount": {"set": "Dragoon", "min": 2}}, {"rune": ["Giant Meteor", "Potion Magnet", "Meteor Split", "Star of Fury", "Star of Time", "Potion Spring"]}],
       "why": "Dragoon's kit is explosion/Meteor-based and Meteor damage is always elemental, so the gear and the Meteor runes feed the same damage pool."},
     {"id": "cleo-flame-poison-runes", "label": "Cleo + Flamenox runes", "confidence": "confirmed", "modes": ["pvp", "pve"],
       "when": [{"char": ["Cleo"]}, {"rune": ["Flamenox Seal", "Flamenox Touch"]}],
@@ -204,7 +204,7 @@
       "gear": {"weapon": ["Dragoon"], "amulet": ["Griffin"], "ring": ["Griffin"], "helmet": ["Dragoon"], "armor": ["Oracle"], "boots": ["Dragoon", "Griffin"]},
       "runes": {
         "blessing": [["Revive"], ["Guardian", "Lucky Shadow", "Resilience"]],
-        "enhancement": [{"rune": ["Potion Gravity"], "ench": "Meteor CRIT Rate"}, {"rune": ["Giant Meteor"], "ench": "Unique / Meteor CRIT Rate"}, {"rune": ["Flamenox Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Frostshock Seal"], "ench": "Elemental CRIT Rate"}],
+        "enhancement": [{"rune": ["Potion Magnet"], "ench": "Meteor CRIT Rate"}, {"rune": ["Giant Meteor"], "ench": "Unique / Meteor CRIT Rate"}, {"rune": ["Flamenox Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Frostshock Seal"], "ench": "Elemental CRIT Rate"}],
         "ability": [{"rune": ["Ring of Agony"], "ench": "Unique"}, {"rune": ["Star of Fury"], "ench": "Elemental DMG"}, {"rune": ["Frostshock Touch"], "ench": "Elemental DMG"}, {"rune": ["Flamenox Touch"], "ench": "Elemental DMG"}],
         "etched": [["Elemental Crit"], ["Meteor Split"], ["Elemental Domain", "Arrow of Echoes"]]
       },
@@ -228,7 +228,7 @@
       "gear": {"weapon": ["Dragoon"], "amulet": ["Dragoon", "Oracle"], "ring": ["Dragoon", "Oracle"], "helmet": ["Dragoon"], "armor": ["Oracle", "Dragoon"], "boots": ["Dragoon"]},
       "runes": {
         "blessing": [["Revive"], ["Lucky Shadow"]],
-        "enhancement": [{"rune": ["Potion Gravity"], "ench": "Meteor CRIT Rate"}, {"rune": ["Giant Meteor"], "ench": "Unique / Meteor CRIT Rate"}, {"rune": ["Flamenox Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Frostshock Seal"], "ench": "Elemental CRIT Rate"}],
+        "enhancement": [{"rune": ["Potion Magnet"], "ench": "Meteor CRIT Rate"}, {"rune": ["Giant Meteor"], "ench": "Unique / Meteor CRIT Rate"}, {"rune": ["Flamenox Seal"], "ench": "Elemental CRIT Rate"}, {"rune": ["Frostshock Seal"], "ench": "Elemental CRIT Rate"}],
         "ability": [{"rune": ["Star of Time"], "ench": "Meteor DMG"}, {"rune": ["Star of Fury"], "ench": "Unique / Meteor DMG"}, {"rune": ["Frostshock Touch"], "ench": "Elemental DMG"}, {"rune": ["Flamenox Touch"], "ench": "Elemental DMG"}],
         "etched": [["Elemental Crit"], ["Meteor Split"], ["Potion Spring", "Elemental Domain", "Arrow of Echoes"]]
       },
@@ -268,7 +268,7 @@
       "gear": {"weapon": ["Dragoon"], "amulet": ["Griffin", "Dragoon"], "ring": ["Griffin", "Dragoon"], "helmet": ["Dragoon"], "armor": ["Oracle", "Dragoon"], "boots": ["Dragoon"]},
       "runes": {
         "blessing": [["Revive"], ["Guardian"]],
-        "enhancement": [{"rune": ["Potion Gravity"]}, {"rune": ["Giant Meteor"]}, {"rune": ["Frostshock Seal"]}, {"rune": ["Flamenox Seal"]}],
+        "enhancement": [{"rune": ["Potion Magnet"]}, {"rune": ["Giant Meteor"]}, {"rune": ["Frostshock Seal"]}, {"rune": ["Flamenox Seal"]}],
         "ability": [{"rune": ["Star of Fury"]}, {"rune": ["Flamenox Touch"]}, {"rune": ["Frostshock Touch"]}, {"rune": ["Ring of Agony"]}],
         "etched": [["Potion Spring"], ["Elemental Crit"], ["Meteor Split"]]
       },
