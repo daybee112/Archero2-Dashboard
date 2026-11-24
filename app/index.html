@@ -695,7 +695,7 @@ body.env-staging .envbar { display: block; }
             <tbody>
               <tr><td><b>Inventory</b></td><td>Everything you own, entered once: in-game name, characters, gear, runes, mystlings with stars</td><td>Add and update your items. Your builds only offer what's in here. The whole guild can see your inventory; only you and officers can change it</td></tr>
               <tr><td><b>Builds</b></td><td>Your saved builds: Main build, Expedition preset, and any custom builds</td><td>Edit and save builds, see warnings and synergies, ask for a suggested build</td></tr>
-              <tr><td><b>Roster</b></td><td>Every guild member: rank, power, character with resonance under it, gear by slot, runes, artifacts, lane HP, Expedition DPS, whether they've linked their account, and whether their inventory is filled in</td><td>Sort by any column (tap more headings to break ties), search, open a profile, link your account, edit your own preset, open anyone's inventory (Inventory column), copy the table as an image</td></tr>
+              <tr><td><b>Roster</b></td><td>Every guild member: rank, power, character with resonance under it, gear by slot, runes, artifacts, lane HP, Expedition DPS, whether they've linked their account, and whether their inventory is filled in</td><td>Sort by any column (tap more headings to break ties), search, open a profile, link your account, edit your own preset, open anyone's inventory (Inventory column), copy the table as an image. Officers: import a screen recording of players' profile screens (power, artifact stars, gear, runes, mystling) to update the roster, each player's main build and inventory, or to scan an opponent</td></tr>
               <tr><td><b>Expedition</b></td><td>Guild Expedition planning and results</td><td>See lineups, officer messages, the week's results, opponents and your damage history</td></tr>
               <tr><td><b>Training Ground</b></td><td>A standard Training Dummy test (3 runs of 1 minute)</td><td>Test a build, post results to the guild leaderboard, keep a private tracker</td></tr>
               <tr><td><b>What's next</b></td><td>Upcoming work for the dashboard and the guild's testing, and everyone's ideas and bug reports</td><td>See what's planned, send an idea or report a bug, edit or withdraw your own until an officer replies, see officers' replies</td></tr>
@@ -858,7 +858,7 @@ body.env-staging .envbar { display: block; }
     gear: { weapon: { Dragoon: "Mythic+2", Oracle: "Legendary+1" }, amulet: { Griffin: "Chaotic" }, ring: { Griffin: "Mythic+3" },
             helmet: { Dragoon: "Mythic+1" }, armor: { Oracle: "Chaotic" }, boots: { Dragoon: "Mythic", Griffin: "Legendary+2" } },
     runes: { "Revive": "Legendary", "Guardian": "Epic+2", "Lucky Shadow": "Epic+1", "Sharp Arrow": "Legendary+2",
-             "Flamenox Seal": "Legendary+1", "Frostshock Seal": "Legendary", "Giant Meteor": "Epic+2", "Potion Gravity": "Legendary",
+             "Flamenox Seal": "Legendary+1", "Frostshock Seal": "Legendary", "Giant Meteor": "Epic+2", "Potion Magnet": "Legendary",
              "Spin SPD Up": "Epic", "Arrow Rain": "Legendary", "Ring of Agony": "Legendary+1", "Star of Fury": "Epic+2",
              "Flamenox Touch": "Legendary", "Frostshock Touch": "Epic+1", "Healing Sprite": "Epic",
              "Elemental Crit": "Legendary", "Sprite Multishot": "Epic+1", "Meteor Split": "Epic+2", "Arrow of Echoes": "Legendary+1" },
@@ -1931,7 +1931,7 @@ body.env-staging .envbar { display: block; }
   // Members can't write the activity log, so their changes go into their own presets/<id>/log/<yyyy-mm>. The page only ever
   // adds to it; the rules can't stop a determined member editing their own record, so officers' pages keep a copy and flag
   // any later change or removal (officers' entries can't be touched by anyone else).
-  const SRC = { typed: "typed in the tool", screenshot: "screenshot import", builds: "from the Builds tab", roster: "from the Roster", claude: "by Claude" };
+  const SRC = { typed: "typed in the tool", screenshot: "screenshot import", video: "video import", builds: "from the Builds tab", roster: "from the Roster", claude: "by Claude" };
   function shortVal(v) { if (v == null || v === "") return "empty"; const t = typeof v === "object" ? JSON.stringify(v) : String(v); return t.length > 60 ? t.slice(0, 57) + "…" : t; }
   const DIFF_SKIP = new Set(["updatedAt", "updatedBy", "v", "presetUpdatedAt"]);
   function diffObj(a, b, path = "", out = []) {
@@ -1950,7 +1950,7 @@ body.env-staging .envbar { display: block; }
   }
   function srcFor(action, detail) {
     const t = `${action} ${detail || ""}`.toLowerCase();
-    return /screenshot|imported/.test(t) ? "screenshot" : /builds tab|own preset/.test(t) ? "builds" : "typed";
+    return /profile video/.test(t) ? "video" : /screenshot|imported/.test(t) ? "screenshot" : /builds tab|own preset/.test(t) ? "builds" : "typed";
   }
   let auditQ = Promise.resolve();
   function logEvent(action, detail, extra = {}) {
@@ -2320,7 +2320,14 @@ body.env-staging .envbar { display: block; }
       if (linkedTo(m) && linkedTo(m) !== uidV) continue;
       if ((s.at || 0) > presetTime(m)) out.set(m.id, { ...m, preset: s.preset, presetDate: localDate(s.at), presetUpdatedAt: s.at, presetSrc: "Updated by the player", presetBy: uidV });
     }
-    return [...out.values()].map(fillFromWeapon).map(m => m.preset && m.preset.gearAssumed ? { ...m, preset: { ...m.preset, gearAssumed: [] } } : m);   // filled pieces count as known (per Daby)
+    return [...out.values()].map(fillFromWeapon).map(m => m.preset && m.preset.gearAssumed ? { ...m, preset: { ...m.preset, gearAssumed: [] } } : m)   // filled pieces count as known (per Daby)
+      .map(m => { for (const k of ["preset", "mainBuild"]) if (m[k] && m[k].runes) m = { ...m, [k]: { ...m[k], runes: renameRunes(m[k].runes) } }; return m; });
+  }
+  // old rune names (saved before the in-game names were confirmed) read as the current ones
+  function renameRunes(rs) {
+    const ren = (n) => (D && D.runeRenames || {})[n] || n, out = {};
+    for (const [t, list] of Object.entries(rs || {})) out[t] = Array.isArray(list) ? list.map(r => r && r.name ? { ...r, name: ren(r.name) } : r) : list;
+    return out;
   }
   // Per Daby: everyone wears a complete set. Any slot with an unknown set or quality takes the weapon's, treated as known.
   // Applied when displaying, so older saved entries get it too.
@@ -2711,6 +2718,14 @@ body.env-staging .envbar { display: block; }
     box.append(el("div", {}, el("h3", { text: "Expedition preset" }),
       el("p", { class: "small muted", style: "margin:2px 0 6px", text: [m.presetStatus && `Status: ${m.presetStatus}`, m.presetDate && `captured ${m.presetDate}`, m.resonanceDate && m.resonanceDate !== m.presetDate && `resonances as of ${m.resonanceDate}`].filter(Boolean).join(" · ") }), chars));
     box.append(el("div", { class: "grid2" }, el("div", {}, el("h3", { text: "Gear" }), gt), el("div", {}, el("h3", { text: "Runes" }), rl)));
+    if (m.mainBuild) {
+      const mb = m.mainBuild, gl = D.gearSlots.map(({ id, label }) => mb.gear?.[id]?.set ? `${label}: ${mb.gear[id].set}${mb.gear[id].q ? " " + mb.gear[id].q : ""}` : null).filter(Boolean);
+      const rl2 = RTYPES.map(t => { const l = (mb.runes?.[t] || []).filter(Boolean); return l.length ? `${RLABEL[t]}: ${l.map(r => r.name + (r.q ? ` (${r.q}+)` : "")).join(", ")}` : null; }).filter(Boolean);
+      box.append(el("div", { class: "stack", style: "gap:4px" }, el("h3", { text: "Main build" }),
+        el("p", { class: "small muted", style: "margin:0", text: `From a ${mb.src || "capture"}${mb.date ? " on " + mb.date : ""}. Incomplete: the profile doesn't show characters or resonances. Rune quality is the lowest it can be (the +N isn't visible).` }),
+        el("div", { class: "small" }, el("b", { text: "Gear: " }), gl.length ? gl.join(" · ") : "not recorded"),
+        el("div", { class: "small" }, el("b", { text: "Runes: " }), rl2.length ? rl2.join(" · ") : "not recorded")));
+    }
     box.append(el("div", { class: "small" }, el("b", { text: "Mystling: " }),
       p.mystling ? `${p.mystling.name}${Number.isInteger(p.mystling.stars) ? " ★" + p.mystling.stars : ""}` : "not recorded",
       m.mystlingSeen ? el("span", { class: "muted", text: ` · on the capture: ${m.mystlingSeen}` }) : null,
@@ -3043,6 +3058,162 @@ body.env-staging .envbar { display: block; }
     }
     btn.disabled = false;
   });
+  // ================= Rune icons: matched on this device, never guessed =================
+  // References: one clean icon per rune from in-game popups (rune-refs.jpg, a grid of cells, names in rune-refs.json).
+  // A screen's 13 runes are found by color, placed on the known layout (profile Runes ring or preset grid), typed by
+  // their slot, then each icon's white glyph is compared with that type's references. A weak or close match stays blank.
+  const RUNE = { N: 40, GLYPH: 0.36 };
+  const RUNE_LAYOUTS = {   // slot centers as fractions of screen width, measured on a 1179-wide screen
+    profile: [["enhancement", 286, 1193], ["enhancement", 218, 1322], ["enhancement", 212, 1463], ["enhancement", 282, 1585],
+      ["blessing", 368, 1386], ["blessing", 810, 1385], ["etched", 441, 1575], ["etched", 590, 1575], ["etched", 735, 1574],
+      ["ability", 890, 1190], ["ability", 960, 1305], ["ability", 962, 1458], ["ability", 892, 1586]],
+    preset: [["enhancement", 182, 1612], ["enhancement", 305, 1611], ["enhancement", 182, 1734], ["enhancement", 304, 1734],
+      ["blessing", 513, 1612], ["blessing", 641, 1612], ["etched", 452, 1736], ["etched", 577, 1736], ["etched", 703, 1736],
+      ["ability", 877, 1611], ["ability", 1000, 1612], ["ability", 877, 1734], ["ability", 999, 1734]],
+  };
+  let runeRefs = null;
+  function runeMasks(d, n) {   // d: RGBA bytes; returns body (strong color) and white (glyph) masks
+    const body = new Uint8Array(n), white = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      if (mx > 150 && (mx - mn) / mx > 0.62) body[i] = 1;
+      if (mn > 205 && mx - mn < 60) white[i] = 1;
+    }
+    return { body, white };
+  }
+  function morph(m, w, h, grow) {   // one step of 4-neighbour dilation (grow) or erosion
+    const o = new Uint8Array(m.length);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x, a = m[i], l = x > 0 ? m[i - 1] : 0, r = x < w - 1 ? m[i + 1] : 0, u = y > 0 ? m[i - w] : 0, dn = y < h - 1 ? m[i + w] : 0;
+      o[i] = grow ? (a | l | r | u | dn) : (a & l & r & u & dn);
+    }
+    return o;
+  }
+  function fillHoles(m, w, h) {   // anything not reachable from the border becomes part of the shape
+    const out = new Uint8Array(m.length).fill(1), q = [];
+    const push = (i) => { if (!m[i] && out[i]) { out[i] = 0; q.push(i); } };
+    for (let x = 0; x < w; x++) { push(x); push((h - 1) * w + x); }
+    for (let y = 0; y < h; y++) { push(y * w); push(y * w + w - 1); }
+    while (q.length) { const i = q.pop(), x = i % w; if (x > 0) push(i - 1); if (x < w - 1) push(i + 1); if (i >= w) push(i - w); if (i < w * (h - 1)) push(i + w); }
+    return out;
+  }
+  function runeBoxes(img, minSide, maxSide) {
+    const { data: d, width: w, height: h } = img, n = w * h, { body, white } = runeMasks(d, n);
+    let m = body; for (let k = 0; k < 3; k++) m = morph(m, w, h, true); for (let k = 0; k < 3; k++) m = morph(m, w, h, false);
+    m = fillHoles(m, w, h);
+    const lab = new Int32Array(n), boxes = []; let next = 0;
+    for (let s = 0; s < n; s++) {
+      if (!m[s] || lab[s]) continue;
+      next++; const q = [s]; lab[s] = next; let x0 = w, y0 = h, x1 = 0, y1 = 0, cnt = 0, wh = 0;
+      while (q.length) {
+        const i = q.pop(), x = i % w, y = (i / w) | 0; cnt++; wh += white[i];
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i >= w ? i - w : -1, i < n - w ? i + w : -1]) if (j >= 0 && m[j] && !lab[j]) { lab[j] = next; q.push(j); }
+      }
+      const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+      if (bw < minSide || bh < minSide || bw > maxSide || bh > maxSide || bw / bh < 0.75 || bw / bh > 1.33) continue;
+      if (cnt / (bw * bh) < 0.45 || wh / cnt < 0.03 || wh / cnt > 0.5) continue;
+      boxes.push([x0, y0, x1 + 1, y1 + 1]);
+    }
+    return boxes;
+  }
+  function runeDesc(img, box) {   // whiteness of the glyph area, averaged down to N x N
+    const { data: d, width: w } = img, N = RUNE.N;
+    const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2, r = RUNE.GLYPH * Math.min(box[2] - box[0], box[3] - box[1]);
+    const x0 = Math.round(cx - r), y0 = Math.round(cy - r), side = Math.max(2, Math.round(2 * r));
+    const out = new Float32Array(N * N), cnt = new Float32Array(N * N);
+    for (let y = 0; y < side; y++) for (let x = 0; x < side; x++) {
+      const sx = x0 + x, sy = y0 + y; if (sx < 0 || sy < 0 || sx >= w || sy >= img.height) continue;
+      const i = (sy * w + sx) * 4, mn = Math.min(d[i], d[i + 1], d[i + 2]);
+      const k = Math.min(N - 1, (y * N / side) | 0) * N + Math.min(N - 1, (x * N / side) | 0);
+      out[k] += Math.max(0, Math.min(1, (mn - 120) / 120)); cnt[k]++;
+    }
+    for (let k = 0; k < out.length; k++) out[k] = cnt[k] ? out[k] / cnt[k] : 0;
+    return out;
+  }
+  function ncc(p, q, dx = 0, dy = 0) {
+    const N = RUNE.N; let sp = 0, sq = 0, n = 0;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const yy = y - dy, xx = x - dx; if (yy < 0 || xx < 0 || yy >= N || xx >= N) continue; sp += p[yy * N + xx]; sq += q[y * N + x]; n++; }
+    const mp = sp / n, mq = sq / n; let num = 0, dp = 0, dq = 0;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const yy = y - dy, xx = x - dx; if (yy < 0 || xx < 0 || yy >= N || xx >= N) continue; const a = p[yy * N + xx] - mp, b = q[y * N + x] - mq; num += a * b; dp += a * a; dq += b * b; }
+    return dp && dq ? num / Math.sqrt(dp * dq) : 0;
+  }
+  const bestNcc = (p, q) => { let b = -1; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) b = Math.max(b, ncc(p, q, dx, dy)); return b; };
+  async function loadRuneRefs() {
+    if (runeRefs) return runeRefs;
+    const meta = await (await fetch("rune-refs.json", { cache: "no-store" })).json();
+    const blob = await (await fetch("rune-refs.jpg", { cache: "no-store" })).blob(), bmp = await createImageBitmap(blob);
+    const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height; const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0);
+    const img = x.getImageData(0, 0, c.width, c.height), C = meta.cell;
+    runeRefs = meta.refs.map((r, k) => { const bx = (k % meta.cols) * C, by = ((k / meta.cols) | 0) * C; return { ...r, d: runeDesc(img, [bx, by, bx + C, by + C]) }; });
+    return runeRefs;
+  }
+  // Read the 13 runes on one screen. Returns {layout, slots:[{type, name|null, q|null, score}]} or null if it doesn't look like a rune screen.
+  async function readRunes(blob) {
+    const refs = await loadRuneRefs();
+    const bmp = await createImageBitmap(blob), c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+    const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0); const img = x.getImageData(0, 0, c.width, c.height), W = c.width;
+    const boxes = runeBoxes(img, Math.round(0.07 * W), Math.round(0.12 * W));
+    if (boxes.length < 5) return null;
+    const ctr = (b) => [(b[0] + b[2]) / 2 / W, (b[1] + b[3]) / 2 / W], tol = 0.035;
+    let best = null;
+    for (const [name, slots] of Object.entries(RUNE_LAYOUTS)) {   // find the layout and vertical offset most boxes agree with
+      const T = slots.map(([t, sx, sy]) => [t, sx / 1179, sy / 1179]);
+      for (const b of boxes) for (const s of T) {
+        const dy = ctr(b)[1] - s[2]; if (Math.abs(ctr(b)[0] - s[1]) > tol) continue;
+        const hit = T.map(([, tx, ty]) => boxes.find(bb => Math.abs(ctr(bb)[0] - tx) < tol && Math.abs(ctr(bb)[1] - ty - dy) < tol) || null);
+        const n = hit.filter(Boolean).length;
+        if (!best || n > best.n) best = { name, T, dy, hit, n };
+      }
+    }
+    if (!best || best.n < 5) return null;
+    const sizes = best.hit.filter(Boolean).map(b => b[2] - b[0]).sort((a, z) => a - z), sz = sizes[sizes.length >> 1];
+    const raw = best.T.map(([type, tx, ty], k) => {
+      const b = best.hit[k] || [Math.round(tx * W - sz / 2), Math.round((ty + best.dy) * W - sz / 2), Math.round(tx * W + sz / 2), Math.round((ty + best.dy) * W + sz / 2)];
+      if (!best.hit[k] && runeColorShare(img, b) < 0.15) return { type, b, empty: true, cand: [] };
+      const dsc = runeDesc(img, b), byName = {};
+      for (const r of refs) if (r.type === type) { const v = bestNcc(dsc, r.d); if (!(byName[r.name] >= v)) byName[r.name] = v; }
+      return { type, b, cand: Object.entries(byName).map(([name, s]) => ({ name, s })).sort((x, z) => z.s - x.s).slice(0, 6) };
+    });
+    // A rune can only be equipped once, so pick names per type together: the set with the best total score wins
+    // (or a blank), and a slot keeps its name only if swapping it for anything else costs a clear margin.
+    const slots = raw.map(r => ({ type: r.type, name: null, q: null, score: 0, guess: r.cand[0]?.name || null, box: r.b, empty: !!r.empty }));
+    for (const type of ["enhancement", "blessing", "etched", "ability"]) {
+      const idx = raw.map((r, k) => r.type === type ? k : -1).filter(k => k >= 0);
+      const all = [];
+      const walk = (j, used, picks, tot) => {
+        if (j === idx.length) { all.push({ picks: picks.slice(), tot }); return; }
+        picks.push(null); walk(j + 1, used, picks, tot); picks.pop();
+        for (const c of raw[idx[j]].cand) { if (used.has(c.name) || c.s < 0.45) continue; used.add(c.name); picks.push(c); walk(j + 1, used, picks, tot + c.s); picks.pop(); used.delete(c.name); }
+      };
+      walk(0, new Set(), [], 0);
+      all.sort((x, z) => z.tot - x.tot); const top = all[0];
+      idx.forEach((k, j) => {
+        const pick = top.picks[j]; if (!pick) return;
+        const alt = all.find(o => (o.picks[j]?.name || null) !== pick.name);
+        if (alt && top.tot - alt.tot < 0.05) return;
+        slots[k] = { type, name: pick.name, q: runeTier(img, raw[k].b), score: Math.round(pick.s * 100) / 100, guess: pick.name, box: raw[k].b };
+      });
+    }
+    return { layout: best.name, slots };
+  }
+  function runeColorShare(img, b) {   // share of strongly colored pixels: an empty slot is pale
+    const { data: d, width: w } = img; let c = 0, n = 0;
+    for (let y = Math.max(0, b[1]); y < Math.min(img.height, b[3]); y += 2) for (let x = Math.max(0, b[0]); x < Math.min(w, b[2]); x += 2) {
+      const i = (y * w + x) * 4, mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]); n++; if (mx > 150 && (mx - mn) / mx > 0.62) c++;
+    }
+    return n ? c / n : 0;
+  }
+  function runeTier(img, b) {   // frame color: red = Mythic, purple = Epic, gold/orange = Legendary (the +N can't be seen, so this is a floor)
+    const { data: d, width: w } = img; let red = 0, pur = 0, n = 0;
+    for (let y = b[1]; y < b[3]; y += 2) for (let x = b[0]; x < b[2]; x += 2) {
+      const i = (y * w + x) * 4, r = d[i], g = d[i + 1], bl = d[i + 2], mx = Math.max(r, g, bl), mn = Math.min(r, g, bl);
+      if (mx < 150 || (mx - mn) / mx < 0.62) continue; n++;
+      if (r > 170 && g < 80) red++; else if (bl > r * 0.8 && bl > 120) pur++;
+    }
+    return !n ? null : red / n > 0.35 ? "Mythic" : pur / n > 0.35 ? "Epic" : "Legendary";
+  }
+  if (window.__expose) window.__readRunes = readRunes;   // tests only
   // ================= Profile video import =================
   // A screen recording of players' profile screens -> one still per screen (on this device) -> Claude reads each still ->
   // grouped by player (a Namecard starts each player) -> review table -> Apply. Opponents: never characters, only
@@ -3093,6 +3264,39 @@ body.env-staging .envbar { display: block; }
       }
     }
     return out;
+  }
+  // Runes screens: the rune icons are matched on this device (Claude only says which screen it is)
+  async function vidRunes(screens, stills, say) {
+    const idx = screens.map((x, k) => x.type === "runes" && !x.runes ? k : -1).filter(k => k >= 0);
+    for (let j = 0; j < idx.length; j++) {
+      say(`Matching rune icons ${j + 1} of ${idx.length}…`);
+      try { const r = await readRunes(stills[idx[j]].blob); if (r) screens[idx[j]].runes = r.slots.map(({ type, name, q, empty }) => ({ type, name, q, empty })); } catch { /* left unread */ }
+    }
+  }
+  function runeListText(p) {
+    if (!p.runes) return "";
+    return RTYPES.map(t => `${RLABEL[t]}: ${(p.runes[t] || []).map(r => r ? r.name + (r.q ? ` (${r.q})` : "") : "?").join(", ") || "—"}`).join("\n");
+  }
+  // Add what a profile video showed to the player's inventory (the officer copy): missing gear, runes and mystling
+  // are added, a better quality or more stars replace a worse one, and nothing is removed or lowered.
+  async function addToInventory(m, p) {
+    const sh = sharedInv(m), inv = normalizeInv(sh && sh.inv), before = clone(inv), qi = (list, q) => list.indexOf(q);
+    for (const [slot, g] of Object.entries(p.gear)) {
+      if (!g.set || !g.q) continue;
+      inv.gear[slot] = inv.gear[slot] || {}; const cur = inv.gear[slot][g.set];
+      if (!cur || qi(D.gearQualities, g.q) > qi(D.gearQualities, cur)) inv.gear[slot][g.set] = g.q;
+    }
+    for (const r of RTYPES.flatMap(t => (p.runes?.[t] || []).filter(Boolean))) {
+      const q = D.runeQualities.includes(r.q) ? r.q : "Legendary", cur = inv.runes[r.name];
+      if (!cur || qi(D.runeQualities, q) > qi(D.runeQualities, cur)) inv.runes[r.name] = q;
+    }
+    if (p.mystling?.name) { const cur = inv.mystlings[p.mystling.name]; if (cur === undefined || (Number.isInteger(p.mystling.stars) && (cur == null || p.mystling.stars > cur))) inv.mystlings[p.mystling.name] = Number.isInteger(p.mystling.stars) ? p.mystling.stars : (cur ?? null); }
+    const changes = diffObj({ inv: before }, { inv });
+    if (!changes.length) return false;
+    const doc = { memberId: m.id, ign: (sh && sh.ign) || m.ign, inv, at: Date.now(), by: myId, byOfficer: true, v: 1 };
+    await db.doc("inventory/" + m.id).set(doc); invDocs[m.id] = doc; invSubs[m.id] = doc;
+    logEvent("edited inventory", `${m.ign} (from a profile video)`, { src: "video", changes });
+    return true;
   }
   function vidShow(lastErr) {
     const { stills, screens, oppName } = lastVid;
@@ -3157,10 +3361,14 @@ body.env-staging .envbar { display: block; }
   function vidGroup(screens) {
     const players = []; let cur = null; const loose = [];
     for (const sc of screens) {
-      if (sc.type === "namecard") { cur = { name: (sc.name || "").trim() || null, power: typeof sc.power_m === "number" && sc.power_m > 0.5 && sc.power_m < 100 ? Math.round(sc.power_m * 100) / 100 : null, gear: {}, mystling: null, arts: {}, sawEpic: false, frames: [sc.i] }; players.push(cur); continue; }
-      if (sc.type === "roster_list" || sc.type === "other" || sc.type === "runes") { if (sc.type === "roster_list") cur = null; else if (cur) cur.frames.push(sc.i); continue; }
+      if (sc.type === "namecard") { cur = { name: (sc.name || "").trim() || null, power: typeof sc.power_m === "number" && sc.power_m > 0.5 && sc.power_m < 100 ? Math.round(sc.power_m * 100) / 100 : null, gear: {}, mystling: null, arts: {}, sawEpic: false, runes: null, runeRead: 0, runeEmpty: 0, runeSlots: 0, frames: [sc.i] }; players.push(cur); continue; }
+      if (sc.type === "roster_list" || sc.type === "other") { if (sc.type === "roster_list") cur = null; else if (cur) cur.frames.push(sc.i); continue; }
       if (!cur) { loose.push(sc.i); continue; }
       cur.frames.push(sc.i);
+      if (sc.type === "runes" && Array.isArray(sc.runes)) {
+        cur.runes = Object.fromEntries(RTYPES.map(t => [t, sc.runes.filter(r => r.type === t).map(r => r.name ? { name: r.name, q: r.q || "" } : null)]));
+        cur.runeRead = sc.runes.filter(r => r.name).length; cur.runeEmpty = sc.runes.filter(r => r.empty).length; cur.runeSlots = sc.runes.length;
+      }
       if (sc.type === "gear") for (const { id } of D.gearSlots) { const g = (sc.gear || {})[id] || {}; const set = SETS.includes(g.set) ? g.set : null, q = D.gearQualities.includes(g.quality) ? g.quality : null; if (set || q) cur.gear[id] = { set, q }; }
       if (sc.type === "mystling" && sc.mystling) cur.mystling = { name: D.mystlings.some(m => m.name === sc.mystling.name) ? sc.mystling.name : null, stars: Number.isInteger(sc.mystling.stars) && sc.mystling.stars >= 0 && sc.mystling.stars <= D.mystlingMaxStars ? sc.mystling.stars : null };
       if (sc.type === "artifacts") for (const a of (Array.isArray(sc.artifacts) ? sc.artifacts : [])) {
@@ -3204,6 +3412,7 @@ body.env-staging .envbar { display: block; }
       const screens = stills.map((_, k) => ({ i: k + 1, type: "unread" }));
       const errs = await vidReadInto(screens, screens.map(x => x.i), stills, sample, signal, maxImgs, (t) => { st.textContent = t; });
       if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; return; }
+      await vidRunes(screens, stills, (t) => { st.textContent = t; });
       lastVid = { stills, screens, oppName: target === "__us" ? null : oppName, maxImgs };
       const { players } = vidGroup(screens);
       st.textContent = `Found ${stills.length} screens and ${players.length} player${players.length === 1 ? "" : "s"}. Check them, then apply.`;
@@ -3225,6 +3434,7 @@ body.env-staging .envbar { display: block; }
         const st = $("vid-status"); st.className = "small";
         try {
           const errs = await vidReadInto(lastVid.screens, unreadNums, lastVid.stills, sample, vidCtl.signal, lastVid.maxImgs, (t) => { st.textContent = t; });
+          await vidRunes(lastVid.screens, lastVid.stills, (t) => { st.textContent = t; });
           if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; }
           else { const n = vidGroup(lastVid.screens).players.length; st.textContent = `Found ${lastVid.stills.length} screens and ${n} player${n === 1 ? "" : "s"}. Check them, then apply.`; }
           vidShow(errs.last);
@@ -3240,7 +3450,7 @@ body.env-staging .envbar { display: block; }
       const m = us && p.name ? findIgn(p.name) : null;
       return { p, i, m, on: el("input", { type: "checkbox" }) };
     });
-    const t = el("table", { class: "lb", style: "min-width:0" }, el("thead", {}, el("tr", {}, ...["", "Player", "Power", "Mythic / Leg stars", us ? "Mystling" : "Gear", "Screens"].map(h => el("th", { text: h })))));
+    const t = el("table", { class: "lb", style: "min-width:0" }, el("thead", {}, el("tr", {}, ...["", "Player", "Power", "Mythic / Leg stars", "Gear", "Runes", ...(us ? ["Mystling"] : []), "Screens"].map(h => el("th", { text: h })))));
     const b = el("tbody");
     for (const r of rows) {
       const { p, m } = r;
@@ -3254,13 +3464,15 @@ body.env-staging .envbar { display: block; }
         el("td", { class: "small" }, el("b", { text: p.name || "name unclear" }), us && p.name && !m ? el("span", { class: "err", text: " · not on the roster" }) : null),
         el("td", { class: "small", text: (us ? `${nowP} → ` : "") + (p.power != null ? p.power.toFixed(2) + "M" : "—") }),
         el("td", { class: "small" + (p.artCount && !p.artsComplete ? " err" : ""), text: artTxt }),
-        el("td", { class: "small", text: us ? (p.mystling ? `${p.mystling.name || "?"}${p.mystling.stars != null ? " ★" + p.mystling.stars : ""}` : "—") : [p.gearSet, p.gearQ, p.gearNote].filter(Boolean).join(" · ") || "—" }),
+        el("td", { class: "small", text: [p.gearSet, p.gearQ, p.gearNote].filter(Boolean).join(" · ") || "—" }),
+        el("td", { class: "small", title: runeListText(p), text: p.runes ? `${p.runeRead} of ${p.runeSlots - p.runeEmpty} read` + (p.runeEmpty ? ` · ${p.runeEmpty} empty` : "") : "—" }),
+        ...(us ? [el("td", { class: "small", text: p.mystling ? `${p.mystling.name || "?"}${p.mystling.stars != null ? " ★" + p.mystling.stars : ""}` : "—" })] : []),
         el("td", { class: "small muted", text: p.frames.join(", ") })));
     }
     t.append(b); res.append(el("div", { class: "tablewrap" }, t));
     res.append(el("p", { class: "small muted", style: "margin:0", text: us
-      ? "Applying updates power and artifact stars (artifact stars only when every Mythic and Legendary artifact was shown). Gear on the profile is the main build, not the Expedition preset, so it isn't applied."
-      : `Applying saves a new scan for ${oppName} dated ${today}: power, artifact stars and gear set for each ticked player. Characters are never recorded.` }));
+      ? "Applying updates power and artifact stars (only when every Mythic and Legendary artifact was shown), saves the gear and runes as each player's main build (characters can't be seen on the profile, so it's marked incomplete; the Expedition preset isn't touched), and adds that gear, those runes and the mystling to their inventory: missing items are added and better quality raised, nothing is removed or lowered. Rune quality shows the tier only (the +N can't be seen), so it never lowers what's there. Hover a Runes cell to see the names; unclear icons stay blank."
+      : `Applying saves a new scan for ${oppName} dated ${today}: power, artifact stars, gear set and readable runes for each ticked player. Characters are never recorded.` }));
     const msg = el("span", { class: "small" }), apply = el("button", { type: "button", class: "btn", text: us ? "Apply to roster" : `Save scan for ${oppName}` });
     apply.addEventListener("click", async () => {
       const picked = rows.filter(r => r.on.checked && !r.on.disabled);
@@ -3274,7 +3486,14 @@ body.env-staging .envbar { display: block; }
             if (p.power != null) { nm.power = { m: p.power, date: today, src: "profile video" }; ch = true; }
             if (p.artsComplete && p.mythic != null) { nm.artifacts = { ...(nm.artifacts || {}), mythic: p.mythic, leg: p.leg, date: today }; ch = true; }
             if (p.mystling && (p.mystling.name || p.mystling.stars != null)) { nm.mystlingSeen = `${p.mystling.name || "?"}${p.mystling.stars != null ? " ★" + p.mystling.stars : ""} (profile video ${today})`; ch = true; }
+            if (Object.keys(p.gear).length || p.runeRead) {
+              nm.mainBuild = { chars: [null, null, null], gear: Object.fromEntries(Object.entries(p.gear).filter(([, g]) => g.set).map(([k, g]) => [k, { set: g.set, q: g.q || "" }])),
+                runes: p.runes ? Object.fromEntries(RTYPES.map(t => [t, (p.runes[t] || []).filter(Boolean)])) : (nm.mainBuild?.runes || {}),
+                incomplete: true, date: today, src: "profile video" };
+              ch = true;
+            }
             if (ch) { await saveMember(nm, "edited roster", `${m.ign}: from a profile video`); n++; }
+            await addToInventory(m, p);
           }
           msg.className = "small ok-msg"; msg.textContent = `Updated ${n} player${n === 1 ? "" : "s"}.`;
         } else {
@@ -3284,6 +3503,7 @@ body.env-staging .envbar { display: block; }
             if (p.artsComplete && p.mythic != null) { x.mythic = p.mythic; x.leg = p.leg; }
             if (p.gearSet) x.gear = p.gearSet + (p.gearQ ? `, ${p.gearQ}` : "");
             if (p.gearNote) x.note = p.gearNote;
+            if (p.runeRead) x.runes = Object.fromEntries(RTYPES.map(t => [t, (p.runes[t] || []).filter(Boolean).map(r => r.name)]).filter(([, l]) => l.length));
             return x; }) });
           await saveOpponent(o, `scan of ${oppName} from a profile video (${picked.length} players)`);
           msg.className = "small ok-msg"; msg.textContent = `Saved a scan of ${picked.length} player${picked.length === 1 ? "" : "s"} for ${oppName}.`;

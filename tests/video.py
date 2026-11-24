@@ -45,7 +45,10 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required"])
         errs = []
-        c = await b.new_context(viewport={"width": 1280, "height": 900}); await c.add_init_script(MOCK + SCRIPT)
+        c = await b.new_context(viewport={"width": 1280, "height": 900})
+        pre = {"inventory/m-daybee": {"memberId": "m-daybee", "ign": "daybee", "at": 1, "byOfficer": True, "v": 1,
+               "inv": {"chars": {}, "gear": {"weapon": {"Dragoon": "Godforge ★1"}}, "runes": {"Sharp Arrow": "Mythic", "Sprite Link": "Legendary+3"}, "mystlings": {}}}}
+        await c.add_init_script("window.__preseed = " + json.dumps(pre) + ";" + MOCK + SCRIPT)
         pg = await c.new_page(); pg.on("pageerror", lambda e: errs.append(str(e)))
         await pg.goto("http://127.0.0.1:8795/index.html#roster"); await pg.wait_for_timeout(3000)
         check("officer sees Import profile video", await pg.is_visible("#btn-vid"))
@@ -67,6 +70,9 @@ async def main():
         check("two players found", len(rows) == 2, str(len(rows)))
         check("daybee: power and artifact totals (Mythic 15, Leg 15) with no double count", "11.07M" in rows[0] and "→ 15 / 15" in rows[0] and "incomplete" not in rows[0], rows[0])
         check("daybee: mystling", "Death Mage ★14" in rows[0])
+        import re as _re
+        mm = _re.search(r"(\d+) of (\d+) read", rows[0])
+        check("daybee: runes matched on the device (at least 9 of 13)", mm and int(mm.group(1)) >= 9 and mm.group(2) == "13", rows[0])
         check("unknown name flagged", "not on the roster" in rows[1])
         dis = await pg.eval_on_selector_all("#vid-result tbody input", "i=>i.map(x=>x.disabled)")
         check("unknown player can't be ticked", dis == [False, True], str(dis))
@@ -76,6 +82,15 @@ async def main():
         check("roster updated: power, artifacts, mystling", doc and doc["power"]["m"] == 11.07 and doc["power"]["src"] == "profile video" and doc["artifacts"]["mythic"] == 15 and doc["artifacts"]["leg"] == 15 and "Death Mage" in doc.get("mystlingSeen", ""), json.dumps(doc)[:300] if doc else "none")
         ev = await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.startsWith('audit/u-officer/months')).flatMap(([k,v])=>v.events||[])")
         check("logged in the activity log", any("profile video" in (e.get("detail") or "") for e in ev), str([e.get("detail") for e in ev][-3:]))
+        mb = doc.get("mainBuild") or {}
+        check("main build saved: gear, runes, incomplete, preset untouched", mb.get("incomplete") is True and mb.get("gear", {}).get("weapon", {}).get("set") == "Dragoon"
+              and sum(len(v) for v in mb.get("runes", {}).values()) >= 9 and doc["preset"]["chars"][0]["name"] == "Helix", json.dumps(mb)[:300])
+        inv = (await pg.evaluate("window.__store.get('inventory/m-daybee')"))["inv"]
+        check("inventory: Mythic rune not lowered, +3 rune not lowered", inv["runes"].get("Sharp Arrow") == "Mythic" and inv["runes"].get("Sprite Link") == "Legendary+3", json.dumps(inv["runes"]))
+        check("inventory: new rune added at its tier", inv["runes"].get("Sprite Multishot") == "Legendary" and inv["runes"].get("Revive") == "Legendary")
+        check("inventory: better gear kept (Godforge not lowered to Chaotic), new slots added", inv["gear"]["weapon"]["Dragoon"] == "Godforge ★1" and inv["gear"]["boots"]["Dragoon"] == "Chaotic", json.dumps(inv["gear"]))
+        check("inventory: mystling added with stars", inv["mystlings"].get("Death Mage") == 14)
+        check("inventory edit logged as a video import", any(e.get("action") == "edited inventory" and e.get("src") == "video" for e in ev + await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.startsWith('audit/u-officer/months')).flatMap(([k,v])=>v.events||[])")))
 
         # opponent: new guild, scan saved, no characters
         await pg.select_option("#vid-target", "__new"); await pg.fill("#vid-newopp", "TestGuild")
@@ -93,6 +108,7 @@ async def main():
         txt = json.dumps(sc)
         check("no character names in the scan", not any(ch in txt for ch in ["Helix", "Otta", "Thor", "Phynx", "deployed", "resonance"]))
         check("daybee row in scan has stars and gear", sc["players"][0].get("mythic") == 15 and sc["players"][0].get("gear", "").startswith("Dragoon"))
+        check("opponent scan has rune names (no qualities)", "Sharp Arrow" in json.dumps(sc["players"][0].get("runes", {})), json.dumps(sc["players"][0].get("runes"))[:200])
         # limits: platform allows 3 images per call; one batch fails once (split into singles); screen 5 always fails
         c2 = await b.new_context(viewport={"width": 390, "height": 844})
         await c2.add_init_script(MOCK + SCRIPT + "window.__failOnce = 7; window.__failAlways = 5;")
