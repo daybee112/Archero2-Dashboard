@@ -2724,7 +2724,8 @@ body.env-staging .envbar { display: block; }
       box.append(el("div", { class: "stack", style: "gap:4px" }, el("h3", { text: "Main build" }),
         el("p", { class: "small muted", style: "margin:0", text: `From a ${mb.src || "capture"}${mb.date ? " on " + mb.date : ""}. Incomplete: the profile doesn't show characters or resonances. Rune quality is the lowest it can be (the +N isn't visible).` }),
         el("div", { class: "small" }, el("b", { text: "Gear: " }), gl.length ? gl.join(" · ") : "not recorded"),
-        el("div", { class: "small" }, el("b", { text: "Runes: " }), rl2.length ? rl2.join(" · ") : "not recorded")));
+        el("div", { class: "small" }, el("b", { text: "Runes: " }), rl2.length ? rl2.join(" · ") : "not recorded"),
+        el("div", { class: "small" }, el("b", { text: "Mystling: " }), mb.mystling ? `${mb.mystling.name}${Number.isInteger(mb.mystling.stars) ? " ★" + mb.mystling.stars : ""}` : "not recorded")));
     }
     box.append(el("div", { class: "small" }, el("b", { text: "Mystling: " }),
       p.mystling ? `${p.mystling.name}${Number.isInteger(p.mystling.stars) ? " ★" + p.mystling.stars : ""}` : "not recorded",
@@ -3471,7 +3472,7 @@ body.env-staging .envbar { display: block; }
     }
     t.append(b); res.append(el("div", { class: "tablewrap" }, t));
     res.append(el("p", { class: "small muted", style: "margin:0", text: us
-      ? "Applying updates power and artifact stars (only when every Mythic and Legendary artifact was shown), saves the gear and runes as each player's main build (characters can't be seen on the profile, so it's marked incomplete; the Expedition preset isn't touched), and adds that gear, those runes and the mystling to their inventory: missing items are added and better quality raised, nothing is removed or lowered. Rune quality shows the tier only (the +N can't be seen), so it never lowers what's there. Hover a Runes cell to see the names; unclear icons stay blank."
+      ? "Applying updates power and artifact stars (only when every Mythic and Legendary artifact was shown), saves the gear, runes and mystling as each player's main build (characters can't be seen on the profile, so it's marked incomplete; the Expedition preset isn't touched), and adds that gear, those runes and the mystling to their inventory: missing items are added and better quality raised, nothing is removed or lowered. Rune quality shows the tier only (the +N can't be seen), so it never lowers what's there. Hover a Runes cell to see the names; unclear icons stay blank."
       : `Applying saves a new scan for ${oppName} dated ${today}: power, artifact stars, gear set and readable runes for each ticked player. Characters are never recorded.` }));
     const msg = el("span", { class: "small" }), apply = el("button", { type: "button", class: "btn", text: us ? "Apply to roster" : `Save scan for ${oppName}` });
     apply.addEventListener("click", async () => {
@@ -3486,9 +3487,10 @@ body.env-staging .envbar { display: block; }
             if (p.power != null) { nm.power = { m: p.power, date: today, src: "profile video" }; ch = true; }
             if (p.artsComplete && p.mythic != null) { nm.artifacts = { ...(nm.artifacts || {}), mythic: p.mythic, leg: p.leg, date: today }; ch = true; }
             if (p.mystling && (p.mystling.name || p.mystling.stars != null)) { nm.mystlingSeen = `${p.mystling.name || "?"}${p.mystling.stars != null ? " ★" + p.mystling.stars : ""} (profile video ${today})`; ch = true; }
-            if (Object.keys(p.gear).length || p.runeRead) {
+            if (Object.keys(p.gear).length || p.runeRead || p.mystling?.name) {
               nm.mainBuild = { chars: [null, null, null], gear: Object.fromEntries(Object.entries(p.gear).filter(([, g]) => g.set).map(([k, g]) => [k, { set: g.set, q: g.q || "" }])),
                 runes: p.runes ? Object.fromEntries(RTYPES.map(t => [t, (p.runes[t] || []).filter(Boolean)])) : (nm.mainBuild?.runes || {}),
+                mystling: p.mystling?.name ? { name: p.mystling.name, stars: Number.isInteger(p.mystling.stars) ? p.mystling.stars : null } : (nm.mainBuild?.mystling || null),
                 incomplete: true, date: today, src: "profile video" };
               ch = true;
             }
