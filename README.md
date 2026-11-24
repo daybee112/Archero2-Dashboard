@@ -39,7 +39,8 @@ The shared database lives inside the artifact (that's what members' dashboards r
 
 ## Staging
 
-A private test copy of the dashboard for trying feature branches before they go live. It has its **own database**, so
+A private test copy of the dashboard (slug `217b4230-3b53-4b4a-b34e-a0814e650f39`,
+https://claude.ai/artifact/58oF2Q3SVfCMUBq7cqAcC8) for trying feature branches before they go live. It has its **own database**, so
 nothing done there touches the live dashboard or the guild's data, and a striped "Staging" banner at the top.
 
 - **How it differs:** only `env.js`. Live serves `app/env.js` (`AA_ENV = "live"`); staging is published with
