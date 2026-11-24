@@ -3197,6 +3197,14 @@ body.env-staging .envbar { display: block; }
         slots[k] = { type, name: pick.name, q: runeTier(img, raw[k].b), score: Math.round(pick.s * 100) / 100, guess: pick.name, box: raw[k].b };
       });
     }
+    // Melee Sprite and Healing Sprite look almost the same at this size (per Daby): two sprite icons means both are
+    // equipped (the better-scoring way round), one sprite icon is taken to be Healing Sprite.
+    const PAIR = ["Melee Sprite", "Healing Sprite"];
+    const sc = (k, n) => (raw[k].cand.find(c => c.name === n) || { s: 0 }).s;
+    const sprites = raw.map((r, k) => k).filter(k => raw[k].type === "ability" && (PAIR.includes(slots[k].name) || (!slots[k].name && PAIR.includes(raw[k].cand[0]?.name) && raw[k].cand[0].s >= 0.6)));
+    const setS = (k, n) => { slots[k] = { type: "ability", name: n, q: runeTier(img, raw[k].b), score: Math.round(sc(k, n) * 100) / 100, guess: n, box: raw[k].b, sprite: true }; };
+    if (sprites.length === 1) setS(sprites[0], "Healing Sprite");
+    else if (sprites.length === 2) { const [a, b] = sprites; if (sc(a, PAIR[0]) + sc(b, PAIR[1]) >= sc(a, PAIR[1]) + sc(b, PAIR[0])) { setS(a, PAIR[0]); setS(b, PAIR[1]); } else { setS(a, PAIR[1]); setS(b, PAIR[0]); } }
     return { layout: best.name, slots };
   }
   function runeColorShare(img, b) {   // share of strongly colored pixels: an empty slot is pale
