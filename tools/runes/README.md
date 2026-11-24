@@ -21,3 +21,20 @@ costs at least 0.05. Otherwise it stays blank.
 
 Sprite rule (per Daby): Melee Sprite and Healing Sprite are nearly identical at screen size. Two sprite icons on
 one screen are both equipped (named the better-scoring way round); a single sprite icon is taken as Healing Sprite.
+
+## Twinborn runes (not handled yet, per Daby 2026-11-24)
+
+A Twinborn rune is two Mythic runes of the same slot type combined into one, with both effects. On the profile Runes
+ring it shows as one icon that **alternates between the two runes' icons**, with a **number badge on each side**
+(left and right of the frame, e.g. "3" and "3"). Normal runes have no side badges on that screen.
+
+Example: Hago26's third Enhancement slot, two Meteor runes (Giant Meteor + Potion Magnet). The Nov 23 video caught
+the Potion Magnet frame, his Nov 24 screenshot caught the Giant Meteor frame, so each read was "right" for its frame.
+
+Today the matcher reads whichever icon is showing in that still, so a Twinborn slot is saved as one of its two
+runes. Where to start:
+- detect the two side badges (small round badges just outside the frame at mid-height) and flag the slot as Twinborn;
+- in a video, collect the slot's icon from every still of the Runes screen (the icon alternates) and keep both names;
+- read the side badge numbers (likely the two runes' +N levels; confirm with Daby);
+- store it as one slot holding two runes, quality Mythic, and count both for inventory and build analysis.
+Twinborn runes are rare at ArchAcademy's power level.
