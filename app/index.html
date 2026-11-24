@@ -305,9 +305,14 @@ tr.rrow:hover td, tr.rrow.sel td { background: color-mix(in srgb, var(--accent) 
 #roster-float-corner th { box-shadow: inset -1px 0 0 var(--line), inset 0 -1px 0 var(--line); }
 #roster-float th .sortbtn { text-align: inherit; }
 tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.envbar { display: none; margin: -4px 0 10px; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 13px;
+  color: #3b2a00; background: repeating-linear-gradient(-45deg, #ffd54a, #ffd54a 12px, #ffe58a 12px, #ffe58a 24px); }
+body.env-staging .envbar { display: block; }
 </style>
+<script src="env.js"></script>
 </head>
 <body>
+<script>if (window.AA_ENV === "staging") { document.body.classList.add("env-staging"); document.title = "STAGING · " + document.title; }</script>
 <div class="wrap">
   <div class="topbar">
   <header class="top">
@@ -318,6 +323,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
     <div class="small muted row"><span id="whoami"></span><span id="whoami-ign" class="muted"></span><a href="#changelog" class="chip vbtn" id="release-badge" title="Change log and activity log" style="text-decoration:none">version …</a></div>
   </header>
 
+  <div class="envbar" id="envbar" role="note">Staging: a test copy of the dashboard. Nothing here touches the live dashboard or the guild's data.</div>
   <nav class="tabs" aria-label="Sections">
     <a href="#inventory" id="tab-inventory">Inventory</a>
     <a href="#builds" id="tab-builds">Builds</a>
