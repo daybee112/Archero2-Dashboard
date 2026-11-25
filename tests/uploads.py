@@ -20,8 +20,8 @@ async def main():
         # a fresh week
         await pg.click("#exp-new-week"); await pg.wait_for_timeout(100)
         for i, (n, pw) in enumerate([("Unity", "1.19B"), ("그랑", "655.42M"), ("Happiness", "340M")]):
-            await pg.fill(f"#exp-new-week-box tbody tr:nth-child({i+1}) td:nth-child(2) input", n)
-            await pg.fill(f"#exp-new-week-box tbody tr:nth-child({i+1}) td:nth-child(3) input", pw)
+            await pg.fill(f"#exp-new-week-box .nw-round:nth-child({i+1}) input >> nth=0", n)
+            await pg.fill(f"#exp-new-week-box .nw-round:nth-child({i+1}) input >> nth=1", pw)
         await pg.click("#exp-new-week-box >> text=Create week"); await pg.wait_for_timeout(800)
         await pg.click("#exp-sub button[data-sub=uploads]"); await pg.wait_for_timeout(300)
         t = await pg.inner_text("#exp-uploads")
