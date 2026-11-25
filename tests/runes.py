@@ -47,6 +47,15 @@ async def main():
             check(f"{f}: at least {need} of 13 read", known >= need, f"{known} read; blanks at {[i for i, g in enumerate(got) if g is None]}")
             if f == "preset-hago26.png":
                 check("Mythic tier from the red frame (Sharp Arrow, Arrow Rain)", r["slots"][0]["q"] == "Mythic" and r["slots"][10]["q"] == "Mythic", str([s["q"] for s in r["slots"]]))
+        # several frames of one pause (MuffinKnight, Nov 23 video): Revive is behind the character in the first frame only
+        reads = []
+        for f in ("muffin-pause-a.jpg", "muffin-pause-b.jpg", "muffin-pause-c.jpg"):
+            data = base64.b64encode(open(_os.path.join(FIX, f), "rb").read()).decode()
+            reads.append(await pg.evaluate("async (b64) => { const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); return await window.__readRunes(new Blob([bin])); }", data))
+        check("first frame alone misses the hidden Revive", reads[0]["slots"][5]["name"] is None)
+        voted = await pg.evaluate("(r) => window.__voteRunes(r)", reads)
+        check("voting across the pause recovers it", voted[5]["name"] == "Revive", str(voted[5]))
+        check("voting keeps all 13 MuffinKnight runes, each once", sum(1 for s in voted if s["name"]) == 13 and len({(s["type"], s["name"]) for s in voted if s["name"]}) == 13, str([s["name"] for s in voted]))
         check("no page errors", not errs, str(errs[:3]))
         await b.close()
     print(f"{sum(res)} / {len(res)}")
