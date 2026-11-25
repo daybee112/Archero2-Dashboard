@@ -3674,7 +3674,18 @@ body.env-staging .envbar { display: block; }
     const m = new Map();
     for (const w of EXP.weeks) m.set(w.id, w);
     for (const [id, w] of Object.entries(expDb)) m.set(id, { ...w, id });
-    return [...m.values()].sort((a, z) => a.id < z.id ? 1 : -1);   // newest first
+    return [...m.values()].map(w => ({ ...w, label: weekLabelFor(w.id) })).sort((a, z) => a.id < z.id ? 1 : -1);   // newest first
+  }
+  // Weeks start on Tuesday, the first day the matchup can be seen (per Daby). Weeks created before that are stored
+  // under their Monday date and keep that id; they're only shown as the Tuesday.
+  function weekTuesday(id) { const d = new Date(id + "T12:00:00"); if (d.getDay() === 1) d.setDate(d.getDate() + 1); return d; }
+  // notes written before weeks moved to Tuesdays name the week by its Monday ("Week of Nov 2:"), so both count
+  const weekTagMatches = (tag, id) => tag === weekLabelFor(id) || tag === "Week of " + new Date(id + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const weekLabelFor = (id) => "Week of " + weekTuesday(id).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  function nextWeekStart() {   // the Tuesday after the newest week, or this week's Tuesday when there are none
+    const latest = allWeeks()[0], d = latest ? weekTuesday(latest.id) : new Date();
+    if (latest) d.setDate(d.getDate() + 7); else d.setDate(d.getDate() - ((d.getDay() + 5) % 7));
+    return localDate(d);
   }
   const weekById = (id) => allWeeks().find(w => w.id === id);
   function allOpponents() {
@@ -4451,7 +4462,7 @@ body.env-staging .envbar { display: block; }
       card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${w ? w.label : "not faced yet"}${gp ? " · " + gp.toFixed(1) + "M" : ""}` }))));
       const body = el("div", { class: "body" }); card.append(body);
       // habits tagged "Week of <date>:" belong to that week; untagged ones apply every week
-      const habits = (o.behavior || []).filter(b => { const m = b.match(/^Week of ([A-Z][a-z]+ \d+)/); return !weekOnly || !m || ("Week of " + m[1]) === w.label; });
+      const habits = (o.behavior || []).filter(b => { const m = b.match(/^Week of ([A-Z][a-z]+ \d+)/); return !weekOnly || !m || weekTagMatches("Week of " + m[1], w.id); });
       if (habits.length) body.append(el("div", {}, el("h3", { text: weekOnly ? `Lane habits, ${w.label}` : "Lane habits" }), el("ul", { class: "tips" }, ...habits.map(b => el("li", { class: "small", text: b })))));
       const all = oppMatches(n);
       const hist = weekOnly ? all.filter(h => h.week === w.id) : all;
@@ -4828,23 +4839,92 @@ body.env-staging .envbar { display: block; }
   }
 
   // ----- new week -----
-  $("exp-new-week").addEventListener("click", () => {
-    const b = $("exp-new-week-box"); b.hidden = !b.hidden; if (b.hidden) return; b.replaceChildren();
-    const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); const monday = localDate(d);
-    const iDate = el("input", { type: "text", value: monday, style: "width:130px" });
-    const g = [0, 1, 2].map(() => el("input", { type: "text", placeholder: "Opponent guild", list: "exp-opp-list2" }));
-    const msg = el("span", { class: "small" });
-    b.append(el("datalist", { id: "exp-opp-list2" }, ...Object.keys(allOpponents()).map(n => el("option", { value: n }))),
-      el("div", { class: "controls" }, el("label", { class: "field" }, el("span", { class: "lbl", text: "Week starting (Monday)" }), iDate), ...g.map((x, i) => el("label", { class: "field" }, el("span", { class: "lbl", text: `R${i + 1} opponent (if known)` }), x))),
-      el("div", { class: "row" }, el("button", { type: "button", class: "btn", text: "Create week", onclick: async () => {
-        const id = iDate.value.trim(); if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) { msg.className = "small err"; msg.textContent = "Use YYYY-MM-DD."; return; }
-        if (weekById(id)) { msg.className = "small err"; msg.textContent = "That week already exists."; return; }
-        const dt = new Date(id + "T12:00:00");
-        const w = { id, label: "Week of " + dt.toLocaleDateString(undefined, { month: "short", day: "numeric" }), group: [{ guild: "ArchAcademy" }, ...g.map(x => x.value.trim()).filter(Boolean).map(n => ({ guild: n }))], standings: [], final: false,
-          rounds: [1, 2, 3].map(n => ({ n, opponent: g[n - 1].value.trim(), status: "planned", result: null, our: { left: { players: [] }, middle: { players: [] }, right: { players: [] } } })) };
-        try { await saveWeek(w, "created " + w.label); expWeekId = id; expRoundN = null; expRoundPicked = false; $("exp-new-week-box").hidden = true; renderExpedition(); } catch { msg.className = "small err"; msg.textContent = "Couldn't create."; }
-      } }), msg));
-  });
+  // ----- New week: typed in, or read from the matchup and schedule screenshots -----
+  $("exp-new-week").addEventListener("click", () => openNewWeek());
+  function openNewWeek() {
+    const b = $("exp-new-week-box"); if (!b.hidden) { b.hidden = true; return; }
+    b.hidden = false; b.replaceChildren();
+    const start = nextWeekStart(), addDays = (id, n) => { const d = new Date(id + "T12:00:00"); d.setDate(d.getDate() + n); return localDate(d); };
+    const iDate = el("input", { type: "text", value: start, style: "width:130px", "aria-label": "Week starting" });
+    const iOurP = el("input", { type: "text", placeholder: "e.g. 390.45M", style: "width:90px" });
+    const rows = [1, 2, 3].map(n => ({ n, opp: el("input", { type: "text", placeholder: "Opponent guild", list: "exp-opp-list2", style: "width:130px" }),
+      pow: el("input", { type: "text", placeholder: "Power", style: "width:80px" }), date: el("input", { type: "text", value: addDays(start, n + 2), style: "width:110px" }) }));
+    iDate.addEventListener("change", () => { if (/^\d{4}-\d{2}-\d{2}$/.test(iDate.value.trim())) rows.forEach(r => { r.date.value = addDays(iDate.value.trim(), r.n + 2); }); });
+    const files = el("input", { type: "file", accept: "image/*", multiple: "", id: "nw-files" });
+    const thumbs = el("div", { class: "row", style: "gap:6px;flex-wrap:wrap" }), readBtn = el("button", { type: "button", class: "btn", text: "Read screenshots", disabled: "" });
+    const readMsg = el("span", { class: "small" }), msg = el("span", { class: "small" }), note = el("div", { class: "small muted" });
+    let pairings = null;
+    files.addEventListener("change", () => { thumbs.replaceChildren(...[...files.files].map(f => el("img", { src: URL.createObjectURL(f), alt: "", style: "height:96px;border-radius:6px;border:1px solid var(--line)" }))); readBtn.disabled = !files.files.length; });
+    const known = () => Object.keys(allOpponents());
+    const refreshNote = () => { const nw = rows.map(r => r.opp.value.trim()).filter(n => n && !known().includes(n)); note.textContent = nw.length ? `New guild${nw.length > 1 ? "s" : ""}: ${nw.join(", ")}. Each gets its own record in Opponents.` : ""; };
+    rows.forEach(r => r.opp.addEventListener("input", refreshNote));
+    readBtn.addEventListener("click", async () => {
+      const sample = window.claude && typeof claude.use === "function" ? await claude.use("sample") : null;
+      if (!sample) { readMsg.className = "small err"; readMsg.textContent = "Reading screenshots isn't available here. Open this page inside Claude, or fill it in by hand."; return; }
+      readBtn.disabled = true; readMsg.className = "small"; readMsg.textContent = "Reading…";
+      try {
+        const r = await sample(newWeekPrompt([...files.files].length), { images: [...files.files], modelTier: "default" });
+        const got = parseJsonLoose(r.text), now = new Date();
+        const guilds = Array.isArray(got.guilds) ? got.guilds : [], ours = guilds.find(g => /^archacademy$/i.test(String(g.name || "").trim()));
+        if (ours && ours.power) iOurP.value = String(ours.power);
+        let filled = 0; pairings = {};
+        for (const rd of (Array.isArray(got.rounds) ? got.rounds : [])) {
+          const row = rows.find(x => x.n === rd.n); if (!row) continue;
+          const opp = String(rd.opponent || "").trim(); if (opp) { row.opp.value = opp; filled++; }
+          const g = guilds.find(x => String(x.name || "").trim() === opp); if (g && g.power) row.pow.value = String(g.power);
+          const m = /(\d+)\s*d\s*(\d+)\s*h/i.exec(String(rd.starts_in || ""));
+          if (m) { const d = new Date(now.getTime() + (+m[1] * 24 + +m[2]) * 3600e3); row.date.value = localDate(d); }
+          if (Array.isArray(rd.other) && rd.other.length === 2) pairings[rd.n] = rd.other.map(x => String(x).trim());
+        }
+        refreshNote();
+        readMsg.className = filled ? "small ok-msg" : "small err";
+        readMsg.textContent = filled ? `Read ${files.files.length} screenshot${files.files.length > 1 ? "s" : ""}: ${filled} of 3 rounds filled in. Check everything, then create.` : "Couldn't find the matchups. Fill them in by hand.";
+      } catch (e) { readMsg.className = "small err"; readMsg.textContent = (e && SAMPLE_ERR[e.code]) || "Couldn't read those. Fill them in by hand."; }
+      finally { readBtn.disabled = !files.files.length; }
+    });
+    const tbl = el("table", { class: "lb", style: "min-width:0" }, el("thead", {}, el("tr", {}, ...["Round", "Opponent", "Power", "Plays on"].map(h => el("th", { text: h })))),
+      el("tbody", {}, ...rows.map(r => el("tr", {}, el("td", {}, el("b", { text: "R" + r.n })), el("td", {}, r.opp), el("td", {}, r.pow), el("td", {}, r.date)))));
+    const create = el("button", { type: "button", class: "btn", text: "Create week" }), cancel = el("button", { type: "button", class: "btn ghost", text: "Cancel" });
+    cancel.addEventListener("click", () => { b.hidden = true; b.replaceChildren(); });
+    create.addEventListener("click", async () => {
+      const id = iDate.value.trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) { msg.className = "small err"; msg.textContent = "Use YYYY-MM-DD for the week start."; return; }
+      if (weekById(id)) { msg.className = "small err"; msg.textContent = "That week already exists."; return; }
+      const num = (v) => { const m = /^([\d.]+)\s*([MB])?$/i.exec(String(v).trim().replace(/,/g, "")); return !m ? null : Math.round(parseFloat(m[1]) * (m[2] && m[2].toUpperCase() === "B" ? 1000 : 1) * 100) / 100; };
+      const opp = rows.map(r => ({ n: r.n, name: r.opp.value.trim(), power: num(r.pow.value), date: r.date.value.trim() }));
+      const w = { id, label: weekLabelFor(id), group: [{ guild: "ArchAcademy", ...(num(iOurP.value) != null ? { power: num(iOurP.value) } : {}) },
+          ...opp.filter(o => o.name).map(o => ({ guild: o.name, ...(o.power != null ? { power: o.power } : {}) }))],
+        standings: [], final: false, ...(pairings && Object.keys(pairings).length ? { otherMatches: pairings } : {}),
+        rounds: opp.map(o => ({ n: o.n, opponent: o.name, date: /^\d{4}-\d{2}-\d{2}$/.test(o.date) ? o.date : null, status: "planned", result: null, our: { left: { players: [] }, middle: { players: [] }, right: { players: [] } } })) };
+      create.disabled = true; msg.className = "small"; msg.textContent = "Creating…";
+      try {
+        await saveWeek(w, "created " + w.label);
+        for (const o of opp.filter(o => o.name)) {   // new guilds get a record; known ones get this week added
+          const cur = allOpponents()[o.name];
+          const rec = cur ? clone(cur) : { name: o.name, weeks: [], behavior: [] };
+          rec.weeks = [...new Set([...(rec.weeks || []), id])]; if (o.power != null) rec.power = o.power;
+          await saveOpponent(rec, cur ? `${o.name}: added to ${w.label}` : `new guild ${o.name} (${w.label})`);
+        }
+        expWeekId = id; expRoundN = null; expRoundPicked = false; b.hidden = true; b.replaceChildren(); renderExpedition();
+      } catch { msg.className = "small err"; msg.textContent = "Couldn't create. Only officers can do this."; create.disabled = false; }
+    });
+    b.append(el("datalist", { id: "exp-opp-list2" }, ...known().map(n => el("option", { value: n }))),
+      el("div", { class: "stack" },
+        el("h3", { style: "margin:0", text: "New week" }),
+        el("p", { class: "small muted", style: "margin:0", text: "Upload the matchup screen and the three Schedule tabs to fill this in, or type it. Everything stays editable until you create the week." }),
+        el("div", { class: "row", style: "gap:8px;flex-wrap:wrap" }, el("label", { class: "field" }, el("span", { class: "lbl", text: "Matchup and schedule screenshots" }), files), readBtn, readMsg),
+        thumbs,
+        el("div", { class: "controls" }, el("label", { class: "field" }, el("span", { class: "lbl", text: "Week starting (Tuesday)" }), iDate), el("label", { class: "field" }, el("span", { class: "lbl", text: "Our power" }), iOurP)),
+        tbl, note, el("div", { class: "row" }, create, cancel, msg)));
+  }
+  function newWeekPrompt(n) {
+    return `These ${n} screenshot${n > 1 ? "s are" : " is"} from the Guild Expedition screens of the mobile game Archero 2, for our guild ArchAcademy.\n` +
+      "- The main screen shows the 4 guilds of this week's group, each with its name and power (like 390.45M or 1.19B).\n" +
+      "- Each Schedule screen has a Round 1/2/3 tab (the selected one is lighter), a \"Starts in: 02d 05h\" countdown, and two matchups. One matchup includes ArchAcademy; its other guild is our opponent that round.\n" +
+      "Extract only what is clearly shown; use null when unsure. Keep guild names exactly as written, including Korean, Chinese or Japanese characters.\n" +
+      'Reply with ONLY this JSON: {"guilds":[{"name":"","power":"390.45M"}],"rounds":[{"n":1,"opponent":"","starts_in":"02d 05h","other":["",""]}]}\n' +
+      '"other" is the matchup that round that does not include ArchAcademy.';
+  }
 
   // ----- v8 storage -----
   // expedition/<week> = the week header (group, standings, lessons, final); expedition/<week>/rounds/<n> = one round.
