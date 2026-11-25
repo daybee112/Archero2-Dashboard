@@ -4054,12 +4054,14 @@ body.env-staging .envbar { display: block; }
     return el("span", { class: "pchip" + (ws ? " g-" + ws : ""), title: `${ign}${ws ? " · " + ws : ""}${a ? ` · Avg DPS ${fmtRate(a.avg)} (${a.n})` : " · no DPS yet"}` },
       el("b", { text: ws ? ws[0] : "?" }), " ", playerLink(ign), extra || "");
   }
+  // Times are always shown in the viewer's own time zone, with its name (officers live all over the world).
+  const lockText = (at) => at.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
   // Lanes lock at 12:00 UTC on the round's day (4:00 AM PT). Before that we're preparing; after it, locked until results come in.
   function laneLockState(r) {
     const at = r.date ? new Date(r.date + "T12:00:00Z") : null;
     if (r.result) return { label: "Played", locked: true, at };
     if (at && Date.now() >= at.getTime()) return { label: "Locked", locked: true, at };
-    if (at) return { label: `Preparing · locks ${at.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}`, locked: false, at };
+    if (at) return { label: `Preparing · locks ${lockText(at)}`, locked: false, at };
     return { label: "Preparing", locked: false, at };
   }
 
@@ -4159,9 +4161,9 @@ body.env-staging .envbar { display: block; }
       if (r.result) chip = { c: r.result === "W" ? "good" : r.result === "L" ? "bad" : "neutral", t: (r.result === "W" ? "Won " : r.result === "L" ? "Lost " : "Draw ") + (r.score || "") };
       else if (ls.locked) chip = { c: "hyp", t: "Locked" };
       else if (r.n === curN && ls.at) { const ms = ls.at.getTime() - Date.now(), h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4);
-        chip = { c: "accent", t: h < 24 ? `Locks ${h ? h + "h " : "in "}${m}m` : "Locks " + ls.at.toLocaleString(undefined, { weekday: "short", hour: "numeric" }) }; }
+        chip = { c: "accent", t: h < 24 ? `Locks ${h ? h + "h " : "in "}${m}m` : "Locks " + lockText(ls.at) }; }
       else chip = { c: "neutral", t: r.n === curN ? "Preparing" : "Upcoming" };
-      const day = r.date ? new Date(r.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "";
+      const day = r.date ? new Date(r.date + "T12:00:00Z").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "";   // the lock moment, in the viewer's own time zone
       const lanes = el("div", { class: "rclanes" }, ...LANES.map(l => { const res = r.laneResults?.[l]?.result;
         return el("span", { title: `${LANE_LABEL[l]}: ${res || "not played yet"}` }, el("i", { class: "rcdot " + (res === "won" ? "won" : res === "lost" ? "lost" : "open") }), LANE_LABEL[l][0]); }));
       tabs.append(el("button", { type: "button", class: "roundcard", "aria-pressed": String(r.n === expRoundN), "aria-label": `Round ${r.n} vs ${r.opponent || "unknown"}, ${chip.t}`,
@@ -4864,9 +4866,12 @@ body.env-staging .envbar { display: block; }
     const start = nextWeekStart(), addDays = (id, n) => { const d = new Date(id + "T12:00:00"); d.setDate(d.getDate() + n); return localDate(d); };
     const iDate = el("input", { type: "text", value: start, style: "width:130px", "aria-label": "Week starting" });
     const iOurP = el("input", { type: "text", placeholder: "e.g. 390.45M", style: "width:90px" });
-    const rows = [1, 2, 3].map(n => ({ n, opp: el("input", { type: "text", placeholder: "Opponent guild", list: "exp-opp-list2", style: "width:130px" }),
-      pow: el("input", { type: "text", placeholder: "Power", style: "width:80px" }), date: el("input", { type: "text", value: addDays(start, n + 2), style: "width:110px" }) }));
-    iDate.addEventListener("change", () => { if (/^\d{4}-\d{2}-\d{2}$/.test(iDate.value.trim())) rows.forEach(r => { r.date.value = addDays(iDate.value.trim(), r.n + 2); }); });
+    const rows = [1, 2, 3].map(n => ({ n, opp: el("input", { type: "text", placeholder: "Opponent guild", list: "exp-opp-list2", style: "width:150px" }),
+      pow: el("input", { type: "text", placeholder: "e.g. 655.42M", style: "width:100px" }), date: el("input", { type: "text", value: addDays(start, n + 2), style: "width:120px" }),
+      lock: el("div", { class: "small muted" }) }));
+    const showLock = (r) => { const v = r.date.value.trim(); r.lock.textContent = /^\d{4}-\d{2}-\d{2}$/.test(v) ? "Lanes lock " + lockText(new Date(v + "T12:00:00Z")) : ""; };
+    rows.forEach(r => { r.date.addEventListener("input", () => showLock(r)); showLock(r); });
+    iDate.addEventListener("change", () => { if (/^\d{4}-\d{2}-\d{2}$/.test(iDate.value.trim())) rows.forEach(r => { r.date.value = addDays(iDate.value.trim(), r.n + 2); showLock(r); }); });
     const files = el("input", { type: "file", accept: "image/*", multiple: "", id: "nw-files" });
     const thumbs = el("div", { class: "row", style: "gap:6px;flex-wrap:wrap" }), readBtn = el("button", { type: "button", class: "btn", text: "Read screenshots", disabled: "" });
     const readMsg = el("span", { class: "small" }), msg = el("span", { class: "small" }), note = el("div", { class: "small muted" });
@@ -4890,7 +4895,7 @@ body.env-staging .envbar { display: block; }
           const opp = String(rd.opponent || "").trim(); if (opp) { row.opp.value = opp; filled++; }
           const g = guilds.find(x => String(x.name || "").trim() === opp); if (g && g.power) row.pow.value = String(g.power);
           const m = /(\d+)\s*d\s*(\d+)\s*h/i.exec(String(rd.starts_in || ""));
-          if (m) { const d = new Date(now.getTime() + (+m[1] * 24 + +m[2]) * 3600e3); row.date.value = localDate(d); }
+          if (m) { const d = new Date(now.getTime() + (+m[1] * 24 + +m[2] + 1) * 3600e3); row.date.value = d.toISOString().slice(0, 10); showLock(row); }   // the countdown drops minutes; lanes lock at 12:00 UTC
           if (Array.isArray(rd.other) && rd.other.length === 2) pairings[rd.n] = rd.other.map(x => String(x).trim());
         }
         refreshNote();
@@ -4899,8 +4904,23 @@ body.env-staging .envbar { display: block; }
       } catch (e) { readMsg.className = "small err"; readMsg.textContent = (e && SAMPLE_ERR[e.code]) || "Couldn't read those. Fill them in by hand."; }
       finally { readBtn.disabled = !files.files.length; }
     });
-    const tbl = el("table", { class: "lb", style: "min-width:0" }, el("thead", {}, el("tr", {}, ...["Round", "Opponent", "Power", "Plays on"].map(h => el("th", { text: h })))),
-      el("tbody", {}, ...rows.map(r => el("tr", {}, el("td", {}, el("b", { text: "R" + r.n })), el("td", {}, r.opp), el("td", {}, r.pow), el("td", {}, r.date)))));
+    const tbl = el("div", { class: "stack", style: "gap:8px" }, ...rows.map(r => el("div", { class: "panel stack nw-round", style: "padding:10px;gap:6px" },
+      el("b", { text: "Round " + r.n }),
+      el("div", { class: "controls", style: "gap:8px" },
+        el("label", { class: "field" }, el("span", { class: "lbl", text: "Opponent" }), r.opp),
+        el("label", { class: "field" }, el("span", { class: "lbl", text: "Power" }), r.pow),
+        el("label", { class: "field" }, el("span", { class: "lbl", text: "Plays on" }), r.date)),
+      r.lock)));
+    const tz = (() => { try { return new Intl.DateTimeFormat(undefined, { timeZoneName: "long" }).formatToParts(new Date()).find(x => x.type === "timeZoneName").value; } catch { return "your time zone"; } })();
+    const how = el("details", { class: "small" }, el("summary", { text: "Which screenshots to upload" }),
+      el("ol", { style: "margin:6px 0 6px 18px;padding:0" },
+        el("li", { text: "Open Guild Expedition and screenshot the main screen. It shows all 4 guilds of the week with their power." }),
+        el("li", { text: "Tap Schedule (bottom left) and screenshot the Round 1 tab." }),
+        el("li", { text: "Switch to Round 2 and Round 3 and screenshot each. The \"Starts in\" countdown on each tab gives the round's day." })),
+      el("div", { class: "row", style: "gap:6px;flex-wrap:wrap" }, ...["main", "r1", "r2", "r3"].map((n, i) => el("figure", { style: "margin:0;text-align:center" },
+        el("img", { src: `examples/matchup-${n}.jpg`, alt: ["Main screen", "Schedule, Round 1", "Schedule, Round 2", "Schedule, Round 3"][i], style: "height:150px;border-radius:6px;border:1px solid var(--line)" }),
+        el("figcaption", { class: "small muted", text: ["Main screen", "Round 1", "Round 2", "Round 3"][i] })))),
+      el("p", { class: "small muted", style: "margin:6px 0 0", text: "Example from the week of Nov 24. Upload all 4 at once, in any order." }));
     const create = el("button", { type: "button", class: "btn", text: "Create week" }), cancel = el("button", { type: "button", class: "btn ghost", text: "Cancel" });
     cancel.addEventListener("click", () => { b.hidden = true; b.replaceChildren(); });
     create.addEventListener("click", async () => {
@@ -4929,10 +4949,11 @@ body.env-staging .envbar { display: block; }
       el("div", { class: "stack" },
         el("h3", { style: "margin:0", text: "New week" }),
         el("p", { class: "small muted", style: "margin:0", text: "Upload the matchup screen and the three Schedule tabs to fill this in, or type it. Everything stays editable until you create the week." }),
+        how,
         el("div", { class: "row", style: "gap:8px;flex-wrap:wrap" }, el("label", { class: "field" }, el("span", { class: "lbl", text: "Matchup and schedule screenshots" }), files), readBtn, readMsg),
         thumbs,
         el("div", { class: "controls" }, el("label", { class: "field" }, el("span", { class: "lbl", text: "Week starting (Tuesday)" }), iDate), el("label", { class: "field" }, el("span", { class: "lbl", text: "Our power" }), iOurP)),
-        tbl, note, el("div", { class: "row" }, create, cancel, msg)));
+        tbl, el("div", { class: "small muted", text: `Times are shown in your time zone (${tz}). Everyone sees them in their own.` }), note, el("div", { class: "row" }, create, cancel, msg)));
   }
   // ----- Delete a week: only one that holds nothing yet (made by mistake, wrong date). Anything with a lineup,
   // results, notes or standings can't be deleted, and neither can the weeks that ship with the page.
@@ -5014,7 +5035,7 @@ body.env-staging .envbar { display: block; }
           (lastVid ? ` Last done ${lastVid}: ${nVid} of ${ms.length} players.` : ""), ourK, "Upload video", (tr) => openVidFor("__us", anchorAfter(tr))),
         el("tr", {}, el("td", { colspan: "3", class: "small muted", text: "New members: a name that isn't on the roster, in any of our videos, is offered as a new member when you review it." })))];
     for (const r of (w.rounds || [])) {
-      const day = r.date ? new Date(r.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short" }) : "";
+      const day = r.date ? lockText(new Date(r.date + "T12:00:00Z")) : "";
       const name = r.opponent && r.opponent !== "tbd" ? r.opponent : null;
       const o = name ? allOpponents()[name] : null;
       const scans = (o && o.scans || []).filter(sc => inWeek(w, sc.date));
