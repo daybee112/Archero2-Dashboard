@@ -3223,12 +3223,12 @@ body.env-staging .envbar { display: block; }
     }
     return !n ? null : red / n > 0.35 ? "Mythic" : pur / n > 0.35 ? "Epic" : "Legendary";
   }
-  if (window.__expose) window.__readRunes = readRunes;   // tests only
+  if (window.__expose) { window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
   // ================= Profile video import =================
   // A screen recording of players' profile screens -> one still per screen (on this device) -> Claude reads each still ->
   // grouped by player (a Namecard starts each player) -> review table -> Apply. Opponents: never characters, only
   // power, artifacts and gear set. Our guild: power and artifact stars (gear on the profile isn't the Expedition preset).
-  const VID = { STEP: 1 / 6, W: 118, H: 256, STILL: 0.12, MIN: 2, SAME: 0.04, BATCH: 6, OUT_H: 1568 };
+  const VID = { STEP: 1 / 6, W: 118, H: 256, STILL: 0.12, MIN: 2, SAME: 0.04, BATCH: 6, OUT_H: 1568, EXTRA_EVERY: 2, EXTRA_MAX: 3 };
   let vidCtl = null;
   function vidTargets() {
     const sel = $("vid-target"), cur = sel.value;
@@ -3280,7 +3280,11 @@ body.env-staging .envbar { display: block; }
     const idx = screens.map((x, k) => x.type === "runes" && !x.runes ? k : -1).filter(k => k >= 0);
     for (let j = 0; j < idx.length; j++) {
       say(`Matching rune icons ${j + 1} of ${idx.length}…`);
-      try { const r = await readRunes(stills[idx[j]].blob); if (r) screens[idx[j]].runes = r.slots.map(({ type, name, q, empty }) => ({ type, name, q, empty })); } catch { /* left unread */ }
+      try {
+        const reads = [];
+        for (const blob of [stills[idx[j]].blob, ...(stills[idx[j]].extra || [])]) { try { const r = await readRunes(blob); if (r) reads.push(r); } catch { /* skip this frame */ } }
+        if (reads.length) screens[idx[j]].runes = voteRunes(reads);
+      } catch { /* left unread */ }
     }
   }
   function runeListText(p) {
@@ -3308,6 +3312,22 @@ body.env-staging .envbar { display: block; }
     logEvent("edited inventory", `${m.ign} (from a profile video)`, { src: "video", changes });
     return true;
   }
+  // Combine rune reads of several frames of one Runes screen: each slot takes the name most frames agree on
+  // (a blank frame doesn't vote); a tie between two different names stays blank. Quality: the highest seen.
+  function voteRunes(reads) {
+    const ord = (q) => D.runeQualities.indexOf(q);
+    return reads[0].slots.map((s0, k) => {
+      const tally = {}, qs = {};
+      for (const r of reads) { const s = r.slots[k]; if (!s || !s.name || s.type !== s0.type) continue; tally[s.name] = (tally[s.name] || 0) + 1; if (!qs[s.name] || ord(s.q) > ord(qs[s.name])) qs[s.name] = s.q; }
+      const ranked = Object.entries(tally).sort((a, z) => z[1] - a[1]);
+      const name = ranked.length && (ranked.length === 1 || ranked[0][1] > ranked[1][1]) ? ranked[0][0] : null;
+      return { type: s0.type, name, q: name ? qs[name] : null, empty: reads.every(r => r.slots[k]?.empty), votes: name ? tally[name] : 0 };
+    }).map((s, k, all) => {   // a rune can only be equipped once: if voting put one name in two slots, the weaker one goes blank
+      if (!s.name) return s;
+      const rival = all.find((o, j) => j !== k && o.type === s.type && o.name === s.name && (o.votes > s.votes || (o.votes === s.votes && j < k)));
+      return rival ? { ...s, name: null, q: null } : s;
+    }).map(({ votes, ...s }) => s);
+  }
   function vidShow(lastErr) {
     const { stills, screens, oppName } = lastVid;
     const { players, loose } = vidGroup(screens);
@@ -3328,19 +3348,24 @@ body.env-staging .envbar { display: block; }
       const gray = () => { sx.drawImage(v, 0, 0, VID.W, VID.H); const d = sx.getImageData(0, 0, VID.W, VID.H).data, g = new Uint8Array(VID.W * VID.H);
         for (let i = 0; i < g.length; i++) g[i] = (d[i * 4] * 299 + d[i * 4 + 1] * 587 + d[i * 4 + 2] * 114) / 1000; return g; };
       const changed = (a, b) => { let n = 0; for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 20) n++; return n / a.length; };
-      const out = []; let prev = null, run = 0, lastKept = null, grabbed = false;
+      const out = []; let prev = null, run = 0, lastKept = null, grabbed = false, keepExtra = false;
       for (let t = 0; t < dur; t += VID.STEP) {
         if (signal.aborted) throw new Error("stopped");
         await seek(t); const g = gray();
         const still = prev && changed(g, prev) < VID.STILL;
         run = still ? run + 1 : 0; if (!still) grabbed = false;
         if (run >= VID.MIN && !grabbed) {
-          grabbed = true;
+          grabbed = true; keepExtra = false;
           if (!lastKept || changed(g, lastKept) >= VID.SAME) {
             bx.drawImage(v, 0, 0, bc.width, bc.height);
             const blob = await new Promise((ok) => bc.toBlob(ok, "image/jpeg", 0.9));
-            out.push({ t, blob, url: URL.createObjectURL(blob) }); lastKept = g;
+            out.push({ t, blob, url: URL.createObjectURL(blob), extra: [] }); lastKept = g; keepExtra = true;
           }
+        } else if (grabbed && keepExtra && still && (run - VID.MIN) % VID.EXTRA_EVERY === 0 && out[out.length - 1].extra.length < VID.EXTRA_MAX) {
+          // more frames from the same pause: only used for matching rune icons (the 3D character moves, so a rune
+          // hidden in one frame is often clear in another); never sent to Claude
+          bx.drawImage(v, 0, 0, bc.width, bc.height);
+          out[out.length - 1].extra.push(await new Promise((ok) => bc.toBlob(ok, "image/jpeg", 0.9)));
         }
         prev = g; onProgress(Math.min(1, t / dur), out.length);
       }
