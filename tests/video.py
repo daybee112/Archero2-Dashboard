@@ -49,7 +49,7 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required"])
         errs = []
-        c = await b.new_context(viewport={"width": 1280, "height": 900})
+        c = await b.new_context(viewport={"width": 1280, "height": 900}); await c.add_init_script("window.__expose = true;")
         pre = {"inventory/m-daybee": {"memberId": "m-daybee", "ign": "daybee", "at": 1, "byOfficer": True, "v": 1,
                "inv": {"chars": {}, "gear": {"weapon": {"Dragoon": "Godforge ★1"}}, "runes": {"Sharp Arrow": "Mythic", "Sprite Link": "Legendary+3"}, "mystlings": {}}}}
         await c.add_init_script("window.__preseed = " + json.dumps(pre) + ";" + MOCK + SCRIPT)
@@ -65,6 +65,9 @@ async def main():
         await pg.wait_for_function("document.querySelector('#vid-status').textContent.startsWith('Found') || document.querySelector('#vid-status').classList.contains('err')", timeout=180000)
         stxt = await pg.inner_text("#vid-status"); print("status:", stxt)
         check("no unread screens on a clean run", await pg.locator("#vid-result .hintbox.err").count() == 0)
+        ex = await pg.evaluate("window.__lastVid ? window.__lastVid.stills.map(x => x.extra.length) : null")
+        print("extras per still:", ex)
+        check("extra frames kept only for Runes screens (the clip has 2)", ex is not None and sum(1 for n in ex if n) in (1, 2) and sum(1 for n in ex if n) <= 2, str(ex))
         n = int(stxt.split()[1])
         check("finds the screens in the 40s clip (about 19, as the offline check found)", 16 <= n <= 22, stxt)
         batches = await pg.evaluate("window.__batches")
@@ -133,6 +136,28 @@ async def main():
         await p2.evaluate("window.__failAlways = 0")
         await p2.click("#vid-result .hintbox.err button"); await p2.wait_for_timeout(1500)
         check("retry reads just the unread screen and fills it in", await p2.locator("#vid-result .hintbox.err").count() == 0 and "Death Mage" in await p2.inner_text("#vid-result tbody"))
+        # Stop works mid-read, right away
+        c3 = await b.new_context(viewport={"width": 390, "height": 844}); await c3.add_init_script(MOCK + SCRIPT)
+        p3 = await c3.new_page(); p3.on("pageerror", lambda e: errs.append(str(e)))
+        await p3.goto("http://127.0.0.1:8795/index.html#roster"); await p3.wait_for_timeout(2500)
+        await p3.click("#btn-vid"); await p3.set_input_files("#vid-file", FIX); await p3.click("#btn-vid-read")
+        await p3.wait_for_function("document.querySelector('#vid-status').textContent.includes('Finding screens')", timeout=30000)
+        check("a small preview plays while reading", await p3.is_visible("#vid-preview-box video"))
+        await p3.wait_for_timeout(1500); await p3.click("#btn-vid-stop"); await p3.wait_for_timeout(700)
+        st3 = await p3.inner_text("#vid-status")
+        check("Stop stops within a second", st3 == "Stopped.", st3)
+        check("preview removed after stopping", await p3.is_hidden("#vid-preview-box"))
+        await c3.close()
+        # a browser that won't play it falls back to jumping frame by frame
+        c4 = await b.new_context(viewport={"width": 390, "height": 844})
+        await c4.add_init_script(MOCK + SCRIPT + "HTMLMediaElement.prototype.play = function () { return Promise.reject(new Error('NotAllowed')); };")
+        p4 = await c4.new_page(); p4.on("pageerror", lambda e: errs.append(str(e)))
+        await p4.goto("http://127.0.0.1:8795/index.html#roster"); await p4.wait_for_timeout(2500)
+        await p4.click("#btn-vid"); await p4.set_input_files("#vid-file", FIX); await p4.click("#btn-vid-read")
+        await p4.wait_for_function("document.querySelector('#vid-status').textContent.startsWith('Found')", timeout=300000)
+        st4 = await p4.inner_text("#vid-status")
+        check("fallback finds the same screens", st4.startswith("Found 1") and "2 players" in st4, st4)
+        await c4.close()
         check("no page errors", not errs, str(errs[:3]))
         await b.close()
     print(f"{sum(res)} / {len(res)}")
