@@ -35,6 +35,11 @@ async def main():
         await pg.click("#exp-uploads tr:has-text('Unity roster and profiles') button"); await pg.wait_for_timeout(300)
         check("video reader opens inside Uploads", await pg.is_visible("#exp-uploads ~ * #vid-panel, #exp-uploads #vid-panel") or await pg.evaluate("!!document.querySelector('#exp-uploads #vid-panel')"))
         check("…pointed at Unity", await pg.eval_on_selector("#vid-target", "s=>s.value") == "Unity")
+        # a finished read survives the list being redrawn when new data arrives
+        await pg.evaluate("document.querySelector('#vid-result').append(Object.assign(document.createElement('div'), { id: 'fake-review', textContent: 'review here' }))")
+        await pg.evaluate("""(async () => { const db = await window.claude.use('db'); await db.doc('opponents/o-4772616e67/scans/x').set({ date: '2026-11-20', players: [], v: 3 }); })()""")
+        await pg.wait_for_timeout(600)
+        check("review survives a redraw of the list", await pg.is_visible("#exp-uploads #fake-review"))
         await pg.click("#exp-uploads tr:has-text('Our roster and profiles') button"); await pg.wait_for_timeout(300)
         check("…or at our guild", await pg.eval_on_selector("#vid-target", "s=>s.value") == "__us")
         # leaving Uploads puts the reader back on the Roster
