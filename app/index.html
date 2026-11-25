@@ -308,6 +308,7 @@ tr.rrow:hover td:first-child, tr.rrow.sel td:first-child { background: color-mix
 .envbar { display: none; margin: -4px 0 10px; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 13px;
   color: #3b2a00; background: repeating-linear-gradient(-45deg, #ffd54a, #ffd54a 12px, #ffe58a 12px, #ffe58a 24px); }
 body.env-staging .envbar { display: block; }
+.vid-preview { width: 90px; border-radius: 6px; border: 1px solid var(--line); display: block; }
 </style>
 <script src="env.js"></script>
 </head>
@@ -588,6 +589,7 @@ body.env-staging .envbar { display: block; }
         <div class="field"><label for="vid-file">Video</label><input type="file" id="vid-file" accept="video/*"></div>
       </div>
       <div class="row"><button type="button" class="btn" id="btn-vid-read" disabled>Read video</button><button type="button" class="btn ghost" id="btn-vid-stop" hidden>Stop</button><span id="vid-status" class="small"></span></div>
+      <div id="vid-preview-box" hidden></div>
       <div id="vid-result" class="stack"></div>
     </div>
     <div class="panel stack" id="import-panel" hidden>
@@ -3347,42 +3349,85 @@ body.env-staging .envbar { display: block; }
   }
   // Pull one still per screen: step through the video, find stretches where under 12% of the picture changes
   // (the animated 3D character doesn't count as movement), keep one frame per stretch, drop repeats of the last screen.
+  // Two ways to walk through the video. Playing it (fast, muted, in a small preview on the page) is the main one: a
+  // 15-minute phone recording took far too long frame by frame, and iPhones sometimes never finish a jump to a new spot,
+  // which froze the reader. Jumping frame by frame is kept as a fallback, with a time limit on every jump. Both stop
+  // straight away when you tap Stop.
   async function videoStills(file, signal, onProgress) {
-    const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto";
+    const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto"; v.setAttribute("playsinline", ""); v.setAttribute("muted", "");
+    v.className = "vid-preview"; v.setAttribute("aria-hidden", "true");
     const url = URL.createObjectURL(file); v.src = url;
+    const host = $("vid-preview-box"); host.replaceChildren(v); host.hidden = false;   // iPhones won't keep playing a video that isn't on screen
+    const stopped = () => new Error("stopped");
+    const abortable = (pr) => new Promise((ok, bad) => { if (signal.aborted) return bad(stopped()); const on = () => bad(stopped()); signal.addEventListener("abort", on, { once: true }); pr.then((x) => { signal.removeEventListener("abort", on); ok(x); }, (e) => { signal.removeEventListener("abort", on); bad(e); }); });
     try {
-      await new Promise((ok, bad) => { v.onloadeddata = ok; v.onerror = () => bad(new Error("format")); setTimeout(() => bad(new Error("format")), 20000); });
+      await abortable(new Promise((ok, bad) => { v.onloadeddata = ok; v.onerror = () => bad(new Error("format")); setTimeout(() => bad(new Error("format")), 20000); }));
       const dur = v.duration; if (!isFinite(dur) || dur <= 0) throw new Error("format");
       const sc = document.createElement("canvas"); sc.width = VID.W; sc.height = VID.H; const sx = sc.getContext("2d", { willReadFrequently: true });
       const scale = Math.min(1, VID.OUT_H / v.videoHeight);
       const bc = document.createElement("canvas"); bc.width = Math.round(v.videoWidth * scale); bc.height = Math.round(v.videoHeight * scale); const bx = bc.getContext("2d");
-      const seek = (t) => new Promise((ok) => { const done = () => { v.removeEventListener("seeked", done); ok(); }; v.addEventListener("seeked", done); v.currentTime = t; });
+      let tabs = null;   // which Personal Info tab is highlighted (yellow), from the same small picture
       const gray = () => { sx.drawImage(v, 0, 0, VID.W, VID.H); const d = sx.getImageData(0, 0, VID.W, VID.H).data, g = new Uint8Array(VID.W * VID.H);
-        for (let i = 0; i < g.length; i++) g[i] = (d[i * 4] * 299 + d[i * 4 + 1] * 587 + d[i * 4 + 2] * 114) / 1000; return g; };
+        for (let i = 0; i < g.length; i++) g[i] = (d[i * 4] * 299 + d[i * 4 + 1] * 587 + d[i * 4 + 2] * 114) / 1000;
+        tabs = [0.20, 0.40, 0.60, 0.80].map(fx => { const k = (Math.round(0.300 * VID.H) * VID.W + Math.round(fx * VID.W)) * 4; return d[k] > 200 && d[k + 1] > 180 && d[k + 2] < 120; });
+        return g; };
+      const onRunesTab = () => tabs && tabs[1] && !tabs[0] && !tabs[2] && !tabs[3];
       const changed = (a, b) => { let n = 0; for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 20) n++; return n / a.length; };
-      const out = []; let prev = null, run = 0, lastKept = null, grabbed = false, keepExtra = false;
-      for (let t = 0; t < dur; t += VID.STEP) {
-        if (signal.aborted) throw new Error("stopped");
-        await seek(t); const g = gray();
-        const still = prev && changed(g, prev) < VID.STILL;
+      const snap = () => { bx.drawImage(v, 0, 0, bc.width, bc.height); return new Promise((ok) => bc.toBlob(ok, "image/jpeg", 0.9)); };
+      const out = [], pending = []; let prev = null, run = 0, lastKept = null, grabbed = false, keepExtra = false;
+      const consider = (t) => {   // one sample, about every VID.STEP seconds of video
+        const g = gray(), still = prev && changed(g, prev) < VID.STILL;
         run = still ? run + 1 : 0; if (!still) grabbed = false;
         if (run >= VID.MIN && !grabbed) {
           grabbed = true; keepExtra = false;
           if (!lastKept || changed(g, lastKept) >= VID.SAME) {
-            bx.drawImage(v, 0, 0, bc.width, bc.height);
-            const blob = await new Promise((ok) => bc.toBlob(ok, "image/jpeg", 0.9));
-            out.push({ t, blob, url: URL.createObjectURL(blob), extra: [] }); lastKept = g; keepExtra = true;
+            // extra frames are only for matching rune icons, so only a Runes screen keeps them (a long video would
+            // otherwise hold hundreds of extra pictures in the phone's memory)
+            const item = { t, blob: null, url: null, extra: [] }; out.push(item); lastKept = g; keepExtra = onRunesTab();
+            pending.push(snap().then(b => { item.blob = b; item.url = URL.createObjectURL(b); }));
           }
         } else if (grabbed && keepExtra && still && (run - VID.MIN) % VID.EXTRA_EVERY === 0 && out[out.length - 1].extra.length < VID.EXTRA_MAX) {
           // more frames from the same pause: only used for matching rune icons (the 3D character moves, so a rune
           // hidden in one frame is often clear in another); never sent to Claude
-          bx.drawImage(v, 0, 0, bc.width, bc.height);
-          out[out.length - 1].extra.push(await new Promise((ok) => bc.toBlob(ok, "image/jpeg", 0.9)));
+          const item = out[out.length - 1]; pending.push(snap().then(b => { item.extra.push(b); }));
         }
         prev = g; onProgress(Math.min(1, t / dur), out.length);
+      };
+      let played = false;
+      try { played = await playThrough(v, dur, signal, consider); } catch (e) { if (e && e.message === "stopped") throw e; played = false; }
+      if (!played) {   // fallback: jump through it, giving each jump at most 4 seconds
+        prev = null; run = 0; lastKept = null; grabbed = false; keepExtra = false; out.length = 0;
+        const seek = (t) => new Promise((ok) => { let done = false; const fin = () => { if (done) return; done = true; v.removeEventListener("seeked", fin); ok(); };
+          v.addEventListener("seeked", fin); setTimeout(fin, 4000); v.currentTime = t; });
+        for (let t = 0; t < dur; t += VID.STEP) { if (signal.aborted) throw stopped(); await abortable(seek(t)); consider(t); }
       }
-      return out;
-    } finally { URL.revokeObjectURL(url); v.removeAttribute("src"); v.load(); }
+      await abortable(Promise.all(pending));
+      return out.filter(x => x.blob);
+    } finally { try { v.pause(); } catch {} URL.revokeObjectURL(url); v.removeAttribute("src"); v.load(); host.replaceChildren(); host.hidden = true; }
+  }
+  // Play the video muted at up to 4x and sample frames as they're shown. Resolves true at the end; false if this browser
+  // won't play it here (then the caller jumps frame by frame); rejects "stopped" on Stop. If it stops moving for 15
+  // seconds, it nudges it once, then gives up so the fallback can take over.
+  function playThrough(v, dur, signal, consider) {
+    return new Promise((ok, bad) => {
+      let last = -1, finished = false, lastMove = Date.now(), nudged = false;
+      const finish = (val, err) => { if (finished) return; finished = true; clearInterval(watch); clearInterval(poll); try { v.pause(); } catch {}
+        signal.removeEventListener("abort", onAbort); v.removeEventListener("ended", onEnd); err ? bad(err) : ok(val); };
+      const onAbort = () => finish(null, new Error("stopped")), onEnd = () => { tick(dur); finish(true); };
+      const tick = (t) => { if (finished) return; if (t > last) lastMove = Date.now(); if (t - last >= VID.STEP || (t >= dur && last < dur)) { last = t; consider(Math.min(t, dur)); } };
+      signal.addEventListener("abort", onAbort, { once: true }); v.addEventListener("ended", onEnd);
+      const useRvfc = typeof v.requestVideoFrameCallback === "function";
+      const frame = (_now, meta) => { if (finished) return; tick(meta && meta.mediaTime != null ? meta.mediaTime : v.currentTime); v.requestVideoFrameCallback(frame); };
+      const poll = setInterval(() => { if (!useRvfc) tick(v.currentTime); }, 40);
+      const watch = setInterval(() => {
+        if (Date.now() - lastMove < 15000) return;
+        if (!nudged) { nudged = true; lastMove = Date.now(); v.play().catch(() => {}); return; }
+        finish(false);
+      }, 1000);
+      try { v.playbackRate = 4; } catch {}
+      v.play().then(() => { if (useRvfc) v.requestVideoFrameCallback(frame); if (v.playbackRate < 2) { try { v.playbackRate = 2; } catch {} } })
+        .catch(() => finish(false));
+    });
   }
   function vidPrompt(nums) {
     const n = nums.length, first = nums[0];
@@ -3477,7 +3522,7 @@ body.env-staging .envbar { display: block; }
       const errs = await vidReadInto(screens, screens.map(x => x.i), stills, sample, signal, maxImgs, (t) => { st.textContent = t; });
       if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; return; }
       await vidRunes(screens, stills, (t) => { st.textContent = t; });
-      lastVid = { stills, screens, oppName: target === "__us" ? null : oppName, maxImgs };
+      lastVid = { stills, screens, oppName: target === "__us" ? null : oppName, maxImgs }; if (window.__expose) window.__lastVid = lastVid;
       const { players } = vidGroup(screens);
       st.textContent = `Found ${stills.length} screens and ${players.length} player${players.length === 1 ? "" : "s"}. Check them, then apply.`;
       vidShow(errs.last);
