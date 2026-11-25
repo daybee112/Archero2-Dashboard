@@ -6,6 +6,23 @@
  },
  "releases": [
   {
+   "id": "v10.0.0",
+   "date": "not released yet",
+   "by": "Daby (staging preview)",
+   "draft": true,
+   "title": "Video uploads and the Expedition Uploads tab (in testing)",
+   "changes": [
+    "Profile video import: screen-record players' profiles and the dashboard pulls out one still per screen on your device. Runes are matched on the device, so they don't use Claude.",
+    "Review before saving: a card per player where every value can be corrected (power, artifact stars, mystling, gear, runes), with what the roster has now shown underneath. Unsure values are outlined and left blank. New names can be added as members, matched to an existing member, or skipped.",
+    "Expedition: New week, typed in or read from the matchup screenshots, starting on Tuesdays. Existing weeks keep their records and are labeled by their Tuesday.",
+    "Expedition: an Uploads tab (officers) listing what to upload this week for us and each opponent, with each item's status.",
+    "Expedition: a safe way to delete an empty week.",
+    "Round lock times show in each viewer's own time zone.",
+    "Faster start on phones, and Help's first-visit welcome is remembered properly in the Claude app.",
+    "Arena (with Peak Arena) and All-Star Cup are listed as coming areas."
+   ]
+  },
+  {
    "id": "v9.1.0",
    "date": "2026-11-23",
    "by": "Daby (published by Claude)",

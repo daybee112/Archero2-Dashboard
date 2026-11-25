@@ -2137,7 +2137,7 @@ body.env-staging .envbar { display: block; }
       const ul = el("ul", { class: "tips" });
       (r.changes || []).forEach(c => ul.append(el("li", { class: "small", text: c })));
       box.append(el("div", { style: "border-top:1px solid var(--line);padding-top:10px" },
-        el("div", { class: "row" }, el("b", { text: r.id }), el("span", { class: "small muted", text: `${r.date} · ${r.by}` }), r === rel[0] ? el("span", { class: "chip good", text: "live" }) : null),
+        el("div", { class: "row" }, el("b", { text: r.id }), el("span", { class: "small muted", text: `${r.date} · ${r.by}` }), r.draft ? el("span", { class: "chip warn", text: "on staging, not released yet" }) : r === rel.find(x => !x.draft) ? el("span", { class: "chip good", text: "live" }) : null),
         r.title ? el("div", { text: r.title }) : null, ul));
     }
   }
