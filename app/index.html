@@ -629,7 +629,7 @@ body.env-staging .envbar { display: block; }
     <div id="exp-opponents" class="stack" hidden></div>
     <div id="exp-players" class="stack" hidden></div>
     <div id="exp-findings" class="stack" hidden></div>
-    <div id="exp-uploads" class="stack" hidden></div>
+    <div id="exp-uploads" class="stack" hidden><div id="exp-uploads-reader"></div><div id="exp-uploads-list" class="stack"></div></div>
   </section>
 
   <!-- ================= CHANGES ================= -->
@@ -5054,16 +5054,19 @@ body.env-staging .envbar { display: block; }
   function parkVidPanel() {   // put the video panel back on the Roster when leaving Uploads
     const pnl = $("vid-panel"); if (vidHome.parent && pnl.parentNode !== vidHome.parent) { vidHome.parent.insertBefore(pnl, vidHome.next); pnl.hidden = true; }
   }
-  function openVidFor(target, anchor) {
+  // The reader sits in its own slot at the top of Uploads, outside the list: the list is redrawn whenever data arrives
+  // (it used to sit inside the list, so a redraw threw away a finished read before you could review it).
+  function openVidFor(target) {
     const pnl = $("vid-panel"); if (!vidHome.parent) { vidHome.parent = pnl.parentNode; vidHome.next = pnl.nextSibling; }
-    anchor.after(pnl); vidTargets();
+    $("exp-uploads-reader").append(pnl); vidTargets();
+    const same = $("vid-target").value === target && !pnl.hidden;   // reopening the same one keeps a read you haven't saved yet
     $("vid-target").value = target; $("vid-newopp-f").hidden = true; vidReady();
-    $("vid-result").replaceChildren(); $("vid-status").textContent = "";
+    if (!same) { $("vid-result").replaceChildren(); $("vid-status").textContent = ""; }
     pnl.hidden = false; pnl.scrollIntoView({ block: "start", behavior: "smooth" });
   }
   function inWeek(w, date) { if (!date) return false; const d = Date.parse(date + "T12:00:00Z"), st = Date.parse(w.id + "T00:00:00Z"); return d >= st - 864e5 && d < st + 7 * 864e5; }
   function renderUploads(w) {
-    const box = $("exp-uploads"); box.replaceChildren();
+    const box = $("exp-uploads-list"); box.replaceChildren();
     if (!w) { box.append(el("div", { class: "panel muted", text: "Create a week first (New week)." })); return; }
     const chip = (k) => k === "saved" ? el("span", { class: "chip good", text: "Saved" }) : k === "part" ? el("span", { class: "chip warn", text: "Partly saved" }) : k === "soon" ? el("span", { class: "chip neutral", text: "Reader coming soon" }) : el("span", { class: "chip neutral", text: "Not uploaded" });
     const row = (title, hint, k, btnText, onClick) => {
@@ -5073,21 +5076,20 @@ body.env-staging .envbar { display: block; }
       tr.append(td); return tr;
     };
     const table = (...rows) => el("table", { class: "lb uploads", style: "min-width:0" }, el("tbody", {}, ...rows));
-    const anchorAfter = (tr) => tr.closest("table");
     // this week
     const opps = (w.rounds || []).map(r => r.opponent).filter(n => n && n !== "tbd");
     const matchK = opps.length === 3 ? "saved" : opps.length ? "part" : "todo";
     // our guild: newest profile-video date on the roster
     const ms = allMembers().filter(m => m.status !== "left"), vids = ms.map(m => m.power && m.power.src === "profile video" ? m.power.date : null).filter(Boolean).sort();
     const lastVid = vids[vids.length - 1], nVid = vids.filter(d => d === lastVid).length;
-    const ourK = lastVid && inWeek(w, lastVid) ? "saved" : "todo";
+    const ourK = lastVid && inWeek(w, lastVid) ? (nVid >= ms.length ? "saved" : "part") : "todo";
     const sections = [
       el("h3", { style: "margin:8px 0 0", text: "This week" }),
       table(row("Matchup and schedule", "Group, opponents, round days" + (opps.length ? ` · ${opps.join(", ")}` : ""), matchK, null)),
       el("h3", { style: "margin:8px 0 0", text: "Our guild · ArchAcademy" }),
       table(
         row("Our roster and profiles", "Profile video of our members: power, artifacts, gear, runes, mystling. Saved as each player's main build and inventory. Monthly, or when someone changes." +
-          (lastVid ? ` Last done ${lastVid}: ${nVid} of ${ms.length} players.` : ""), ourK, "Upload video", (tr) => openVidFor("__us", anchorAfter(tr))),
+          (lastVid ? ` Last done ${lastVid}: ${nVid} of ${ms.length} players.` : ""), ourK, "Upload video", () => openVidFor("__us")),
         el("tr", {}, el("td", { colspan: "3", class: "small muted", text: "New members: a name that isn't on the roster, in any of our videos, is offered as a new member when you review it." })))];
     for (const r of (w.rounds || [])) {
       const day = r.date ? lockText(new Date(r.date + "T12:00:00Z")) : "";
@@ -5098,7 +5100,7 @@ body.env-staging .envbar { display: block; }
       const resK = (r.stats || []).length ? "saved" : r.result ? "part" : "soon";
       sections.push(el("h3", { style: "margin:8px 0 0", text: `Round ${r.n}${name ? " · vs " + name : ""}${day ? " · " + day : ""}` }),
         table(
-          name ? row(`${name} roster and profiles`, `Profile video, saved as this week's ${name} scan` + (scans.length ? ` · ${scans[scans.length - 1].players.length} players on ${scans[scans.length - 1].date}` : ""), scans.length ? "saved" : "todo", "Upload video", (tr) => openVidFor(name, anchorAfter(tr)))
+          name ? row(`${name} roster and profiles`, `Profile video, saved as this week's ${name} scan` + (scans.length ? ` · ${scans[scans.length - 1].players.length} players on ${scans[scans.length - 1].date}` : ""), scans.length ? "saved" : "todo", "Upload video", () => openVidFor(name))
                : row("Opponent roster and profiles", "Set this round's opponent first (New week or Rounds)", "todo", null),
           row("Our lanes and presets", "Team Info for each lane, then each preset: character, resonances, gear, runes, mystling, movement. Saved as each player's Expedition preset", lanesK, null),
           row("Results", "Overview + 12 detail screens", resK, null)));
