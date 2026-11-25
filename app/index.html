@@ -3827,7 +3827,7 @@ body.env-staging .envbar { display: block; }
     const w = weekById(expWeekId);
     const head = $("exp-week-head"); head.replaceChildren();
     if (w) {
-      head.append(el("div", { class: "row small muted" }, "Guilds: ", ...(w.group || []).map(g => el("span", {}, el("b", {}, guildLink(g.guild)), g.power ? ` ${g.power.toFixed(1)}M` : ""))));
+      head.append(el("div", { class: "row small muted" }, "Guilds: ", ...(w.group || []).map(g => el("span", {}, el("b", {}, guildLink(g.guild)), g.power ? " " + guildPow(g.power) : ""))));
     }
     if (expSub === "rounds") renderRounds(w);
     else if (expSub === "results") { const b = $("exp-results"); b.replaceChildren(w ? el("div", { class: "panel stack" }, weekResultsCard(w)) : el("div", { class: "panel muted", text: "No weeks yet." })); }
@@ -4064,6 +4064,7 @@ body.env-staging .envbar { display: block; }
       el("b", { text: ws ? ws[0] : "?" }), " ", playerLink(ign), extra || "");
   }
   // Times are always shown in the viewer's own time zone, with its name (officers live all over the world).
+  const guildPow = (m) => m >= 1000 ? (m / 1000).toFixed(2) + "B" : m.toFixed(1) + "M";   // guild power is stored in millions
   const lockText = (at) => at.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
   // Lanes lock at 12:00 UTC on the round's day (4:00 AM PT). Before that we're preparing; after it, locked until results come in.
   function laneLockState(r) {
@@ -4170,7 +4171,7 @@ body.env-staging .envbar { display: block; }
       if (r.result) chip = { c: r.result === "W" ? "good" : r.result === "L" ? "bad" : "neutral", t: (r.result === "W" ? "Won " : r.result === "L" ? "Lost " : "Draw ") + (r.score || "") };
       else if (ls.locked) chip = { c: "hyp", t: "Locked" };
       else if (r.n === curN && ls.at) { const ms = ls.at.getTime() - Date.now(), h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4);
-        chip = { c: "accent", t: h < 24 ? `Locks ${h ? h + "h " : "in "}${m}m` : "Locks " + lockText(ls.at) }; }
+        chip = { c: "accent", t: h < 24 ? `Locks ${h ? h + "h " : "in "}${m}m` : "Locks " + ls.at.toLocaleString(undefined, { weekday: "short", hour: "numeric" }) }; }   // short on the tile; the full time with its zone is on the round
       else chip = { c: "neutral", t: r.n === curN ? "Preparing" : "Upcoming" };
       const day = r.date ? new Date(r.date + "T12:00:00Z").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "";   // the lock moment, in the viewer's own time zone
       const lanes = el("div", { class: "rclanes" }, ...LANES.map(l => { const res = r.laneResults?.[l]?.result;
@@ -4487,7 +4488,7 @@ body.env-staging .envbar { display: block; }
       const o = opps[n];
       const gp = w ? ((w.group || []).find(g => g.guild === n) || {}).power : o.power;
       const card = el("details", { class: "inv", "data-guild": n, "data-week": w ? w.id : "" });
-      card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${w ? w.label : "not faced yet"}${gp ? " · " + gp.toFixed(1) + "M" : ""}` }))));
+      card.append(el("summary", {}, el("span", {}, n, el("span", { class: "small muted", text: ` · ${w ? w.label : "not faced yet"}${gp ? " · " + guildPow(gp) : ""}` }))));
       const body = el("div", { class: "body" }); card.append(body);
       // habits tagged "Week of <date>:" belong to that week; untagged ones apply every week
       const habits = (o.behavior || []).filter(b => { const m = b.match(/^Week of ([A-Z][a-z]+ \d+)/); return !weekOnly || !m || weekTagMatches("Week of " + m[1], w.id); });
