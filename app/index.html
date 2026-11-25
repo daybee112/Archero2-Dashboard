@@ -172,6 +172,19 @@ table.lb td.num, table.lb th.num { text-align: right; font-variant-numeric: tabu
 .err { color: var(--bad); font-size: .9rem; }
 .ok-msg { color: var(--good); font-size: .9rem; }
 .hintbox { border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; }
+.vcard { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 10px; }
+.vcard.look { border-color: var(--warn); }
+.vcard.off > :not(:first-child) { opacity: .55; }
+.vrow { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; }
+.vf { gap: 2px; }
+.vnow { font-size: .78rem; color: var(--muted); }
+.vslot { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 6px; }
+.vgrid { display: grid; grid-template-columns: 4.2em minmax(0, 1fr) minmax(0, 1.2fr); gap: 4px 6px; align-items: center; }
+.vgrid .vspan { grid-column: 2 / -1; }
+.vslot select, .vgrid select { width: 100%; }
+.vbadge { border: 1px solid var(--warn); color: var(--warn); border-radius: 999px; padding: 1px 8px; font-size: .78rem; }
+.warn-t { color: var(--warn); }
+.unsure { outline: 2px solid var(--bad); outline-offset: -1px; }
 .soonbox { text-align: center; padding: 48px 16px; }
 #ai-out { white-space: pre-wrap; }
 .briefing { border: 1px solid var(--accent); border-left-width: 5px; border-radius: 10px; padding: 12px 14px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); gap: 8px; }
@@ -581,7 +594,7 @@ body.env-staging .envbar { display: block; }
       <ol class="steps small">
         <li>In game, open the guild's member list and <b>screen-record</b> while you go through players one at a time: tap a player, then show their <b>Namecard</b>, <b>Gear</b>, <b>Runes</b>, <b>Mystling</b> and every <b>Artifact</b> page (scroll until you reach the Epic artifacts), then go back to the list for the next player. Pause about a second on each screen.</li>
         <li>Pick whose roster it is and the video. The video stays on this device: the dashboard pulls out one still picture per screen and only those go to Claude (uses some of your Claude usage).</li>
-        <li>Check the results table. Nothing saves until you tap <b>Apply</b>. Unclear values stay blank.</li>
+        <li>Check each player and correct anything that's wrong: every value can be changed, and red outlines mark what the reader wasn't sure about. Nothing saves until you tap <b>Save</b>. Blank values aren't saved.</li>
       </ol>
       <div class="controls">
         <div class="field"><label for="vid-target">Whose roster</label><select id="vid-target"></select></div>
@@ -3342,10 +3355,10 @@ body.env-staging .envbar { display: block; }
       return rival ? { ...s, name: null, q: null } : s;
     }).map(({ votes, ...s }) => s);
   }
-  function vidShow(lastErr) {
+  function vidShow() {
     const { stills, screens, oppName } = lastVid;
     const { players, loose } = vidGroup(screens);
-    renderVidResult(players, loose, screens, stills, oppName, lastErr);
+    renderVidResult(players, loose, screens, stills, oppName);
   }
   // Pull one still per screen: step through the video, find stretches where under 12% of the picture changes
   // (the animated 3D character doesn't count as movement), keep one frame per stretch, drop repeats of the last screen.
@@ -3464,7 +3477,7 @@ body.env-staging .envbar { display: block; }
       cur.frames.push(sc.i);
       if (sc.type === "runes" && Array.isArray(sc.runes)) {
         cur.runes = Object.fromEntries(RTYPES.map(t => [t, sc.runes.filter(r => r.type === t).map(r => r.name ? { name: r.name, q: r.q || "" } : null)]));
-        cur.runeRead = sc.runes.filter(r => r.name).length; cur.runeEmpty = sc.runes.filter(r => r.empty).length; cur.runeSlots = sc.runes.length;
+        cur.runeRead = sc.runes.filter(r => r.name).length; cur.runeEmpty = sc.runes.filter(r => r.empty).length; cur.runeSlots = sc.runes.length; cur.runeRaw = sc.runes;
       }
       if (sc.type === "gear") for (const { id } of D.gearSlots) { const g = (sc.gear || {})[id] || {}; const set = SETS.includes(g.set) ? g.set : null, q = D.gearQualities.includes(g.quality) ? g.quality : null; if (set || q) cur.gear[id] = { set, q }; }
       if (sc.type === "mystling" && sc.mystling) cur.mystling = { name: D.mystlings.some(m => m.name === sc.mystling.name) ? sc.mystling.name : null, stars: Number.isInteger(sc.mystling.stars) && sc.mystling.stars >= 0 && sc.mystling.stars <= D.mystlingMaxStars ? sc.mystling.stars : null };
@@ -3485,7 +3498,7 @@ body.env-staging .envbar { display: block; }
       if (!q.mystling) q.mystling = p.mystling;
       for (const [k, a] of Object.entries(p.arts)) if (!q.arts[k] || (q.arts[k].stars == null && a.stars != null)) q.arts[k] = a;
       q.sawEpic = q.sawEpic || p.sawEpic;
-      if (p.runeRead > q.runeRead) { q.runes = p.runes; q.runeRead = p.runeRead; q.runeEmpty = p.runeEmpty; q.runeSlots = p.runeSlots; }
+      if (p.runeRead > q.runeRead) { q.runes = p.runes; q.runeRaw = p.runeRaw; q.runeRead = p.runeRead; q.runeEmpty = p.runeEmpty; q.runeSlots = p.runeSlots; }
       players.splice(i, 1);
     }
     for (const p of players) {
@@ -3494,12 +3507,7 @@ body.env-staging .envbar { display: block; }
       p.mythic = arts.length && !unknown ? arts.filter(a => a.tier === "Mythic").reduce((x, a) => x + a.stars, 0) : null;
       p.leg = arts.length && !unknown ? arts.filter(a => a.tier === "Legendary").reduce((x, a) => x + a.stars, 0) : null;
       p.artsComplete = arts.length > 0 && !unknown && p.sawEpic;
-      const sets = Object.values(p.gear).map(g => g.set).filter(Boolean), qs = Object.values(p.gear).map(g => g.q).filter(Boolean);
-      const cnt = {}; for (const x of sets) cnt[x] = (cnt[x] || 0) + 1;
-      const top = Object.entries(cnt).sort((a, z) => z[1] - a[1])[0];
-      p.gearSet = !top ? null : top[1] === sets.length ? top[0] : `${top[0]} (mixed)`;
-      p.gearNote = top && top[1] < sets.length ? D.gearSlots.filter(({ id }) => p.gear[id]?.set && p.gear[id].set !== top[0]).map(({ id, label }) => `${p.gear[id].set} ${label.toLowerCase()}`).join(" + ") : "";
-      p.gearQ = qs.length && qs.every(q => q === qs[0]) ? `all ${qs[0]}` : qs.length ? "mixed quality" : "";
+      Object.assign(p, gearSummary(p.gear));
     }
     return { players, loose };
   }
@@ -3524,13 +3532,75 @@ body.env-staging .envbar { display: block; }
       await vidRunes(screens, stills, (t) => { st.textContent = t; });
       lastVid = { stills, screens, oppName: target === "__us" ? null : oppName, maxImgs }; if (window.__expose) window.__lastVid = lastVid;
       const { players } = vidGroup(screens);
-      st.textContent = `Found ${stills.length} screens and ${players.length} player${players.length === 1 ? "" : "s"}. Check them, then apply.`;
-      vidShow(errs.last);
+      st.textContent = `Found ${stills.length} screens and ${players.length} player${players.length === 1 ? "" : "s"}. Check and correct anything, then save.`;
+      vidShow();
     } catch (e) {
       st.className = "small"; st.textContent = e && e.message === "stopped" ? "Stopped." : "Something went wrong reading the video.";
     } finally { $("btn-vid-read").disabled = false; $("btn-vid-stop").hidden = true; vidReady(); }
   });
-  function renderVidResult(players, loose, screens, stills, oppName, lastErr) {
+  // ----- Review before saving (every value can be corrected) -----
+  // One card per player. Each value is a box you can change; red outlines mark what the reader wasn't sure about or
+  // couldn't see (those stay blank and aren't saved unless you fill them in). For our guild, "now:" under a value is
+  // what the roster has today. Nothing is written until Save.
+  const editDist = (a, b) => { a = a.toLowerCase(); b = b.toLowerCase(); const dp = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) { let prev = dp[0]; dp[0] = i; for (let j = 1; j <= b.length; j++) { const t = dp[j]; dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = t; } }
+    return dp[b.length]; };
+  const activeMembers = () => allMembers().filter(m => (m.status || "active") !== "left").sort((a, z) => a.ign.localeCompare(z.ign));
+  function closeMember(name) {   // a misread name that's one or two letters off a member's name
+    let best = null; for (const m of activeMembers()) { const d = editDist(name, m.ign); if (!best || d < best.d) best = { m, d }; }
+    return best && best.d > 0 && best.d <= Math.max(1, Math.floor(name.length / 5)) ? best.m : null;
+  }
+  function vidDraft(p, us) {
+    const m = us && p.name ? findIgn(p.name) : null, near = us && p.name && !m ? closeMember(p.name) : null;
+    const unsure = new Set(), runes = {};
+    for (const t of RTYPES) {
+      const raw = (p.runeRaw || []).filter(r => r.type === t);
+      runes[t] = Array.from({ length: RSLOTS[t] }, (_, k) => {
+        const r = raw[k];
+        if (!p.runeRaw) return { name: "", q: "Legendary", unsure: false };
+        if (r && r.name) return { name: r.name, q: D.runeQualities.includes(r.q) ? r.q : "Legendary", unsure: false };
+        if (r && r.empty) return { name: "__empty", q: "Legendary", unsure: false };
+        return { name: "", q: "Legendary", unsure: true };
+      });
+    }
+    const sawGear = Object.keys(p.gear).length > 0, gear = {};
+    for (const { id } of D.gearSlots) { const g = p.gear[id] || {}; gear[id] = { set: g.set || "", q: g.q || "" }; if (sawGear && (!g.set || !g.q)) unsure.add("g-" + id); }
+    const d = {
+      key: p.name ? "n:" + p.name.toLowerCase() : "f:" + p.frames[0], hand: false, touched: false,
+      name: p.name || "", memberId: m ? m.id : near ? near.id : "", near: near ? near.ign : "",
+      mode: !us ? "opp" : m ? "match" : near ? "existing" : "new",
+      power: p.power != null ? p.power.toFixed(2) : "",
+      mythic: p.artsComplete && p.mythic != null ? String(p.mythic) : "", leg: p.artsComplete && p.leg != null ? String(p.leg) : "",
+      artNote: !p.artCount ? "" : p.artsComplete ? "" : `Saw ${p.artCount} artifacts but not every page${p.mythic != null ? ` (partial count ${p.mythic} / ${p.leg})` : ""}, so the stars are left blank.`,
+      gear, sawGear, sawRunes: !!p.runeRaw, sawMyst: !!p.mystling,
+      myst: { name: p.mystling?.name || "", stars: p.mystling?.stars != null ? String(p.mystling.stars) : "" },
+      runes, frames: p.frames, unsure };
+    if (!d.name) unsure.add("name");
+    if (!d.power) unsure.add("power");
+    if (p.artCount && !d.mythic) unsure.add("mythic");
+    if (p.artCount && !d.leg) unsure.add("leg");
+    if (d.sawMyst && !d.myst.name) unsure.add("myst");
+    if (d.sawMyst && !d.myst.stars) unsure.add("mstars");
+    d.on = !!d.name && (d.power !== "" || d.mythic !== "" || sawGear || d.sawRunes || d.sawMyst) && (!us || d.mode !== "new" || !!d.name);
+    if (us && d.mode === "existing") d.on = !!d.memberId;
+    return d;
+  }
+  const handDraft = (us) => ({ key: "h:" + Date.now() + Math.random(), hand: true, touched: true, name: "", memberId: "", near: "", mode: us ? "existing" : "opp",
+    power: "", mythic: "", leg: "", artNote: "", gear: Object.fromEntries(D.gearSlots.map(({ id }) => [id, { set: "", q: "" }])), sawGear: false, sawRunes: false, sawMyst: false,
+    myst: { name: "", stars: "" }, runes: Object.fromEntries(RTYPES.map(t => [t, Array.from({ length: RSLOTS[t] }, () => ({ name: "", q: "Legendary", unsure: false }))])), frames: [], unsure: new Set(), on: true });
+  const draftIssues = (d) => d.unsure.size + RTYPES.reduce((n, t) => n + d.runes[t].filter(r => r.unsure).length, 0);
+  const draftGear = (d) => Object.fromEntries(Object.entries(d.gear).filter(([, g]) => g.set).map(([k, g]) => [k, { set: g.set, q: g.q || "" }]));
+  const draftRunes = (d) => Object.fromEntries(RTYPES.map(t => [t, d.runes[t].filter(r => r.name && r.name !== "__empty").map(r => ({ name: r.name, q: r.q || "Legendary" }))]));
+  const draftNum = (v) => { const t = String(v ?? "").trim().replace(/m$/i, ""); if (!t) return null; const x = Number(t); return isFinite(x) ? x : NaN; };
+  function gearSummary(gear) {
+    const sets = Object.values(gear).map(g => g.set).filter(Boolean), qs = Object.values(gear).map(g => g.q).filter(Boolean);
+    const cnt = {}; for (const x of sets) cnt[x] = (cnt[x] || 0) + 1;
+    const top = Object.entries(cnt).sort((a, z) => z[1] - a[1])[0];
+    return { gearSet: !top ? null : top[1] === sets.length ? top[0] : `${top[0]} (mixed)`,
+      gearNote: top && top[1] < sets.length ? D.gearSlots.filter(({ id }) => gear[id]?.set && gear[id].set !== top[0]).map(({ id, label }) => `${gear[id].set} ${label.toLowerCase()}`).join(" + ") : "",
+      gearQ: qs.length && qs.every(q => q === qs[0]) ? `all ${qs[0]}` : qs.length ? "mixed quality" : "" };
+  }
+  function renderVidResult(players, loose, screens, stills, oppName) {
     const res = $("vid-result"); res.replaceChildren();
     const us = !oppName, today = localDate(Date.now());
     const unreadNums = screens.filter(x => x.type === "unread").map(x => x.i), unread = unreadNums.length;
@@ -3545,8 +3615,8 @@ body.env-staging .envbar { display: block; }
           const errs = await vidReadInto(lastVid.screens, unreadNums, lastVid.stills, sample, vidCtl.signal, lastVid.maxImgs, (t) => { st.textContent = t; });
           await vidRunes(lastVid.screens, lastVid.stills, (t) => { st.textContent = t; });
           if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; }
-          else { const n = vidGroup(lastVid.screens).players.length; st.textContent = `Found ${lastVid.stills.length} screens and ${n} player${n === 1 ? "" : "s"}. Check them, then apply.`; }
-          vidShow(errs.last);
+          else { const n = vidGroup(lastVid.screens).players.length; st.textContent = `Found ${lastVid.stills.length} screens and ${n} player${n === 1 ? "" : "s"}. Check and correct anything, then save.`; }
+          vidShow();
         } catch (e) { st.textContent = e && e.message === "stopped" ? "Stopped." : "Something went wrong."; }
         finally { $("btn-vid-stop").hidden = true; retry.disabled = false; }
       });
@@ -3555,78 +3625,185 @@ body.env-staging .envbar { display: block; }
         el("div", { class: "row" }, retry)));
     }
     if (loose.length) res.append(el("div", { class: "small muted", text: `Screens ${loose.join(", ")} came before any namecard, so they aren't matched to a player.` }));
-    const rows = players.map((p, i) => {
-      const m = us && p.name ? findIgn(p.name) : null;
-      return { p, i, m, on: el("input", { type: "checkbox" }) };
-    });
-    const t = el("table", { class: "lb", style: "min-width:0" }, el("thead", {}, el("tr", {}, ...["", "Player", "Power", "Mythic / Leg stars", "Gear", "Runes", ...(us ? ["Mystling"] : []), "Screens"].map(h => el("th", { text: h })))));
-    const b = el("tbody");
-    for (const r of rows) {
-      const { p, m } = r;
-      const ok = p.name && (!us || m) && (p.power != null || (p.artsComplete && p.mythic != null));
-      r.on.checked = !!ok; r.on.disabled = !p.name || (us && !m);
-      const nowP = m?.power?.m != null ? m.power.m.toFixed(2) + "M" : "—", nowA = m?.artifacts?.mythic != null ? `${m.artifacts.mythic} / ${m.artifacts.leg}` : "—";
-      const art = p.mythic != null ? `${p.mythic} / ${p.leg}` : "—";
-      const artTxt = (us ? `${nowA} → ` : "") + art + (p.artCount && !p.artsComplete ? " (incomplete: didn't reach the Epic artifacts)" : "");
-      b.append(el("tr", { "data-vid": String(r.i) },
-        el("td", {}, r.on),
-        el("td", { class: "small" }, el("b", { text: p.name || "name unclear" }), us && p.name && !m ? el("span", { class: "err", text: " · not on the roster" }) : null),
-        el("td", { class: "small", text: (us ? `${nowP} → ` : "") + (p.power != null ? p.power.toFixed(2) + "M" : "—") }),
-        el("td", { class: "small" + (p.artCount && !p.artsComplete ? " err" : ""), text: artTxt }),
-        el("td", { class: "small", text: [p.gearSet, p.gearQ, p.gearNote].filter(Boolean).join(" · ") || "—" }),
-        el("td", { class: "small", title: runeListText(p), text: p.runes ? `${p.runeRead} of ${p.runeSlots - p.runeEmpty} read` + (p.runeEmpty ? ` · ${p.runeEmpty} empty` : "") : "—" }),
-        ...(us ? [el("td", { class: "small", text: p.mystling ? `${p.mystling.name || "?"}${p.mystling.stars != null ? " ★" + p.mystling.stars : ""}` : "—" })] : []),
-        el("td", { class: "small muted", text: p.frames.join(", ") })));
-    }
-    t.append(b); res.append(el("div", { class: "tablewrap" }, t));
-    res.append(el("p", { class: "small muted", style: "margin:0", text: us
-      ? "Applying updates power and artifact stars (only when every Mythic and Legendary artifact was shown), saves the gear, runes and mystling as each player's main build (characters can't be seen on the profile, so it's marked incomplete; the Expedition preset isn't touched), and adds that gear, those runes and the mystling to their inventory: missing items are added and better quality raised, nothing is removed or lowered. Rune quality shows the tier only (the +N can't be seen), so it never lowers what's there. Hover a Runes cell to see the names; unclear icons stay blank."
-      : `Applying saves a new scan for ${oppName} dated ${today}: power, artifact stars, gear set and readable runes for each ticked player. Characters are never recorded.` }));
-    const msg = el("span", { class: "small" }), apply = el("button", { type: "button", class: "btn", text: us ? "Apply to roster" : `Save scan for ${oppName}` });
-    apply.addEventListener("click", async () => {
-      const picked = rows.filter(r => r.on.checked && !r.on.disabled);
-      if (!picked.length) { msg.textContent = "Tick at least one player."; return; }
-      apply.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
+    // keep corrections already made (a retry of unread screens redraws this)
+    const old = lastVid.drafts || new Map(), drafts = new Map();
+    for (const p of players) { const d = vidDraft(p, us), was = old.get(d.key); drafts.set(d.key, was && was.touched ? was : d); }
+    for (const [k, d] of old) if (d.hand) drafts.set(k, d);
+    lastVid.drafts = drafts; if (lastVid.saved == null) lastVid.saved = false;
+    const look = el("div"), cards = el("div", { class: "stack" }), saveBtn = el("button", { type: "button", class: "btn", id: "vid-save" }), msg = el("span", { class: "small" });
+    const refresh = () => {   // the "needs a look" box and the Save count
+      const list = [...drafts.values()];
+      const need = list.filter(d => d.on && d.mode !== "skip" && draftIssues(d));
+      look.replaceChildren(); look.className = need.length ? "hintbox small" : "";
+      if (need.length) look.append(`${need.length} player${need.length > 1 ? "s need" : " needs"} a look: `,
+        ...need.flatMap((d, i) => [i ? ", " : "", el("b", { text: d.name || "a name it couldn't read" }), ` (${draftIssues(d)} unsure)`]), ". Red outlines are values the reader wasn't sure about or couldn't see; blanks aren't saved.");
+      const n = list.filter(d => d.on && d.mode !== "skip").length;
+      saveBtn.textContent = lastVid.saved ? "Saved" : `Save ${n} player${n === 1 ? "" : "s"}`; saveBtn.disabled = !n || lastVid.saved;
+    };
+    const touch = (d) => { d.touched = true; refresh(); };
+    const nowOf = (d) => us && d.memberId && d.mode !== "new" ? memberById(d.memberId) : null;
+    const drawCard = (d) => {
+      const m = nowOf(d), card = el("div", { class: "vcard" + (draftIssues(d) ? " look" : "") + (d.on && d.mode !== "skip" ? "" : " off"), "data-key": d.key });
+      const mark = (inp, k) => { if (d.unsure.has(k)) inp.classList.add("unsure"); return inp; };
+      const clear = (inp, k) => { d.unsure.delete(k); inp.classList.remove("unsure"); card.classList.toggle("look", !!draftIssues(d)); };
+      const text = (k, val, set, attrs = {}) => { const i = el("input", { type: "text", "data-f": k, ...attrs }); i.value = val; mark(i, k);
+        i.addEventListener("input", () => { set(i.value); clear(i, k); touch(d); }); return i; };
+      const sel = (k, opts, val, set, attrs = {}) => { const s = el("select", { "data-f": k, ...attrs }, ...opts.map(([v, t]) => el("option", { value: v, text: t })));
+        if (val && !opts.some(([v]) => v === val)) s.append(el("option", { value: val, text: val })); s.value = val; mark(s, k);
+        s.addEventListener("change", () => { set(s.value); clear(s, k); touch(d); }); return s; };
+      const fld = (label, input, now) => el("label", { class: "field vf" }, el("span", { class: "small muted", text: label }), input, now != null ? el("span", { class: "vnow", text: "now: " + now }) : null);
+      // header: tick, who, screens
+      const on = el("input", { type: "checkbox", class: "von", "aria-label": "Include this player" }); on.checked = d.on;
+      on.addEventListener("change", () => { d.on = on.checked; card.classList.toggle("off", !(d.on && d.mode !== "skip")); touch(d); });
+      const memberOpts = (blank) => [["", blank], ...activeMembers().map(x => [x.id, x.ign])];
+      const head = el("div", { class: "vrow" }, on);
+      if (d.mode === "match") {
+        head.append(sel("member", [...memberOpts("— pick —").slice(1), ["__new", "Not on the roster…"]], d.memberId, (v) => {
+          if (v === "__new") { d.mode = "new"; d.memberId = ""; } else d.memberId = v; redraw(d); }));
+      } else if (us) {
+        head.append(text("name", d.name, (v) => { d.name = v; }, { placeholder: "Name unclear: type it", style: "width:12em" }), el("span", { class: "vbadge", text: d.hand ? "Added by hand" : "Not on the roster" }));
+      } else head.append(text("name", d.name, (v) => { d.name = v; }, { placeholder: "Name unclear: type it", style: "width:12em" }));
+      const shotsBox = el("div", { class: "shots", hidden: "" });
+      if (d.frames.length) {
+        const a = el("a", { href: "#", class: "small", text: "see screens" });
+        a.addEventListener("click", (e) => { e.preventDefault(); if (!shotsBox.childNodes.length) for (const i of d.frames) { const x = lastVid.stills[i - 1]; if (x) shotsBox.append(el("img", { src: x.url, alt: "", style: "height:110px;border-radius:6px" })); } shotsBox.hidden = !shotsBox.hidden; });
+        head.append(el("span", { class: "small muted", style: "margin-left:auto" }, `screens ${d.frames.length > 1 ? Math.min(...d.frames) + "–" + Math.max(...d.frames) : d.frames[0]} · `, a));
+      }
+      card.append(head, shotsBox);
+      if (us && d.mode !== "match") {   // who is this: new member, an existing member, or skip
+        const nm = "who-" + d.key, radio = (v, ...label) => { const r = el("input", { type: "radio", name: nm, value: v, "data-f": "mode-" + v }); r.checked = d.mode === v;
+          r.addEventListener("change", () => { d.mode = v; if (v === "existing" && !d.memberId && d.near) d.memberId = activeMembers().find(x => x.ign === d.near)?.id || ""; redraw(d); }); return el("label", { class: "row small", style: "gap:6px" }, r, ...label); };
+        card.append(el("div", { class: "stack", style: "gap:4px" },
+          d.near && d.mode === "existing" ? el("span", { class: "small warn-t", text: `The name read as “${d.name}”, which looks like ${d.near}. Check it's them.` }) : null,
+          radio("new", "Add as a new member"),
+          radio("existing", "It's an existing member:", sel("member", memberOpts("pick…"), d.memberId, (v) => { d.memberId = v; d.mode = "existing"; redraw(d); })),
+          radio("skip", "Skip")));
+      }
+      if (d.mode === "skip") return card;
+      card.append(el("div", { class: "vrow" },
+        fld("Power (M)", text("power", d.power, (v) => { d.power = v; }, { inputmode: "decimal", style: "width:6.5em" }), m ? (m.power?.m != null ? m.power.m.toFixed(2) + "M" : "—") : null),
+        fld("Mythic stars", text("mythic", d.mythic, (v) => { d.mythic = v; }, { inputmode: "numeric", style: "width:4.5em" }), m ? (m.artifacts?.mythic ?? "—") : null),
+        fld("Legendary stars", text("leg", d.leg, (v) => { d.leg = v; }, { inputmode: "numeric", style: "width:4.5em" }), m ? (m.artifacts?.leg ?? "—") : null)));
+      if (d.artNote) card.append(el("div", { class: "small muted", text: d.artNote }));
+      const mystNow = m ? (m.mainBuild?.mystling?.name ? m.mainBuild.mystling.name + (Number.isInteger(m.mainBuild.mystling.stars) ? " ★" + m.mainBuild.mystling.stars : "") : (m.mystlingSeen || "—")) : null;
+      card.append(el("div", { class: "vrow" },
+        fld("Mystling in use", sel("myst", [["", d.unsure.has("myst") ? "— not sure —" : "—"], ...D.mystlings.map(x => [x.name, x.name])], d.myst.name, (v) => { d.myst.name = v; }), mystNow),
+        fld("Stars", text("mstars", d.myst.stars, (v) => { d.myst.stars = v; }, { inputmode: "numeric", style: "width:4.5em" }))));
+      // gear and runes: a one-line summary with "edit", opened straight away when anything is unsure
+      const fold = (title, summary, open, build) => {
+        const box = el("div", { class: "stack", style: "gap:6px" }), body = el("div", { class: "stack", style: "gap:6px" });
+        const sum = el("div", { class: "small" }, el("b", { text: title + ": " }), summary + " · ");
+        const a = el("a", { href: "#", text: "edit", "data-f": "edit-" + title.toLowerCase() }); sum.append(a);
+        const show = () => { sum.hidden = true; body.hidden = false; if (!body.childNodes.length) build(body); };
+        a.addEventListener("click", (e) => { e.preventDefault(); show(); });
+        box.append(sum, body); body.hidden = true; if (open) { body.append(el("b", { class: "small", text: title })); show(); }
+        return box;
+      };
+      const gs = gearSummary(draftGear(d)), gearIssues = D.gearSlots.some(({ id }) => d.unsure.has("g-" + id));
+      card.append(fold("Gear", d.sawGear || Object.values(d.gear).some(g => g.set) ? [gs.gearSet, gs.gearQ, gs.gearNote].filter(Boolean).join(" · ") || "unclear" : "not in the video", gearIssues, (body) => {
+        for (const { id, label } of D.gearSlots) {
+          const now = m?.mainBuild?.gear?.[id];
+          const setS = sel("g-" + id + "-set", [["", "—"], ...SETS.map(x => [x, x])], d.gear[id].set, (v) => { d.gear[id].set = v; });
+          const qS = sel("g-" + id + "-q", [["", "—"], ...D.gearQualities.map(x => [x, x])], d.gear[id].q, (v) => { d.gear[id].q = v; });
+          if (d.unsure.has("g-" + id)) { setS.classList.add("unsure"); qS.classList.add("unsure"); }
+          const fix = () => { d.unsure.delete("g-" + id); setS.classList.remove("unsure"); qS.classList.remove("unsure"); card.classList.toggle("look", !!draftIssues(d)); refresh(); };
+          setS.addEventListener("change", fix); qS.addEventListener("change", fix);
+          body.append(el("div", { class: "vgrid" }, el("span", { class: "small", text: label }), setS, qS,
+            m ? el("span", { class: "vnow vspan", text: "now: " + (now ? [now.set, now.q].filter(Boolean).join(" ") : "—") }) : null));
+        }
+      }));
+      const rn = RTYPES.reduce((n, t) => n + d.runes[t].filter(r => r.name && r.name !== "__empty").length, 0), re = RTYPES.reduce((n, t) => n + d.runes[t].filter(r => r.name === "__empty").length, 0);
+      const runeIssues = RTYPES.some(t => d.runes[t].some(r => r.unsure));
+      card.append(fold("Runes", d.sawRunes || rn ? `${rn} of ${13 - re} read` + (re ? ` · ${re} empty` : "") : "not in the video", runeIssues, (body) => {
+        for (const t of RTYPES) {
+          const row = el("div", { class: "stack", style: "gap:4px" }, el("span", { class: "small muted", text: RLABEL[t] }));
+          d.runes[t].forEach((r, k) => {
+            const f = `r-${t}-${k}`;
+            const nS = el("select", { "data-f": f }, el("option", { value: "", text: r.unsure ? "— not sure —" : "—" }), el("option", { value: "__empty", text: "(empty slot)" }), ...D.runes[t].map(x => el("option", { value: x.name, text: x.name })));
+            if (r.name && ![...nS.options].some(o => o.value === r.name)) nS.append(el("option", { value: r.name, text: r.name }));
+            nS.value = r.name; if (r.unsure) nS.classList.add("unsure");
+            const qS = el("select", { "data-f": f + "-q", "aria-label": "Quality" }, ...D.runeQualities.filter(q => !["Common", "Fine", "Rare"].includes(q)).map(q => el("option", { value: q, text: q })));
+            qS.value = r.q;
+            nS.addEventListener("change", () => { r.name = nS.value; r.unsure = false; nS.classList.remove("unsure"); card.classList.toggle("look", !!draftIssues(d)); touch(d); });
+            qS.addEventListener("change", () => { r.q = qS.value; touch(d); });
+            row.append(el("div", { class: "vslot" }, nS, qS));
+          });
+          body.append(row);
+        }
+        body.append(el("span", { class: "small muted", text: "Quality from the icon frame is a floor (the +N can't be seen), so it never lowers what the inventory has." }));
+      }));
+      return card;
+    };
+    const redraw = (d) => { const old = cards.querySelector(`[data-key="${CSS.escape(d.key)}"]`), n = drawCard(d); if (old) old.replaceWith(n); else cards.append(n); touch(d); };
+    for (const d of drafts.values()) cards.append(drawCard(d));
+    const addHand = el("button", { type: "button", class: "btn ghost", text: "+ Add a player by hand" });
+    addHand.addEventListener("click", () => { const d = handDraft(us); drafts.set(d.key, d); redraw(d); });
+    res.append(look, cards, el("div", { class: "row" }, addHand),
+      el("p", { class: "small muted", style: "margin:0", text: us
+        ? "Saving updates each ticked player's power and artifact stars, saves the gear, runes and mystling as their main build (characters can't be seen on the profile, so it's marked incomplete; the Expedition preset isn't touched), and adds that gear, those runes and the mystling to their inventory: missing items are added and better quality raised, nothing is removed or lowered. Blank values aren't saved."
+        : `Saving adds a scan of ${oppName} dated ${today}: power, artifact stars, gear, mystling and runes for each ticked player. Characters are never recorded for opponents. Blank values aren't saved.` }));
+    const cancel = el("button", { type: "button", class: "btn ghost", text: "Cancel" });
+    cancel.addEventListener("click", () => { res.replaceChildren(); $("vid-status").className = "small"; $("vid-status").textContent = lastVid.saved ? "" : "Cancelled. Nothing was saved."; lastVid = null; });
+    saveBtn.addEventListener("click", async () => {
+      const picked = [...drafts.values()].filter(d => d.on && d.mode !== "skip");
+      const bad = (t) => { msg.className = "small err"; msg.textContent = t; };
+      for (const d of picked) {
+        const who = d.name || "A player";
+        if (us && d.mode === "new" && !d.name.trim()) return bad("Type a name for each new member (or untick them).");
+        if (us && d.mode === "existing" && !d.memberId) return bad(`Pick which member ${who} is (or choose Skip).`);
+        if (!us && !d.name.trim()) return bad("Type a name for each player (or untick them).");
+        const pw = draftNum(d.power); if (Number.isNaN(pw) || (pw != null && (pw < 0.5 || pw > 100))) return bad(`${who}: power should be in millions, like 11.16.`);
+        for (const k of ["mythic", "leg"]) { const x = draftNum(d[k]); if (Number.isNaN(x) || (x != null && (x < 0 || !Number.isInteger(x)))) return bad(`${who}: artifact stars should be whole numbers.`); }
+        const s = draftNum(d.myst.stars); if (Number.isNaN(s) || (s != null && (s < 0 || s > D.mystlingMaxStars || !Number.isInteger(s)))) return bad(`${who}: mystling stars go from 0 to ${D.mystlingMaxStars}.`);
+      }
+      if (us) {
+        const ids = picked.map(d => d.mode === "new" ? memberId(d.name.trim()) : d.memberId), dup = ids.find((x, i) => ids.indexOf(x) !== i);
+        if (dup) return bad(`${memberById(dup)?.ign || dup} is picked for two cards. Untick or change one.`);
+        const clash = picked.find(d => d.mode === "new" && memberById(memberId(d.name.trim())));
+        if (clash) return bad(`${clash.name} is already on the roster: choose "It's an existing member" instead.`);
+      }
+      saveBtn.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
       try {
         if (us) {
-          let n = 0;
-          for (const { p, m } of picked) {
-            const nm = clone(memberById(m.id)); let ch = false;
-            if (p.power != null) { nm.power = { m: p.power, date: today, src: "profile video" }; ch = true; }
-            if (p.artsComplete && p.mythic != null) { nm.artifacts = { ...(nm.artifacts || {}), mythic: p.mythic, leg: p.leg, date: today }; ch = true; }
-            if (p.mystling && (p.mystling.name || p.mystling.stars != null)) { nm.mystlingSeen = `${p.mystling.name || "?"}${p.mystling.stars != null ? " ★" + p.mystling.stars : ""} (profile video ${today})`; ch = true; }
-            if (Object.keys(p.gear).length || p.runeRead || p.mystling?.name) {
-              nm.mainBuild = { chars: [null, null, null], gear: Object.fromEntries(Object.entries(p.gear).filter(([, g]) => g.set).map(([k, g]) => [k, { set: g.set, q: g.q || "" }])),
-                runes: p.runes ? Object.fromEntries(RTYPES.map(t => [t, (p.runes[t] || []).filter(Boolean)])) : (nm.mainBuild?.runes || {}),
-                mystling: p.mystling?.name ? { name: p.mystling.name, stars: Number.isInteger(p.mystling.stars) ? p.mystling.stars : null } : (nm.mainBuild?.mystling || null),
-                incomplete: true, date: today, src: "profile video" };
-              ch = true;
-            }
-            if (ch) { await saveMember(nm, "edited roster", `${m.ign}: from a profile video`); n++; }
-            await addToInventory(m, p);
+          let n = 0, added = 0;
+          for (const d of picked) {
+            const isNew = d.mode === "new", base = isNew ? blankMember(d.name.trim()) : memberById(d.memberId);
+            if (isNew) base.src = "Added from a profile video";
+            const nm = clone(base), pw = draftNum(d.power), my = draftNum(d.mythic), lg = draftNum(d.leg), ms = draftNum(d.myst.stars);
+            if (pw != null) nm.power = { m: Math.round(pw * 100) / 100, date: today, src: "profile video" };
+            if (my != null && lg != null) nm.artifacts = { ...(nm.artifacts || {}), mythic: my, leg: lg, date: today };
+            if (d.myst.name || ms != null) nm.mystlingSeen = `${d.myst.name || "?"}${ms != null ? " ★" + ms : ""} (profile video ${today})`;
+            const gear = draftGear(d), runes = draftRunes(d), anyRune = RTYPES.some(t => runes[t].length);
+            if (Object.keys(gear).length || anyRune || d.myst.name) nm.mainBuild = { chars: [null, null, null], gear, runes: anyRune ? runes : (nm.mainBuild?.runes || {}),
+              mystling: d.myst.name ? { name: d.myst.name, stars: ms } : (nm.mainBuild?.mystling || null), incomplete: true, date: today, src: "profile video" };
+            await saveMember(nm, isNew ? "added member" : "edited roster", `${nm.ign}: ${isNew ? "added " : ""}from a profile video`); n++; if (isNew) added++;
+            await addToInventory(nm, { gear, runes, mystling: d.myst.name ? { name: d.myst.name, stars: ms } : null });
           }
-          msg.className = "small ok-msg"; msg.textContent = `Updated ${n} player${n === 1 ? "" : "s"}.`;
+          msg.className = "small ok-msg"; msg.textContent = `Saved ${n} player${n === 1 ? "" : "s"}${added ? ` (${added} added to the roster)` : ""}.`;
         } else {
           const o = clone(allOpponents()[oppName] || { name: oppName, weeks: [], scans: [] }); o.name = oppName; o.scans = o.scans || [];
-          o.scans.push({ date: today, source: "profile video", players: picked.map(({ p }) => {
-            const x = { name: p.name }; if (p.power != null) x.power = p.power;
-            if (p.artsComplete && p.mythic != null) { x.mythic = p.mythic; x.leg = p.leg; }
-            if (p.gearSet) x.gear = p.gearSet + (p.gearQ ? `, ${p.gearQ}` : "");
-            if (p.gearNote) x.note = p.gearNote;
-            if (p.runeRead) x.runes = Object.fromEntries(RTYPES.map(t => [t, (p.runes[t] || []).filter(Boolean).map(r => r.name)]).filter(([, l]) => l.length));
+          o.scans.push({ date: today, source: "profile video", players: picked.map((d) => {
+            const x = { name: d.name.trim() }, pw = draftNum(d.power), my = draftNum(d.mythic), lg = draftNum(d.leg), ms = draftNum(d.myst.stars);
+            if (pw != null) x.power = Math.round(pw * 100) / 100;
+            if (my != null && lg != null) { x.mythic = my; x.leg = lg; }
+            const gs = gearSummary(draftGear(d)); if (gs.gearSet) x.gear = gs.gearSet + (gs.gearQ ? `, ${gs.gearQ}` : ""); if (gs.gearNote) x.note = gs.gearNote;
+            if (d.myst.name) x.mystling = d.myst.name + (ms != null ? " ★" + ms : "");
+            const rs = Object.fromEntries(Object.entries(draftRunes(d)).map(([t, l]) => [t, l.map(r => r.name)]).filter(([, l]) => l.length)); if (Object.keys(rs).length) x.runes = rs;
             return x; }) });
           await saveOpponent(o, `scan of ${oppName} from a profile video (${picked.length} players)`);
           msg.className = "small ok-msg"; msg.textContent = `Saved a scan of ${picked.length} player${picked.length === 1 ? "" : "s"} for ${oppName}.`;
           vidTargets();
         }
-      } catch { msg.className = "small err"; msg.textContent = "Couldn't save. Only officers can do this."; apply.disabled = false; }
+        lastVid.saved = true; refresh();
+      } catch { msg.className = "small err"; msg.textContent = "Couldn't save. Only officers can do this."; saveBtn.disabled = false; }
     });
-    res.append(el("div", { class: "row" }, apply, msg));
-    const det = el("details", {}, el("summary", { class: "small", text: `See the ${stills.length} screens it found` }));
+    res.append(el("div", { class: "row" }, saveBtn, cancel, msg));
+    const det = el("details", {}, el("summary", { class: "small", text: `See all ${stills.length} screens it found` }));
     const g = el("div", { class: "shots" });
     stills.forEach((x, k) => g.append(el("figure", { style: "margin:0;text-align:center" }, el("img", { src: x.url, alt: "", style: "height:120px;border-radius:6px" }),
       el("figcaption", { class: "small muted", text: `${k + 1} · ${screens[k]?.type || "?"}` }))));
     det.append(g); res.append(det);
+    refresh();
   }
   // One result block per preset. Returns its apply function (for "Apply all").
   function renderImportResult(r, g) {

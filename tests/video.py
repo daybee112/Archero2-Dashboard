@@ -10,6 +10,10 @@ threading.Thread(target=srv.serve_forever, daemon=True).start()
 MOCK = open(_os.path.join(HERE, "mock.js")).read()
 res = []
 def check(n, c, x=""): res.append(c); print("PASS" if c else "FAIL", n, x)
+CARDS = """() => [...document.querySelectorAll('#vid-result .vcard')].map(c => ({ key: c.dataset.key, text: c.innerText.replace(/\\s+/g, ' '),
+  vals: Object.fromEntries([...c.querySelectorAll('[data-f]')].filter(x => 'value' in x && x.type !== 'radio').map(x => [x.dataset.f, x.value])),
+  radios: Object.fromEntries([...c.querySelectorAll('input[type=radio]')].map(x => [x.value, x.checked])),
+  on: c.querySelector('.von').checked, unsure: [...c.querySelectorAll('.unsure')].map(x => x.dataset.f) }))"""
 # What Claude "sees" on each still, by position (the fixture's screens, checked by eye):
 # 1 list, 2-8 daybee (namecard, gear, runes, mystling, 3 artifact pages), 9 list, 10+ thesithlor
 SCRIPT = r"""
@@ -21,7 +25,7 @@ window.__vidScript = (i) => {
     2: { type: "namecard", name: "daybee", power_m: 11.07 },
     3: gear("Dragoon"),
     4: { type: "runes" },
-    5: { type: "mystling", mystling: { name: "Death Mage", stars: 14 } },
+    5: { type: "mystling", mystling: { name: window.__mystUnclear ? null : "Death Mage", stars: 14 } },
     6: A([["Golden Fleece","Mythic",5],["Goldfinger","Mythic",4],["Golden Mask","Mythic",3],["Tidal Conch","Mythic",2],["Demon King's Eye","Mythic",1],["Voidblade","Mythic",0]]),
     7: A([["Voidblade","Mythic",0],["Magic Harp","Legendary",3],["Dragon Heart","Legendary",3],["Bull Skull","Legendary",3]]),
     8: A([["Healing Grail","Legendary",3],["Attack Horn","Legendary",3],["Some Epic Thing","Epic",2]]),
@@ -72,19 +76,40 @@ async def main():
         check("finds the screens in the 40s clip (about 19, as the offline check found)", 16 <= n <= 22, stxt)
         batches = await pg.evaluate("window.__batches")
         check("read in batches of at most 6", batches and max(batches) <= 6 and sum(batches) == n, str(batches))
-        rows = await pg.eval_on_selector_all("#vid-result tbody tr", "r=>r.map(x=>x.innerText.replace(/\\s+/g,' '))")
-        print(rows)
-        check("two players found (repeat namecards and a second visit merged, no duplicates)", len(rows) == 2, str(len(rows)))
-        check("daybee: power and artifact totals (Mythic 15, Leg 15) with no double count", "11.07M" in rows[0] and "→ 15 / 15" in rows[0] and "incomplete" not in rows[0], rows[0])
-        check("daybee: mystling", "Death Mage ★14" in rows[0])
+        cards = await pg.evaluate(CARDS)
+        print([c["text"][:160] for c in cards])
+        check("two players found (repeat namecards and a second visit merged, no duplicates)", len(cards) == 2, str(len(cards)))
+        d0 = cards[0]["vals"]
+        check("daybee matched to the roster, power and artifact totals (Mythic 15, Leg 15) with no double count",
+              d0.get("member") == "m-daybee" and d0.get("power") == "11.07" and d0.get("mythic") == "15" and d0.get("leg") == "15", json.dumps(d0)[:300])
+        check("daybee: now values shown under each box", "now:" in cards[0]["text"])
+        check("daybee: mystling and stars in boxes", d0.get("myst") == "Death Mage" and d0.get("mstars") == "14")
         import re as _re
-        mm = _re.search(r"(\d+) of (\d+) read", rows[0])
-        check("daybee: runes matched on the device (at least 9 of 13)", mm and int(mm.group(1)) >= 9 and mm.group(2) == "13", rows[0])
-        check("unknown name flagged", "not on the roster" in rows[1])
-        dis = await pg.eval_on_selector_all("#vid-result tbody input", "i=>i.map(x=>x.disabled)")
-        check("unknown player can't be ticked", dis == [False, True], str(dis))
+        mm = _re.search(r"(\d+) of (\d+) read", cards[0]["text"])
+        check("daybee: runes matched on the device (at least 9)", mm and int(mm.group(1)) >= 9, cards[0]["text"])
+        check("unknown name flagged with choices, Add as new member picked", "Not on the roster" in cards[1]["text"] and cards[1]["radios"].get("new") is True, json.dumps(cards[1]["radios"]))
         check("screens gallery present", await pg.locator("#vid-result details img").count() == n)
-        await pg.click("#vid-result .btn"); await pg.wait_for_timeout(800)
+        check("Save button counts the ticked players", (await pg.inner_text("#vid-save")) == "Save 2 players")
+        # open the runes on daybee: every slot is a dropdown
+        await pg.click("#vid-result .vcard >> nth=0 >> [data-f=edit-runes]")
+        check("rune slots open as dropdowns", await pg.locator("#vid-result .vcard >> nth=0 >> select[data-f^=r-]:not([data-f$='-q'])").count() == 13)
+        # a bad value is caught before anything is saved
+        await pg.fill("#vid-result .vcard >> nth=1 >> [data-f=power]", "abc")
+        await pg.click("#vid-save"); await pg.wait_for_timeout(300)
+        check("bad power stops the save with a message", "millions" in await pg.inner_text("#vid-result"))
+        # NotAMember is really a new recruit called NewGuy
+        await pg.fill("#vid-result .vcard >> nth=1 >> [data-f=power]", "7.5")
+        await pg.fill("#vid-result .vcard >> nth=1 >> [data-f=name]", "NewGuy")
+        # a player typed in by hand, then skipped
+        await pg.click("text=+ Add a player by hand"); await pg.wait_for_timeout(200)
+        check("hand-added card appears", len(await pg.evaluate(CARDS)) == 3)
+        await pg.click("#vid-result .vcard >> nth=2 >> [data-f=mode-skip]")
+        check("skipped card isn't counted", (await pg.inner_text("#vid-save")) == "Save 2 players")
+        await pg.click("#vid-save"); await pg.wait_for_timeout(1200)
+        print("save msg:", await pg.inner_text("#vid-result .row:last-of-type"))
+        ng = await pg.evaluate("[...window.__store.entries()].filter(([k,v])=>k.startsWith('roster/') && v.ign==='NewGuy').map(([k,v])=>v)")
+        check("new member added with the corrected name and power", len(ng) == 1 and ng[0]["power"]["m"] == 7.5 and ng[0].get("mainBuild", {}).get("gear", {}).get("boots", {}).get("set") == "Oracle", json.dumps(ng)[:300])
+        check("Save button shows Saved afterwards", (await pg.inner_text("#vid-save")) == "Saved" and await pg.is_disabled("#vid-save"))
         doc = await pg.evaluate("window.__store.get('roster/m-daybee')")
         check("roster updated: power, artifacts, mystling", doc and doc["power"]["m"] == 11.07 and doc["power"]["src"] == "profile video" and doc["artifacts"]["mythic"] == 15 and doc["artifacts"]["leg"] == 15 and "Death Mage" in doc.get("mystlingSeen", ""), json.dumps(doc)[:300] if doc else "none")
         ev = await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.startsWith('audit/u-officer/months')).flatMap(([k,v])=>v.events||[])")
@@ -101,21 +126,27 @@ async def main():
         check("inventory edit logged as a video import", any(e.get("action") == "edited inventory" and e.get("src") == "video" for e in ev + await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.startsWith('audit/u-officer/months')).flatMap(([k,v])=>v.events||[])")))
 
         # opponent: new guild, scan saved, no characters
+        await pg.evaluate("window.__mystUnclear = true")
         await pg.select_option("#vid-target", "__new"); await pg.fill("#vid-newopp", "TestGuild")
         await pg.evaluate("document.querySelector('#vid-status').textContent = ''")
         await pg.click("#btn-vid-read")
         await pg.wait_for_function("document.querySelector('#vid-status').textContent.startsWith('Found')", timeout=180000)
         await pg.wait_for_timeout(300)
-        rows = await pg.eval_on_selector_all("#vid-result tbody tr", "r=>r.map(x=>x.innerText.replace(/\\s+/g,' '))")
-        check("opponent rows show gear, mixed noted", "Dragoon (mixed)" in rows[1] and "Oracle boots" in rows[1], rows[1])
-        check("opponent: both players can be ticked", await pg.eval_on_selector_all("#vid-result tbody input", "i=>i.every(x=>!x.disabled)"))
-        await pg.click("#vid-result .btn"); await pg.wait_for_timeout(800)
+        cards = await pg.evaluate(CARDS)
+        check("opponent cards show gear, mixed noted", "Dragoon (mixed)" in cards[1]["text"] and "Oracle boots" in cards[1]["text"], cards[1]["text"])
+        check("opponent: both players ticked", all(c["on"] for c in cards))
+        check("unclear mystling outlined in red", "myst" in cards[0]["unsure"], str(cards[0]["unsure"]))
+        check("needs-a-look box names the player", "needs a look" in await pg.inner_text("#vid-result"))
+        await pg.select_option("#vid-result .vcard >> nth=0 >> [data-f=myst]", "Witch")
+        check("fixing it clears the outline", "myst" not in (await pg.evaluate(CARDS))[0]["unsure"])
+        await pg.click("#vid-save"); await pg.wait_for_timeout(800)
         scans = await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.includes('/scans/')).map(([k,v])=>v)")
         sc = scans[-1] if scans else {}
         check("scan saved with source profile video", sc.get("source") == "profile video" and len(sc.get("players", [])) == 2, json.dumps(sc)[:300])
         txt = json.dumps(sc)
         check("no character names in the scan", not any(ch in txt for ch in ["Helix", "Otta", "Thor", "Phynx", "deployed", "resonance"]))
         check("daybee row in scan has stars and gear", sc["players"][0].get("mythic") == 15 and sc["players"][0].get("gear", "").startswith("Dragoon"))
+        check("corrected mystling in the scan", sc["players"][0].get("mystling") == "Witch ★14", json.dumps(sc["players"][0])[:200])
         check("opponent scan has rune names (no qualities)", "Sharp Arrow" in json.dumps(sc["players"][0].get("runes", {})), json.dumps(sc["players"][0].get("runes"))[:200])
         # limits: platform allows 3 images per call; one batch fails once (split into singles); screen 5 always fails
         c2 = await b.new_context(viewport={"width": 390, "height": 844})
@@ -130,12 +161,12 @@ async def main():
         check("batches respect the platform's image limit (3)", max(bt) <= 3, str(bt))
         msg = await p2.inner_text("#vid-result .hintbox.err")
         check("one unreadable screen reported with the reason", msg.startswith("1 of") and "picture was rejected" in msg, msg)
-        rows2 = await p2.eval_on_selector_all("#vid-result tbody tr", "r=>r.map(x=>x.innerText.replace(/\\s+/g,' '))")
-        check("failed-once batch recovered by reading singly (artifacts still complete)", rows2 and "→ 15 / 15" in rows2[0], str(rows2[:1]))
-        check("mystling missing because screen 5 failed", rows2 and "Death Mage" not in rows2[0])
+        c2v = (await p2.evaluate(CARDS))[0]["vals"]
+        check("failed-once batch recovered by reading singly (artifacts still complete)", c2v.get("mythic") == "15" and c2v.get("leg") == "15", json.dumps(c2v)[:200])
+        check("mystling missing because screen 5 failed", c2v.get("myst") == "")
         await p2.evaluate("window.__failAlways = 0")
         await p2.click("#vid-result .hintbox.err button"); await p2.wait_for_timeout(1500)
-        check("retry reads just the unread screen and fills it in", await p2.locator("#vid-result .hintbox.err").count() == 0 and "Death Mage" in await p2.inner_text("#vid-result tbody"))
+        check("retry reads just the unread screen and fills it in", await p2.locator("#vid-result .hintbox.err").count() == 0 and (await p2.evaluate(CARDS))[0]["vals"].get("myst") == "Death Mage")
         # Stop works mid-read, right away
         c3 = await b.new_context(viewport={"width": 390, "height": 844}); await c3.add_init_script(MOCK + SCRIPT)
         p3 = await c3.new_page(); p3.on("pageerror", lambda e: errs.append(str(e)))
