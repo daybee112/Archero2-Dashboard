@@ -609,22 +609,25 @@ body.env-staging .envbar { display: block; }
       <div class="controls">
         <div class="field" style="min-width:200px"><label for="exp-week">Week</label><select id="exp-week"></select></div>
         <div class="seg" role="group" aria-label="Expedition section" id="exp-sub">
+          <button type="button" data-sub="uploads" aria-pressed="false" hidden>Uploads</button>
           <button type="button" data-sub="rounds" aria-pressed="true">Rounds</button>
           <button type="button" data-sub="results" aria-pressed="false">Week results</button>
           <button type="button" data-sub="players" aria-pressed="false">Roster</button>
           <button type="button" data-sub="opponents" aria-pressed="false">Opponents</button>
           <button type="button" data-sub="findings" aria-pressed="false">Findings</button>
         </div>
-        <button type="button" class="btn ghost" id="exp-new-week" hidden>New week</button>
+        <div class="row" style="gap:8px"><button type="button" class="btn ghost" id="exp-new-week" hidden>New week</button><button type="button" class="btn ghost" id="exp-del-week" hidden>Delete this week</button></div>
       </div>
       <div id="exp-week-head"></div>
       <div id="exp-new-week-box" class="hintbox" hidden></div>
+      <div id="exp-del-week-box" class="hintbox" hidden></div>
     </div>
     <div id="exp-rounds" class="stack"></div>
     <div id="exp-results" class="stack" hidden></div>
     <div id="exp-opponents" class="stack" hidden></div>
     <div id="exp-players" class="stack" hidden></div>
     <div id="exp-findings" class="stack" hidden></div>
+    <div id="exp-uploads" class="stack" hidden></div>
   </section>
 
   <!-- ================= CHANGES ================= -->
@@ -903,28 +906,37 @@ body.env-staging .envbar { display: block; }
   for (const b of $("changes-sub").querySelectorAll("button")) b.addEventListener("click", () => showChangesSub(b.dataset.sub));
   for (const a of document.querySelectorAll("#view-help [data-go]")) a.addEventListener("click", (e) => { e.preventDefault(); goTo(a.dataset.go); });
   // First visit (per Daby, v9.x): a plain link with no tab in it opens on Help with a welcome line; every later visit opens
-  // on the Roster. Remembered per browser. If storage isn't available we can't remember, so it stays on the Roster rather
-  // than showing Help every time. A first visit straight to a tab (e.g. #expedition) is left alone.
-  (() => {
-    let seen = false, canStore = true;
-    try { seen = localStorage.getItem("aa-help-seen") === "1"; } catch { canStore = false; }
-    if (seen || !canStore) return;
-    if (!location.hash || location.hash === "#") {
-      try { localStorage.setItem("aa-help-seen", "1"); } catch { return; }
+  // on the Roster. Remembered per person in the database (data/users/<id>/prefs), plus this browser as a shortcut: the
+  // Claude phone app doesn't keep browser storage between visits, so storage alone made Help open almost every time.
+  // Until we know who's signed in the page shows the Roster; if we can't tell (not signed in, no database), it stays there.
+  // A first visit straight to a tab (e.g. #expedition) is left alone, with a small hint on the Roster.
+  const landedBare = !location.hash || location.hash === "#";
+  const helpSeenLocal = () => { try { return localStorage.getItem("aa-help-seen") === "1"; } catch { return false; } };
+  async function markHelpSeen() {
+    try { localStorage.setItem("aa-help-seen", "1"); } catch {}
+    try { if (db && myId) await db.doc("data/users/" + myId + "/prefs").set({ helpSeen: true, at: Date.now() }); } catch {}
+  }
+  async function firstVisitHelp() {
+    if (!db || !myId) return;
+    let seen = helpSeenLocal();
+    if (!seen) { try { const d = await db.doc("data/users/" + myId + "/prefs").get(); seen = !!(d && d.exists && (d.data() || {}).helpSeen); } catch { return; } }
+    if (seen) { try { localStorage.setItem("aa-help-seen", "1"); } catch {} return; }
+    if (landedBare && (!location.hash || location.hash === "#")) {   // only if they haven't moved on already
+      markHelpSeen();
       try { history.replaceState(null, "", "#help"); } catch {}
       const hello = document.createElement("div"); hello.className = "banner info small"; hello.id = "help-welcome";
       hello.textContent = "Welcome! 👋 Start with the 5-minute quick start below. Next time, the dashboard opens on the Roster.";
-      $("view-help").prepend(hello);
+      $("view-help").prepend(hello); route();
       return;
     }
     const bar = document.createElement("div"); bar.className = "banner info small help-hint";
     bar.innerHTML = 'New here? The <a href="#help">Help tab</a> has a 5-minute quick start. <button type="button" class="linkbtn">Got it</button>';
-    const done = () => { try { localStorage.setItem("aa-help-seen", "1"); } catch {} bar.remove(); };
+    const done = () => { markHelpSeen(); bar.remove(); };
     bar.querySelector("a").addEventListener("click", (e) => { e.preventDefault(); done(); goTo("help"); });
     bar.querySelector("button").addEventListener("click", done);
     $("tab-help").addEventListener("click", done);
     $("view-roster").prepend(bar);
-  })();
+  }
   addEventListener("hashchange", route);
 
   // ================= helpers =================
@@ -3797,8 +3809,12 @@ body.env-staging .envbar { display: block; }
     if (!expWeekId || !weekById(expWeekId)) expWeekId = weeks[0] && weeks[0].id;
     const sel = $("exp-week"); sel.replaceChildren(...weeks.map(w => el("option", { value: w.id, text: w.label + (w.final ? "" : " (in progress)") }))); sel.value = expWeekId || "";
     $("exp-new-week").hidden = !isEditor;
+    { const cw = weekById(expWeekId); $("exp-del-week").hidden = !(isEditor && cw && weekDeletable(cw)); if ($("exp-del-week").hidden) $("exp-del-week-box").hidden = true; }
     for (const b of $("exp-sub").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.sub === expSub));
-    for (const s of ["rounds", "results", "opponents", "players", "findings"]) $("exp-" + s).hidden = s !== expSub;
+    $("exp-sub").querySelector('[data-sub="uploads"]').hidden = !isEditor;
+    if (expSub === "uploads" && !isEditor) expSub = "rounds";
+    if (expSub !== "uploads") parkVidPanel();
+    for (const s of ["rounds", "results", "opponents", "players", "findings", "uploads"]) $("exp-" + s).hidden = s !== expSub;
     const w = weekById(expWeekId);
     const head = $("exp-week-head"); head.replaceChildren();
     if (w) {
@@ -3808,6 +3824,7 @@ body.env-staging .envbar { display: block; }
     else if (expSub === "results") { const b = $("exp-results"); b.replaceChildren(w ? el("div", { class: "panel stack" }, weekResultsCard(w)) : el("div", { class: "panel muted", text: "No weeks yet." })); }
     else if (expSub === "opponents") renderOpponents();
     else if (expSub === "players") renderPlayers();
+    else if (expSub === "uploads") renderUploads(w);
     else renderFindings();
   }
   // ----- Discord-style markdown (the officer messages): **bold**, *italic*, "- " bullets (2 spaces = nested), emoji section headers -----
@@ -4917,6 +4934,104 @@ body.env-staging .envbar { display: block; }
         el("div", { class: "controls" }, el("label", { class: "field" }, el("span", { class: "lbl", text: "Week starting (Tuesday)" }), iDate), el("label", { class: "field" }, el("span", { class: "lbl", text: "Our power" }), iOurP)),
         tbl, note, el("div", { class: "row" }, create, cancel, msg)));
   }
+  // ----- Delete a week: only one that holds nothing yet (made by mistake, wrong date). Anything with a lineup,
+  // results, notes or standings can't be deleted, and neither can the weeks that ship with the page.
+  function weekDeletable(w) {
+    if (!w || EXP.weeks.some(x => x.id === w.id) || w.final || (w.standings || []).length || (w.lessons || []).length || w.goal) return false;
+    return (w.rounds || []).every(r => !r.result && !(r.stats || []).length && !(r.theirStats || []).length && !r.their && !r.laneResults && !r.briefing && !r.notes && !(r.keyNotes || []).length
+      && LANES.every(l => !((r.our || {})[l] || {}).players || !((r.our || {})[l].players.length)));
+  }
+  $("exp-del-week").addEventListener("click", () => {
+    const w = weekById(expWeekId), box = $("exp-del-week-box"); if (!w || !weekDeletable(w)) return;
+    box.hidden = !box.hidden; if (box.hidden) return;
+    const yes = el("button", { type: "button", class: "btn danger", text: "Delete " + w.label }), no = el("button", { type: "button", class: "btn ghost", text: "Keep it" }), msg = el("span", { class: "small" });
+    no.addEventListener("click", () => { box.hidden = true; });
+    yes.addEventListener("click", async () => {
+      yes.disabled = true; msg.textContent = "Deleting…";
+      try { await deleteWeek(w.id); box.hidden = true; }
+      catch (e) { console.error(e); msg.className = "small err"; msg.textContent = "Couldn't delete. Only officers can do this."; yes.disabled = false; }
+    });
+    box.replaceChildren(el("div", { class: "stack" },
+      el("div", { class: "small", text: `Delete ${w.label}? It has no lineups, results or notes yet, so nothing is lost. Guilds added only for this week are removed too; guilds with other weeks or scans are kept.` }),
+      el("div", { class: "row" }, yes, no, msg)));
+  });
+  async function deleteWeek(id) {
+    if (!db || !isEditor) throw new Error("not allowed");
+    const w = weekById(id); if (!w || !weekDeletable(w)) throw new Error("not deletable");
+    for (const k of Object.keys(expRounds[id] || {})) await db.doc(`expedition/${id}/rounds/${k}`).delete();
+    await db.doc("expedition/" + id).delete();
+    const gone = [];
+    for (const [name, o] of Object.entries(allOpponents())) {
+      if (!(o.weeks || []).includes(id)) continue;
+      const weeks = o.weeks.filter(x => x !== id);
+      if (!weeks.length && !(o.scans || []).length && !(o.behavior || []).length && !EXP.opponents[name]) { await db.doc("opponents/" + oppId(name)).delete(); gone.push(name); }
+      else await saveOpponent({ ...clone(o), weeks }, `${name}: removed ${w.label}`);
+    }
+    delete expHead[id]; delete expRounds[id]; rebuildExpDb();
+    logEvent("expedition", `deleted ${w.label} (empty)` + (gone.length ? `; removed guilds added only for it: ${gone.join(", ")}` : ""), { changes: [`week ${id}: deleted`] });
+    expWeekId = allWeeks()[0]?.id || null; expRoundN = null; expRoundPicked = false; renderExpedition();
+  }
+  // ----- Uploads: everything a week needs, with a status and the right reader for each -----
+  // The profile-video reader is the same panel as on the Roster; opening it from here moves it into this tab and
+  // points it at the right guild. Readers still to come (lanes and presets, results) show as coming soon.
+  const vidHome = { parent: null, next: null };
+  function parkVidPanel() {   // put the video panel back on the Roster when leaving Uploads
+    const pnl = $("vid-panel"); if (vidHome.parent && pnl.parentNode !== vidHome.parent) { vidHome.parent.insertBefore(pnl, vidHome.next); pnl.hidden = true; }
+  }
+  function openVidFor(target, anchor) {
+    const pnl = $("vid-panel"); if (!vidHome.parent) { vidHome.parent = pnl.parentNode; vidHome.next = pnl.nextSibling; }
+    anchor.after(pnl); vidTargets();
+    $("vid-target").value = target; $("vid-newopp-f").hidden = true; vidReady();
+    $("vid-result").replaceChildren(); $("vid-status").textContent = "";
+    pnl.hidden = false; pnl.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+  function inWeek(w, date) { if (!date) return false; const d = Date.parse(date + "T12:00:00Z"), st = Date.parse(w.id + "T00:00:00Z"); return d >= st - 864e5 && d < st + 7 * 864e5; }
+  function renderUploads(w) {
+    const box = $("exp-uploads"); box.replaceChildren();
+    if (!w) { box.append(el("div", { class: "panel muted", text: "Create a week first (New week)." })); return; }
+    const chip = (k) => k === "saved" ? el("span", { class: "chip good", text: "Saved" }) : k === "part" ? el("span", { class: "chip warn", text: "Partly saved" }) : k === "soon" ? el("span", { class: "chip neutral", text: "Reader coming soon" }) : el("span", { class: "chip neutral", text: "Not uploaded" });
+    const row = (title, hint, k, btnText, onClick) => {
+      const tr = el("tr", {}, el("td", {}, el("b", { text: title }), el("div", { class: "small muted", text: hint })), el("td", {}, chip(k)));
+      const td = el("td", { style: "text-align:right" });
+      if (btnText) { const b = el("button", { type: "button", class: "btn" + (k === "saved" ? " ghost" : ""), style: "white-space:nowrap", text: btnText }); b.addEventListener("click", () => onClick(tr, b)); td.append(b); }
+      tr.append(td); return tr;
+    };
+    const table = (...rows) => el("table", { class: "lb uploads", style: "min-width:0" }, el("tbody", {}, ...rows));
+    const anchorAfter = (tr) => tr.closest("table");
+    // this week
+    const opps = (w.rounds || []).map(r => r.opponent).filter(n => n && n !== "tbd");
+    const matchK = opps.length === 3 ? "saved" : opps.length ? "part" : "todo";
+    // our guild: newest profile-video date on the roster
+    const ms = allMembers().filter(m => m.status !== "left"), vids = ms.map(m => m.power && m.power.src === "profile video" ? m.power.date : null).filter(Boolean).sort();
+    const lastVid = vids[vids.length - 1], nVid = vids.filter(d => d === lastVid).length;
+    const ourK = lastVid && inWeek(w, lastVid) ? "saved" : "todo";
+    const sections = [
+      el("h3", { style: "margin:8px 0 0", text: "This week" }),
+      table(row("Matchup and schedule", "Group, opponents, round days" + (opps.length ? ` · ${opps.join(", ")}` : ""), matchK, null)),
+      el("h3", { style: "margin:8px 0 0", text: "Our guild · ArchAcademy" }),
+      table(
+        row("Our roster and profiles", "Profile video of our members: power, artifacts, gear, runes, mystling. Saved as each player's main build and inventory. Monthly, or when someone changes." +
+          (lastVid ? ` Last done ${lastVid}: ${nVid} of ${ms.length} players.` : ""), ourK, "Upload video", (tr) => openVidFor("__us", anchorAfter(tr))),
+        el("tr", {}, el("td", { colspan: "3", class: "small muted", text: "New members: a name that isn't on the roster, in any of our videos, is offered as a new member when you review it." })))];
+    for (const r of (w.rounds || [])) {
+      const day = r.date ? new Date(r.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short" }) : "";
+      const name = r.opponent && r.opponent !== "tbd" ? r.opponent : null;
+      const o = name ? allOpponents()[name] : null;
+      const scans = (o && o.scans || []).filter(sc => inWeek(w, sc.date));
+      const lanesK = LANES.every(l => ((r.our || {})[l] || {}).players && r.our[l].players.length) ? "saved" : LANES.some(l => ((r.our || {})[l] || {}).players && r.our[l].players.length) ? "part" : "soon";
+      const resK = (r.stats || []).length ? "saved" : r.result ? "part" : "soon";
+      sections.push(el("h3", { style: "margin:8px 0 0", text: `Round ${r.n}${name ? " · vs " + name : ""}${day ? " · " + day : ""}` }),
+        table(
+          name ? row(`${name} roster and profiles`, `Profile video, saved as this week's ${name} scan` + (scans.length ? ` · ${scans[scans.length - 1].players.length} players on ${scans[scans.length - 1].date}` : ""), scans.length ? "saved" : "todo", "Upload video", (tr) => openVidFor(name, anchorAfter(tr)))
+               : row("Opponent roster and profiles", "Set this round's opponent first (New week or Rounds)", "todo", null),
+          row("Our lanes and presets", "Team Info for each lane, then each preset: character, resonances, gear, runes, mystling, movement. Saved as each player's Expedition preset", lanesK, null),
+          row("Results", "Overview + 12 detail screens", resK, null)));
+    }
+    box.append(el("div", { class: "panel stack" },
+      el("h2", { style: "margin:0", text: "Uploads for the " + w.label.replace(/^Week/, "week") }),
+      el("p", { class: "small muted", style: "margin:0", text: "Everything this week needs, in the order you'll usually capture it. Each upload is read, then shown for you to check and correct before anything is saved. Uploading early is fine." }),
+      ...sections));
+  }
   function newWeekPrompt(n) {
     return `These ${n} screenshot${n > 1 ? "s are" : " is"} from the Guild Expedition screens of the mobile game Archero 2, for our guild ArchAcademy.\n` +
       "- The main screen shows the 4 guilds of this week's group, each with its name and power (like 390.45M or 1.19B).\n" +
@@ -5438,6 +5553,7 @@ body.env-staging .envbar { display: block; }
     subscribeNotes();
     subscribeNext();
     renderRoster();
+    firstVisitHelp();
     if (isEditor) setTimeout(migrateToV8, 2500);   // after the first snapshots, so existing records are known
     if (isEditor) setTimeout(seedRoadmap, 3500);
     // v8: move this person's own records out of the old single records (members' presets/<id>, officers' audit/<id>)
