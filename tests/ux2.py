@@ -18,7 +18,7 @@ async def main():
         check("finished week opens on last round", sel == ["false","false","true"], str(sel))
         head = await pg.inner_text("#exp-week-head"); check("no goal line", "Goal" not in head, head)
         subs = await pg.eval_on_selector_all("#exp-sub button", "bs=>bs.map(b=>b.innerText)")
-        check("sub-tab order", subs == ["Rounds","Week results","Roster","Opponents","Findings"], str(subs))
+        check("sub-tab order (Uploads first, officers only)", subs == ["Uploads","Rounds","Week results","Roster","Opponents","Findings"], str(subs))
         notes = await pg.eval_on_selector_all("#exp-rounds .roundnotes li", "ls=>ls.map(l=>l.innerText)")
         check("R3 notes are bullets with labels", len(notes) == 14 and notes[0].startswith("Lineup:") and notes[4].startswith("Result:") and notes[5].startswith("Artifact test:"), str(notes[:2]))
         await pg.click("#exp-rounds .buildtabs button:nth-child(1)"); await pg.wait_for_timeout(200)
