@@ -3693,7 +3693,8 @@ body.env-staging .envbar { display: block; }
   function weekTuesday(id) { const d = new Date(id + "T12:00:00"); if (d.getDay() === 1) d.setDate(d.getDate() + 1); return d; }
   // notes written before weeks moved to Tuesdays name the week by its Monday ("Week of Nov 2:"), so both count
   const weekTagMatches = (tag, id) => tag === weekLabelFor(id) || tag === "Week of " + new Date(id + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  const weekLabelFor = (id) => "Week of " + weekTuesday(id).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const weekLabels = new Map();   // formatting dates is slow on phones and this runs for every week on every render
+  const weekLabelFor = (id) => { let l = weekLabels.get(id); if (!l) { l = "Week of " + weekTuesday(id).toLocaleDateString(undefined, { month: "short", day: "numeric" }); weekLabels.set(id, l); } return l; };
   function nextWeekStart() {   // the Tuesday after the newest week, or this week's Tuesday when there are none
     const latest = allWeeks()[0], d = latest ? weekTuesday(latest.id) : new Date();
     if (latest) d.setDate(d.getDate() + 7); else d.setDate(d.getDate() - ((d.getDay() + 5) % 7));
@@ -3719,7 +3720,15 @@ body.env-staging .envbar { display: block; }
 
   // ----- per-player match history (drives DPS Avg everywhere) -----
   // A match counts when we have damage + survival, the round wasn't partial, and the player wasn't on a different gear set.
+  // Cached per player until the Expedition data changes: the Roster and Expedition ask for every player's history on
+  // every render, and rebuilding it each time was most of the load time on phones.
+  let pmCache = { db: null, exp: null, map: new Map() };
   function playerMatches(ign) {
+    if (pmCache.db !== expDb || pmCache.exp !== EXP.weeks) pmCache = { db: expDb, exp: EXP.weeks, map: new Map() };
+    let hit = pmCache.map.get(ign); if (!hit) { hit = buildPlayerMatches(ign); pmCache.map.set(ign, hit); }
+    return hit.map(x => ({ ...x }));
+  }
+  function buildPlayerMatches(ign) {
     const out = [];
     for (const w of [...allWeeks()].reverse()) for (const r of (w.rounds || [])) {
       const s = (r.stats || []).find(x => x.ign === ign);
@@ -5115,7 +5124,11 @@ body.env-staging .envbar { display: block; }
   }
   function subscribeExpedition() {
     if (!db) return;
-    const rer = () => { if (!expEditing) renderExpedition(); renderRoster(); };
+    // Many records arrive in a burst at load (every week's rounds, every guild's scans): redraw once per burst, and only
+    // the tab that's showing; switching tabs draws the new tab anyway.
+    let rerQueued = false;
+    const rer = () => { if (rerQueued) return; rerQueued = true; setTimeout(() => { rerQueued = false;
+      if (!expEditing && !$("view-expedition").hidden) renderExpedition(); if (!$("view-roster").hidden) renderRoster(); }, 60); };
     db.collection("expedition").onSnapshot((snap) => {
       const n = {}; for (const d of snap.docs) n[d.id] = d.data(); expHead = n;
       for (const id of Object.keys(n)) if (!roundSubs[id] && !Array.isArray(n[id].rounds))
