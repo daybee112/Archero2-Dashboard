@@ -3507,7 +3507,7 @@ body.env-staging .envbar { display: block; }
       p.mythic = arts.length && !unknown ? arts.filter(a => a.tier === "Mythic").reduce((x, a) => x + a.stars, 0) : null;
       p.leg = arts.length && !unknown ? arts.filter(a => a.tier === "Legendary").reduce((x, a) => x + a.stars, 0) : null;
       p.artsComplete = arts.length > 0 && !unknown && p.sawEpic;
-      Object.assign(p, gearSummary(p.gear));
+      Object.assign(p, vidGearSummary(p.gear));
     }
     return { players, loose };
   }
@@ -3592,7 +3592,7 @@ body.env-staging .envbar { display: block; }
   const draftGear = (d) => Object.fromEntries(Object.entries(d.gear).filter(([, g]) => g.set).map(([k, g]) => [k, { set: g.set, q: g.q || "" }]));
   const draftRunes = (d) => Object.fromEntries(RTYPES.map(t => [t, d.runes[t].filter(r => r.name && r.name !== "__empty").map(r => ({ name: r.name, q: r.q || "Legendary" }))]));
   const draftNum = (v) => { const t = String(v ?? "").trim().replace(/m$/i, ""); if (!t) return null; const x = Number(t); return isFinite(x) ? x : NaN; };
-  function gearSummary(gear) {
+  function vidGearSummary(gear) {
     const sets = Object.values(gear).map(g => g.set).filter(Boolean), qs = Object.values(gear).map(g => g.q).filter(Boolean);
     const cnt = {}; for (const x of sets) cnt[x] = (cnt[x] || 0) + 1;
     const top = Object.entries(cnt).sort((a, z) => z[1] - a[1])[0];
@@ -3699,7 +3699,7 @@ body.env-staging .envbar { display: block; }
         box.append(sum, body); body.hidden = true; if (open) { body.append(el("b", { class: "small", text: title })); show(); }
         return box;
       };
-      const gs = gearSummary(draftGear(d)), gearIssues = D.gearSlots.some(({ id }) => d.unsure.has("g-" + id));
+      const gs = vidGearSummary(draftGear(d)), gearIssues = D.gearSlots.some(({ id }) => d.unsure.has("g-" + id));
       card.append(fold("Gear", d.sawGear || Object.values(d.gear).some(g => g.set) ? [gs.gearSet, gs.gearQ, gs.gearNote].filter(Boolean).join(" · ") || "unclear" : "not in the video", gearIssues, (body) => {
         for (const { id, label } of D.gearSlots) {
           const now = m?.mainBuild?.gear?.[id];
@@ -3786,7 +3786,7 @@ body.env-staging .envbar { display: block; }
             const x = { name: d.name.trim() }, pw = draftNum(d.power), my = draftNum(d.mythic), lg = draftNum(d.leg), ms = draftNum(d.myst.stars);
             if (pw != null) x.power = Math.round(pw * 100) / 100;
             if (my != null && lg != null) { x.mythic = my; x.leg = lg; }
-            const gs = gearSummary(draftGear(d)); if (gs.gearSet) x.gear = gs.gearSet + (gs.gearQ ? `, ${gs.gearQ}` : ""); if (gs.gearNote) x.note = gs.gearNote;
+            const gs = vidGearSummary(draftGear(d)); if (gs.gearSet) x.gear = gs.gearSet + (gs.gearQ ? `, ${gs.gearQ}` : ""); if (gs.gearNote) x.note = gs.gearNote;
             if (d.myst.name) x.mystling = d.myst.name + (ms != null ? " ★" + ms : "");
             const rs = Object.fromEntries(Object.entries(draftRunes(d)).map(([t, l]) => [t, l.map(r => r.name)]).filter(([, l]) => l.length)); if (Object.keys(rs).length) x.runes = rs;
             return x; }) });
