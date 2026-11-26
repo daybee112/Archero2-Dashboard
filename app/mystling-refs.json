@@ -41,6 +41,10 @@
   {
    "name": "Egg Demon",
    "look": "normal"
+  },
+  {
+   "name": "Flame Demon",
+   "look": "normal"
   }
  ]
 }

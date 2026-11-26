@@ -23,7 +23,7 @@ window.__vidScript = (i) => {
   const map = {
     1: { type: "roster_list" },
     2: { type: "namecard", name: "daybee", power_m: 11.07 },
-    3: gear("Dragoon"),
+    3: window.__noGear ? { type: "gear", gear: {} } : gear("Dragoon"),
     4: { type: "runes" },
     5: { type: "mystling", mystling: { name: window.__mystUnclear ? null : "Death Mage", stars: 14 } },
     6: A([["Golden Fleece","Mythic",5],["Goldfinger","Mythic",4],["Golden Mask","Mythic",3],["Tidal Conch","Mythic",2],["Demon King's Eye","Mythic",1],["Voidblade","Mythic",0]]),
@@ -150,6 +150,17 @@ async def main():
         check("daybee row in scan has stars and gear", sc["players"][0].get("mythic") == 15 and sc["players"][0].get("gear", "").startswith("Dragoon"))
         check("corrected mystling in the scan", sc["players"][0].get("mystling") == "Witch ★9", json.dumps(sc["players"][0])[:200])
         check("opponent scan has rune names (no qualities)", "Sharp Arrow" in json.dumps(sc["players"][0].get("runes", {})), json.dumps(sc["players"][0].get("runes"))[:200])
+        # a second video where daybee's gear wasn't read: the gear already on file stays (it used to be wiped)
+        await pg.evaluate("window.__noGear = true; window.__mystUnclear = false; window.__artUnclear = false")
+        await pg.select_option("#vid-target", "__us")
+        await pg.click("#btn-vid-read")
+        await pg.wait_for_function("document.querySelector('#vid-status').textContent.startsWith('Found')", timeout=180000)
+        n2 = await pg.locator("#vid-result .vcard").count()
+        for k in range(1, n2): await pg.uncheck(f"#vid-result .vcard >> nth={k} >> .von")
+        await pg.click("#vid-save"); await pg.wait_for_timeout(1200)
+        mb2 = (await pg.evaluate("window.__store.get('roster/m-daybee')")).get("mainBuild", {})
+        check("gear not read this time: daybee keeps the gear on file", mb2.get("gear", {}).get("boots", {}).get("set") == "Dragoon" and len(mb2.get("gear", {})) == 6, json.dumps(mb2.get("gear"))[:200])
+        check("…and the runes on file", sum(len(v) for v in mb2.get("runes", {}).values()) >= 9)
         # limits: platform allows 3 images per call; one batch fails once (split into singles); screen 5 always fails
         c2 = await b.new_context(viewport={"width": 390, "height": 844})
         await c2.add_init_script(MOCK + SCRIPT + "window.__failOnce = 7; window.__failAlways = 5;")

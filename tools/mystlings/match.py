@@ -31,7 +31,7 @@ def stars(img, box):
     for k in range(5):
         cx, cy, r = x0 + (0.15 + 0.175 * k) * w, y0 + 0.84 * h, 0.04 * w
         px = np.asarray(img.crop((int(cx - r), int(cy - r), int(cx + r), int(cy + r))).convert("RGB"), dtype=float).reshape(-1, 3) / 255
-        hsv = np.array([colorsys.rgb_to_hsv(*p) for p in px]); sat = hsv[(hsv[:, 1] > .35) & (hsv[:, 2] > .35)]
+        hsv = np.array([colorsys.rgb_to_hsv(*p) for p in px]); sat = hsv[(hsv[:, 1] > .22) & (hsv[:, 2] > .35)]
         if len(sat) < len(px) * .2: out.append(("grey", 0)); continue
         hue = float(np.median(sat[:, 0])) * 360; val = float(np.median(sat[:, 2]))
         if 255 <= hue <= 345: lab = ("pink", 4)                       # pink stars shade into cyan and white

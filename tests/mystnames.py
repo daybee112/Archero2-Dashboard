@@ -21,7 +21,7 @@ async def main():
         await pg.goto("http://127.0.0.1:8807/index.html#roster"); await pg.wait_for_timeout(3000)
         d = await pg.evaluate("fetch('build-data.json').then(r=>r.json())")
         names = [m["name"] for m in d["mystlings"]]
-        check("in-game names, plus Mr. Meeseeks and Egg Demon", names == ["Witch", "Fool", "Queen Medusa", "Nian Beast", "Death Mage", "Snow Owl", "Mr. Meeseeks", "Egg Demon"], str(names))
+        check("in-game names, plus Mr. Meeseeks and Egg Demon", names == ["Witch", "Fool", "Queen Medusa", "Nian Beast", "Death Mage", "Snow Owl", "Mr. Meeseeks", "Egg Demon", "Flame Demon"], str(names))
         txt = await pg.inner_text("body")
         check("old names don't show anywhere on the roster", "The Fool" not in txt and "Snowy Owl" not in txt)
         # Tuup's saved preset says "The Fool": the profile shows Fool

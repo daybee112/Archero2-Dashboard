@@ -144,7 +144,8 @@
     {"name": "Death Mage", "skill": "8 bouncing scythes applying random debuffs", "tags": ["damage"]},
     {"name": "Snow Owl", "aliases": ["Snowy Owl"], "looks": ["normal: white owl", "variant: black owl"], "skill": "Self-buff: CRIT DMG/CRIT Rate for 3s, 20s cooldown", "tags": ["crit-buff"]},
     {"name": "Mr. Meeseeks", "skill": "Golf ball: 900% ATK area hit (Lv2); if the target survives, cooldown drops to 4s and the next hit does +50%", "tags": ["damage"]},
-    {"name": "Egg Demon", "skill": "Fires 40 fireballs forward, each 90% ATK (Lv3), 25s cooldown", "tags": ["damage"]}
+    {"name": "Egg Demon", "skill": "Fires 40 fireballs forward, each 90% ATK (Lv3), 25s cooldown", "tags": ["damage"]},
+    {"name": "Flame Demon", "skill": "3 jumping slams, each 200% ATK, and enemy CRIT DMG -20% for 4s; 25s cooldown", "tags": ["damage"]}
   ],
   "mystlingRenames": {"The Fool": "Fool", "Snowy Owl": "Snow Owl"},
   "runeRenames": {"Fairy Multishot": "Sprite Multishot", "Fairy Combo": "Sprite Link", "Root Guard": "Rootguard", "Potion Gravity": "Potion Magnet", "Blade Bounce": "Ricochet Strike", "Sword Strike Aerie": "Swordstrike Aerie"},
