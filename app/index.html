@@ -2296,13 +2296,13 @@ body.env-staging .envbar { display: block; }
     if (presetTime(mm) > at) return "older";   // the roster changed after this build; the pull below brings it in
     if (isEditor) {
       const nm = clone(mm); nm.preset = presetOf(ex); nm.presetDate = localDate(at); nm.presetUpdatedAt = at; nm.presetSrc = "Updated by the player";
-      await saveMember(nm, "updated own preset", `${mm.ign} (from the Builds tab)`);
+      await saveMember(nm, "updated own preset", `${mm.ign} (from ${presetFrom || "the Builds tab"})`);
     } else {
       try { await moveMyRecords(true); } catch { /* the old single record still works */ }
       const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {};
       const changes = diffObj({ preset: clone(mm.preset || {}) }, { preset: presetOf(ex) });
       await ref.set({ ...d, memberId: mm.id, ign: mm.ign, preset: presetOf(ex), at, v: d.log || d.shared ? 1 : 2 });
-      await logEvent("updated own preset", `${mm.ign} (from the Builds tab)`, { src: "builds", changes });
+      await logEvent("updated own preset", `${mm.ign} (from ${presetFrom || "the Builds tab"})`, { src: presetFrom ? "typed" : "builds", changes });
     }
     return "pushed";
   }
@@ -2735,6 +2735,7 @@ body.env-staging .envbar { display: block; }
       el("div", { class: "row" },
         isEditor ? el("button", { type: "button", class: "btn", text: "Edit", onclick: () => { editing = true; renderMemberEdit(m); } })
           : canEditMember(m) ? el("button", { type: "button", class: "btn", text: "Edit my preset", onclick: () => { editing = true; renderPresetEdit(m); } }) : null,
+        isEditor || canEditMember(m) ? el("button", { type: "button", class: "btn ghost", id: "btn-preset-shot", text: "Read preset screenshot", onclick: () => { if (!$("sp-panel")) { editing = true; head.after(presetShotPanel(m)); } } }) : null,
         el("button", { type: "button", class: "btn ghost", text: "Close", onclick: () => { openMemberId = null; box.hidden = true; renderRoster(); } })));
     box.append(head);
     // linking: one roster profile per Claude account. Officers' links are shared (everyone sees "linked");
@@ -2891,7 +2892,8 @@ body.env-staging .envbar { display: block; }
     const ms = preset.mystling;
     if (ms && D.mystlings.some(x => x.name === ms.name)) { if (Number.isInteger(ms.stars)) inv.mystlings[ms.name] = ms.stars; else if (!ownsMyst(ms.name)) inv.mystlings[ms.name] = null; }
   }
-  async function savePresetAsPlayer(preset) {
+  let presetFrom = null;   // where a member's own preset save came from, for the Activity log
+  async function savePresetAsPlayer(preset, from = "Edit my preset") {
     const ex = expeditionBuild(); if (!ex) throw new Error("no build");
     applyPresetToInventory(preset);
     ex.chars = [0, 1, 2].map(i => { const c = (preset.chars || [])[i]; return c && charByName(c.name) ? { name: c.name, star: owned(c.name) ? inv.chars[c.name] : (c.star ?? null) } : null; });
@@ -2901,7 +2903,7 @@ body.env-staging .envbar { display: block; }
     ex.behavior = { range: preset.behavior?.range || "", movement: preset.behavior?.movement || "" };
     ex.updatedAt = Date.now();
     refreshBuildsFromInventory(); syncInventoryUI();
-    const ok = await saveProfile(null, true);
+    presetFrom = from; let ok; try { ok = await saveProfile(null, true); } finally { presetFrom = null; }
     if (!ok) throw new Error("save failed");
   }
   function renderPresetEdit(m) {
@@ -3856,6 +3858,40 @@ body.env-staging .envbar { display: block; }
   // --- grouping: Team Info lists, presets in order, presets matched to players ---
   const LANE_OF = (s) => { const t = String(s || "").toLowerCase(); return t.startsWith("l") ? "left" : t.startsWith("m") ? "middle" : t.startsWith("r") ? "right" : null; };
   const powM = (s) => { const m = String(s || "").match(/([\d.]+)\s*([MB])?/i); if (!m) return null; const v = parseFloat(m[1]); return m[2] && m[2].toUpperCase() === "B" ? v * 1000 : v; };
+  // ----- one member's Expedition preset from a screenshot (or two: before and after swiping the gear row) -----
+  // Claude reads the characters and behavior; the mystling, gear and runes are matched on the device, like the video.
+  function presetShotPanel(m) {
+    const wrap = el("div", { class: "hintbox stack", id: "sp-panel" });
+    const file = el("input", { type: "file", id: "sp-file", accept: "image/*", multiple: "" });
+    const go = el("button", { type: "button", class: "btn", id: "sp-read", text: "Read", disabled: "" });
+    const st = el("span", { class: "small", id: "sp-status" }), out = el("div", { class: "stack", id: "sp-result" });
+    const close = (saved) => { editing = false; wrap.remove(); if (saved) renderMemberPanel(); };
+    wrap.append(el("div", { class: "row", style: "justify-content:space-between" }, el("b", { text: `${m.ign}'s Expedition preset from a screenshot` }),
+        el("button", { type: "button", class: "btn ghost", text: "Close", onclick: () => close() })),
+      el("div", { class: "small muted", text: "In game, open the preset in Expedition and take a screenshot. To get all six gear pieces, swipe the gear row and take a second one (optional). Claude reads the characters and behavior (uses a bit of your Claude usage); the mystling, gear and runes are matched on this device." }),
+      el("div", { class: "row" }, file, go, st), out);
+    file.addEventListener("change", () => { const n = file.files.length; st.className = n > 2 ? "small err" : "small"; st.textContent = n > 2 ? "Pick one screenshot, or two if you swiped the gear row." : ""; go.disabled = !n || n > 2; out.replaceChildren(); });
+    go.addEventListener("click", async () => {
+      const files = [...file.files].slice(0, 2); if (!files.length) return;
+      const sample = window.claude && typeof claude.use === "function" ? await claude.use("sample") : null;
+      if (!sample) { st.className = "small err"; st.textContent = "Reading screenshots isn't available here. Open this page inside Claude."; return; }
+      go.disabled = true; st.className = "small"; out.replaceChildren();
+      try {
+        const stills = files.map(f => ({ blob: f, url: URL.createObjectURL(f), extra: [] })), screens = stills.map((_, k) => ({ i: k + 1, type: "unread" }));
+        const errs = await vidReadInto(screens, screens.map(x => x.i), stills, sample, new AbortController().signal, 2, () => { st.textContent = "Reading the screenshot…"; }, presetPrompt);
+        if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; go.disabled = false; return; }
+        const use = screens.filter(x => x.type === "preset" || x.type === "unread");   // unread by Claude: the device can still match what it knows
+        if (!use.length) { st.className = "small err"; st.textContent = "That doesn't look like a preset screen. Open the preset in Expedition and screenshot that."; go.disabled = false; return; }
+        st.textContent = "Matching the mystling, gear and runes…";
+        for (const sc of use) { try { sc.pdev = await readPresetStill(stills[sc.i - 1].blob); } catch { /* left to the review */ } sc.type = "preset"; }
+        const pr = { n: 1, lane: null, slot: { name: m.ign, lane: null, order: null }, frames: use.map(x => x.i), reads: use, near: [] };
+        Object.assign(pr, mergePresetReads(use));
+        st.textContent = use.length < screens.length ? "One screenshot wasn't a preset screen and was left out. Check the rest, then save." : "Check it, correct anything, then save.";
+        renderPresetResult({ lists: { left: [], middle: [], right: [] }, subs: [], presets: [pr] }, screens, stills, { one: { m, box: out, state: {}, onClose: close } });
+      } catch { st.className = "small err"; st.textContent = "Something went wrong reading that. Try again."; go.disabled = false; }
+    });
+    return wrap;
+  }
   function mergeDevReads(reads) {   // several frames of one preset screen: best read per gear slot, a named mystling over an unsure one
     const out = { gear: {} };
     for (const d of reads) {
@@ -3967,27 +4003,29 @@ body.env-staging .envbar { display: block; }
     if (names(nw) !== names(old)) { const a = new Set(names(old).split("|")), n = names(nw).split("|").filter(x => x && !a.has(x)); out.push(n.length ? `runes: ${n.length} new (${n.slice(0, 3).join(", ")}${n.length > 3 ? "…" : ""})` : "runes changed"); }
     return out;
   }
-  function renderPresetResult(g, screens, stills) {
-    const res = $("vid-result"); res.replaceChildren();
+  // opts.one: { m, box, state, onClose } = one member's preset screenshot(s) on their Roster page (no lists, no round)
+  function renderPresetResult(g, screens, stills, opts = {}) {
+    const one = opts.one || null, S = one ? one.state : lastVid;
+    const res = one ? one.box : $("vid-result"); res.replaceChildren();
     const unread = screens.filter(x => x.type === "unread").map(x => x.i);
-    if (unread.length) res.append(el("div", { class: "hintbox err small", text: `${unread.length} of ${screens.length} screens couldn't be read: ${unread.join(", ")}. A preset on one of them is missing, which shifts the matches after it: check the order.` }));
-    const old = lastVid.drafts || new Map(), drafts = new Map();
+    if (unread.length && !one) res.append(el("div", { class: "hintbox err small", text: `${unread.length} of ${screens.length} screens couldn't be read: ${unread.join(", ")}. A preset on one of them is missing, which shifts the matches after it: check the order.` }));
+    const old = S.drafts || new Map(), drafts = new Map();
     for (const p of g.presets) { const d = presetDraft(p), was = old.get(d.key); drafts.set(d.key, was && was.touched ? was : d); }
-    lastVid.drafts = drafts; if (lastVid.saved == null) lastVid.saved = false;
+    S.drafts = drafts; if (S.saved == null) S.saved = false;
     // who's registered (only used to match presets to players)
     const reg = el("details", { class: "vcard", open: "" }, el("summary", {}, el("b", { text: "Who's registered" }), el("span", { class: "small muted", text: " · for matching presets to players only, not a plan" })));
     const fmtP = (p) => p.name + (p.power != null ? " " + p.power.toFixed(2) : "");
     for (const l of LANES) reg.append(el("div", { class: "small" }, el("b", { text: `${l[0].toUpperCase() + l.slice(1)} (${g.lists[l].length}): ` }), g.lists[l].map(fmtP).join(" · ") || "not in the video"));
     reg.append(el("div", { class: "small" }, el("b", { text: `Subs (${g.subs.length}): ` }), g.subs.map(fmtP).join(" · ") || "not in the video"));
-    const regNames = [...LANES.flatMap(l => g.lists[l]), ...g.subs], unknown = regNames.filter(p => !findIgn(p.name)).map(p => p.name);
+    const regNames = one ? [] : [...LANES.flatMap(l => g.lists[l]), ...g.subs], unknown = regNames.filter(p => !findIgn(p.name)).map(p => p.name);
     reg.append(el("div", { class: "small muted", text: `Power here updates the roster.${unknown.length ? ` Not on the roster: ${unknown.join(", ")} (their cards offer Add as a new member).` : ""}` }));
-    const look = el("div"), cards = el("div", { class: "stack" }), saveBtn = el("button", { type: "button", class: "btn", id: "vid-save" }), msg = el("span", { class: "small" });
+    const look = el("div"), cards = el("div", { class: "stack" }), saveBtn = el("button", { type: "button", class: "btn", id: one ? "sp-save" : "vid-save" }), msg = el("span", { class: "small" });
     const noPreset = regNames.filter(p => !g.presets.some(x => x.slot && x.slot.name === p.name));
     const refresh = () => {
       const list = [...drafts.values()].filter(d => d.on && d.mode !== "skip"), need = list.filter(d => d.warn || draftIssues(d));
       look.replaceChildren(); look.className = need.length ? "hintbox small" : "";
       if (need.length) look.append(`${need.length} need a look: `, ...need.slice(0, 8).flatMap((d, i) => [i ? ", " : "", el("b", { text: d.name || `preset ${d.n}` }), d.warn ? " (order)" : ` (${draftIssues(d)} unsure)`]), need.length > 8 ? "…" : "", ". Red outlines are values the reader wasn't sure about; blanks keep what's on file.");
-      saveBtn.textContent = lastVid.saved ? "Saved" : `Save ${list.length} preset${list.length === 1 ? "" : "s"}`; saveBtn.disabled = !list.length || lastVid.saved;
+      saveBtn.textContent = S.saved ? "Saved" : one ? "Save as their Expedition preset" : `Save ${list.length} preset${list.length === 1 ? "" : "s"}`; saveBtn.disabled = !list.length || S.saved;
     };
     const touch = (d) => { d.touched = true; refresh(); };
     const drawCard = (d) => {
@@ -4001,13 +4039,14 @@ body.env-staging .envbar { display: block; }
       const fld = (label, input, now) => el("label", { class: "field vf" }, el("span", { class: "small muted", text: label }), input, now != null ? el("span", { class: "vnow", text: "now: " + now }) : null);
       const on = el("input", { type: "checkbox", class: "von", "aria-label": "Include this preset" }); on.checked = d.on;
       on.addEventListener("change", () => { d.on = on.checked; card.classList.toggle("off", !(d.on && d.mode !== "skip")); touch(d); });
-      const where = d.slot ? (d.slot.lane === "sub" ? "Sub" : `${d.slot.lane[0].toUpperCase() + d.slot.lane.slice(1)} · row ${d.slot.order}`) : (d.lane || "?");
+      const where = one ? "" : d.slot ? (d.slot.lane === "sub" ? "Sub" : `${d.slot.lane[0].toUpperCase() + d.slot.lane.slice(1)} · row ${d.slot.order}`) : (d.lane || "?");
       const head = el("div", { class: "vrow" }, on);
-      if (d.mode === "match") head.append(sel("member", [...activeMembers().map(x => [x.id, x.ign]), ["__new", "Not on the roster…"]], d.memberId, (v) => { if (v === "__new") { d.mode = "new"; d.memberId = ""; } else d.memberId = v; redraw(d); }));
+      if (one) head.append(el("b", { text: one.m.ign }), el("span", { class: "vbadge", text: "Expedition preset" }));
+      else if (d.mode === "match") head.append(sel("member", [...activeMembers().map(x => [x.id, x.ign]), ["__new", "Not on the roster…"]], d.memberId, (v) => { if (v === "__new") { d.mode = "new"; d.memberId = ""; } else d.memberId = v; redraw(d); }));
       else head.append(text("name", d.name, (v) => { d.name = v; }, { placeholder: "Who is this?", style: "width:11em" }), el("span", { class: "vbadge", text: d.slot ? "Not on the roster" : "Not matched" }));
       const shots = el("div", { class: "shots", hidden: "" }), a = el("a", { href: "#", class: "small", text: "see screens" });
       a.addEventListener("click", (e) => { e.preventDefault(); if (!shots.childNodes.length) for (const i of d.frames) { const x = stills[i - 1]; if (x) shots.append(el("img", { src: x.url, alt: "", style: "height:130px;border-radius:6px" })); } shots.hidden = !shots.hidden; });
-      head.append(el("span", { class: "small muted", style: "margin-left:auto" }, `preset ${d.n} · ${where} · `, a));
+      head.append(el("span", { class: "small muted", style: "margin-left:auto" }, one ? `${d.frames.length} screenshot${d.frames.length === 1 ? "" : "s"} · ` : `preset ${d.n} · ${where} · `, a));
       card.append(head, shots);
       if (d.mode !== "match") {
         const nm = "who-" + d.key, radio = (v, ...label) => { const r = el("input", { type: "radio", name: nm, value: v, "data-f": "mode-" + v }); r.checked = d.mode === v;
@@ -4061,10 +4100,11 @@ body.env-staging .envbar { display: block; }
     for (const d of drafts.values()) cards.append(drawCard(d));
     if (noPreset.length) cards.append(el("div", { class: "vcard look" }, el("b", { text: `No preset found for ${noPreset.length}` }),
       el("div", { class: "small", text: `${noPreset.map(p => p.name).join(", ")}: registered, but no preset screen lined up with them. Their current presets stay as they are.` })));
-    res.append(reg, look, el("h3", { style: "margin:4px 0 0", text: `Presets · ${g.presets.length} read` }), cards,
+    if (one) res.append(look, cards, el("p", { class: "small muted", style: "margin:0", text: `Saving makes this ${one.m.ign}'s Expedition preset (the main build isn't touched; a blank value keeps what's on file), and anything new goes into their inventory. It goes in the Activity log.` }));
+    else res.append(reg, look, el("h3", { style: "margin:4px 0 0", text: `Presets · ${g.presets.length} read` }), cards,
       el("p", { class: "small muted", style: "margin:0", text: "Saving: each ticked preset becomes that player's Expedition preset (main builds aren't touched; a blank value keeps what's on file), anything new goes into their inventory (nothing removed or lowered), power from the lists updates the roster, and who's registered is kept with the round for reference. Everything goes in the Activity log." }));
     const cancel = el("button", { type: "button", class: "btn ghost", text: "Cancel" });
-    cancel.addEventListener("click", () => { res.replaceChildren(); $("vid-status").className = "small"; $("vid-status").textContent = lastVid.saved ? "" : "Cancelled. Nothing was saved."; lastVid = null; });
+    cancel.addEventListener("click", () => { if (one) return one.onClose(); res.replaceChildren(); $("vid-status").className = "small"; $("vid-status").textContent = lastVid.saved ? "" : "Cancelled. Nothing was saved."; lastVid = null; });
     saveBtn.addEventListener("click", async () => {
       const picked = [...drafts.values()].filter(d => d.on && d.mode !== "skip"), bad = (t) => { msg.className = "small err"; msg.textContent = t; };
       for (const d of picked) {
@@ -4076,6 +4116,17 @@ body.env-staging .envbar { display: block; }
       if (dup) return bad(`${memberById(dup)?.ign || dup} has two presets ticked. Untick or change one.`);
       const clash = picked.find(d => d.mode === "new" && memberById(memberId(d.name.trim()))); if (clash) return bad(`${clash.name} is already on the roster: choose "It's an existing member".`);
       saveBtn.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
+      if (one) {   // one member: officers write the roster, a member saves their own preset through their profile
+        const d = picked[0], today = localDate(Date.now());
+        try {
+          if (isEditor) { const nm = clone(memberById(one.m.id)); nm.preset = draftPresetObj(d, nm.preset); nm.presetDate = today; nm.presetSrc = "preset screenshot";
+            await saveMember(nm, "edited roster", `${nm.ign}: Expedition preset from a preset screenshot`);
+            await addToInventory(nm, { gear: draftGear(d), runes: draftRunes(d), mystling: d.myst.name ? { name: d.myst.name, stars: draftNum(d.myst.stars) } : null }); }
+          else await savePresetAsPlayer(draftPresetObj(d, one.m.preset), "a preset screenshot");
+          S.saved = true; msg.className = "small ok-msg"; msg.textContent = "Saved."; refresh(); setTimeout(() => one.onClose(true), 900);
+        } catch { msg.className = "small err"; msg.textContent = "Couldn't save. Check your connection and try again."; saveBtn.disabled = false; }
+        return;
+      }
       const today = localDate(Date.now()), powers = new Map(regNames.map(p => [p.name.toLowerCase(), p.power]));
       try {
         let n = 0, added = 0; const done = new Set();
