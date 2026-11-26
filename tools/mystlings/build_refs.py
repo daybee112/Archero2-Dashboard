@@ -1,5 +1,5 @@
 # Builds app/mystling-refs.jpg + .json: one 120px cell per reference tile (the whole tile, frame and stars included).
-# Sources: Daby's Mystling inventory video (Nov 25), a preset screen for the normal white Snow Owl, his Egg Demon screenshot.
+# Sources: Daby's Mystling inventory video (Nov 25), a preset screen for the normal white Snow Owl, his Egg Demon and Flame Demon screenshots.
 import json, os
 from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__)); APP = os.path.join(HERE, "..", "..", "app")
@@ -16,6 +16,7 @@ REFS = [
     ("Snow Owl", "normal", Image.open(os.path.join(HERE, "pre_23.5.png")).crop((872, 744, 1026, 898))),
     ("Death Mage", "normal", Image.open(os.path.join(HERE, "pre_5.png")).crop((872, 744, 1026, 898))),
     ("Egg Demon", "normal", Image.open(os.path.join(HERE, "egg-demon-screenshot.png")).crop((627, 1157, 863, 1393))),
+    ("Flame Demon", "normal", Image.open(os.path.join(HERE, "flame-demon-screenshot.png")).crop((155, 932, 411, 1194))),
 ]
 C, N = 120, 10
 sheet = Image.new("RGB", (C * N, C * ((len(REFS) + N - 1) // N)), "black")

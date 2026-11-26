@@ -33,6 +33,8 @@ async def main():
             ok = r["score"] >= 0.8 and r["score"] - r["second"] >= 0.1
             if name: check(f"{f}: {name}", ok and r["name"] == name, str(r))
             else: check(f"{f}: empty slot isn't passed off as a mystling", not ok, str(r))
+        r = await pg.evaluate("async ([b64, box]) => { " + BLOB + " return await window.__matchMystTile(blob, box); }", [B64("flame-demon.jpg"), [155, 932, 411, 1194]])
+        check("Flame Demon (DrFuko's) matched", r["name"] == "Flame Demon" and r["score"] >= 0.8, str(r))
         # a screen with no In use label (an artifact page) gives "not found", not a guess
         r = await pg.evaluate("async (b64) => { " + BLOB + " return await window.__readMystling(blob); }", B64("preset-5.jpg"))
         check("no In use label: not found", r and r["found"] is False, str(r))
