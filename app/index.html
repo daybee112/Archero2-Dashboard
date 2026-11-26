@@ -3305,7 +3305,7 @@ body.env-staging .envbar { display: block; }
     }
     return !n ? null : red / n > 0.35 ? "Mythic" : pur / n > 0.35 ? "Epic" : "Legendary";
   }
-  if (window.__expose) { window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
+  if (window.__expose) { window.__presetGroup = (sc) => presetGroup(sc); window.__presetKind = (b) => presetKind(b); window.__presetDiffers = (a, b) => presetDiffers(a, b); window.__videoStills = (f, o) => videoStills(f, new AbortController().signal, () => {}, o); window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
   if (window.__expose) { window.__readPresetStill = (b) => readPresetStill(b); }
   if (window.__expose) { window.__readGear = readGear; window.__gearTile = async (blob, b, slot) => { const bmp = await createImageBitmap(blob); return gearSlotRead(gearDesc(bmp, b[0], b[1], b[2] - b[0], b[3] - b[1]), slot, await loadGearRefs()); }; }
   if (window.__expose) { window.__readMystling = readMystling; window.__matchMystTile = async (blob, b) => { const bmp = await createImageBitmap(blob); return matchMystTile(bmp, b); }; }
@@ -3802,6 +3802,7 @@ body.env-staging .envbar { display: block; }
       if (!stills.length) { st.className = "small err"; st.textContent = "No still screens found. Pause about a second on each screen while recording."; return; }
       let maxImgs = VID.BATCH; try { const lim = await sample.limits(); maxImgs = Math.max(1, Math.min(VID.BATCH, lim?.images?.maxCount || VID.BATCH)); } catch {}
       const screens = stills.map((_, k) => ({ i: k + 1, type: "unread" }));
+      if (window.__expose) window.__curStills = stills;   // tests only
       if (target === "__presets") {   // lanes and presets: a different screen set, its own review
         const errs = await vidReadInto(screens, screens.map(x => x.i), stills, sample, signal, maxImgs, (t) => { st.textContent = t; }, presetPrompt);
         if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; return; }
@@ -3892,8 +3893,16 @@ body.env-staging .envbar { display: block; }
     try { out.runes = await readRunes(blob); } catch { /* left unread */ }
     return out;
   }
+  async function presetKind(blob) {   // the device's own call when Claude couldn't read a screen: a preset has the gear row and the rune grid
+    try { const bmp = await createImageBitmap(blob), W = bmp.width, c = document.createElement("canvas"); c.width = W; c.height = bmp.height;
+      const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0);
+      if (presetGearTiles(x.getImageData(0, 0, W, c.height), W).length < 4) return "other";
+      const r = await readRunes(blob); return r && r.layout === "preset" ? "preset" : "other"; } catch { return "other"; }
+  }
   async function vidPresets(screens, stills, say) {
-    const idx = screens.map((x, k) => x.type === "preset" && !x.pdev ? k : -1).filter(k => k >= 0);
+    const un = screens.map((x, k) => x.type === "unread" ? k : -1).filter(k => k >= 0);
+    for (let j = 0; j < un.length; j++) { say(`Checking screens Claude couldn't read on this device… ${j + 1} of ${un.length}`); screens[un[j]].devKind = await presetKind(stills[un[j]].blob); }
+    const idx = screens.map((x, k) => (x.type === "preset" || x.devKind === "preset") && !x.pdev ? k : -1).filter(k => k >= 0);
     for (let j = 0; j < idx.length; j++) {
       say(`Matching mystlings, gear and runes on presets ${j + 1} of ${idx.length}…`);
       const reads = [];   // the main frame plus the extras from the same pause: the gear row is swiped once, so frames differ
@@ -3948,20 +3957,55 @@ body.env-staging .envbar { display: block; }
     if (!Object.keys(out.gear).length) delete out.gear;
     return out;
   }
+  // Two presets in a row with no Team Info between them: a different player if what's on screen clearly differs
+  // (characters, mystling, gear or runes). The gear-row swipe and frames of one pause stay one preset.
+  function presetDiffers(a, b) {
+    const ca = (a.chars || [])[0], cb = (b.chars || [])[0];
+    if (ca && cb && ca !== cb) return true;
+    const da = a.pdev || {}, db = b.pdev || {};
+    if (da.myst && db.myst && da.myst.name && db.myst.name && da.myst.name !== db.myst.name) return true;
+    if (da.myst && db.myst && da.myst.name && da.myst.name === db.myst.name && da.myst.stars != null && db.myst.stars != null && da.myst.stars !== db.myst.stars) return true;   // same mystling, other stars
+    if (da.myst && db.myst && !!da.myst.empty !== !!db.myst.empty && (da.myst.empty ? db.myst.name : da.myst.name)) return true;
+    const both = Object.keys(da.gear || {}).filter(k => da.gear[k].set && db.gear && db.gear[k] && db.gear[k].set);
+    if (both.length >= 3 && both.filter(k => da.gear[k].set !== db.gear[k].set || (da.gear[k].q && db.gear[k].q && da.gear[k].q !== db.gear[k].q)).length >= 2) return true;
+    const rn = (d) => new Set(((d.runes && d.runes.slots) || []).map(x => x.name).filter(Boolean)), ra = rn(da), rb = rn(db);
+    if (ra.size >= 8 && rb.size >= 8 && [...ra].filter(n => rb.has(n)).length / Math.min(ra.size, rb.size) < 0.5) return true;
+    const sa = (da.runes && da.runes.slots) || [], sb = (db.runes && db.runes.slots) || [];   // the same preset keeps each rune in the same slot
+    const pos = sa.map((x, k) => x && x.name && sb[k] && sb[k].name ? (x.name !== sb[k].name ? 1 : 0) : null).filter(v => v != null);
+    if (pos.length >= 8 && pos.reduce((t, v) => t + v, 0) >= 4) return true;
+    return false;
+  }
   function presetGroup(screens) {
-    const lists = { left: {}, middle: {}, right: {} }, subs = [], presets = []; let lane = null, cur = null, afterList = true;
+    const lists = { left: {}, middle: {}, right: {} }, subs = [], presets = []; let lane = null, cur = null, afterList = true, lastPre = null;
+    const laneIdx = (l) => LANES.indexOf(l), used = new Set();
     for (const sc of screens) {
-      if (sc.type === "teaminfo") {
-        lane = LANE_OF(sc.lane) || lane; afterList = true; cur = null;
-        for (const r of sc.rows || []) {
-          if (!r || !r.name) continue;
-          const p = { name: String(r.name).trim(), power: powM(r.power) };
-          if (String(r.order).toLowerCase() === "sub") { if (!subs.some(x => x.name.toLowerCase() === p.name.toLowerCase())) subs.push(p); }
-          else if (lane && Number.isInteger(+r.order) && +r.order >= 1 && +r.order <= 8) lists[lane][+r.order] = p;
+      const kind = sc.type === "unread" ? (sc.devKind === "preset" ? "preset" : "sep") : sc.type;   // Claude couldn't read it: the device says preset or not
+      if (kind === "teaminfo" || kind === "sep") {
+        afterList = true; cur = null;
+        if (kind !== "teaminfo") continue;
+        const rows = (sc.rows || []).filter(r => r && r.name).map(r => ({ name: String(r.name).trim(), power: powM(r.power), order: r.order }));
+        const main = rows.filter(r => String(r.order).toLowerCase() !== "sub");
+        for (const r of rows) if (String(r.order).toLowerCase() === "sub" && !subs.some(x => x.name.toLowerCase() === r.name.toLowerCase())) subs.push({ name: r.name, power: r.power });
+        if (!main.length) { const t = LANE_OF(sc.lane); if (t && !lane) lane = t; continue; }   // only subs, or a loading list
+        // which lane: a list already seen (same names) wins over the tab; otherwise lanes only move forward (Left, Middle, Right)
+        const has = (l, n) => Object.values(lists[l]).some(x => x.name.toLowerCase() === n.toLowerCase());
+        const known = LANES.find(l => main.some(r => has(l, r.name)));
+        let L = known;
+        if (!L) { const tab = LANE_OF(sc.lane), free = LANES.filter(l => !used.has(l));
+          L = tab && free.includes(tab) && (!lane || laneIdx(tab) > laneIdx(lane)) ? tab : free.find(l => !lane || laneIdx(l) > laneIdx(lane)) || tab || lane; }
+        if (!L) continue;
+        lane = L; used.add(L);
+        // rows merged by name: a name already listed keeps its row; new names in a scrolled view take the shift the known names show
+        const off = (() => { const d = main.map(r => { const e = Object.entries(lists[L]).find(([, x]) => x.name.toLowerCase() === r.name.toLowerCase()); return e && Number.isInteger(+r.order) ? +e[0] - +r.order : null; }).filter(v => v != null);
+          if (!d.length) return 0; const c = {}; d.forEach(v => c[v] = (c[v] || 0) + 1); return +Object.entries(c).sort((a, z) => z[1] - a[1])[0][0]; })();
+        for (const r of main) {
+          if (has(L, r.name) || !Number.isInteger(+r.order)) continue;
+          const o = +r.order + off; if (o < 1 || o > 8 || lists[L][o]) continue;
+          lists[L][o] = { name: r.name, power: r.power };
         }
-      } else if (sc.type === "preset") {
-        if (afterList || !cur) { cur = { lane, frames: [], reads: [] }; presets.push(cur); afterList = false; }
-        cur.frames.push(sc.i); cur.reads.push(sc);
+      } else if (kind === "preset") {
+        if (afterList || !cur || (lastPre && presetDiffers(lastPre, sc))) { cur = { lane, frames: [], reads: [] }; presets.push(cur); afterList = false; }
+        cur.frames.push(sc.i); cur.reads.push(sc); lastPre = sc;
       }
     }
     // each lane's order: rows 1-8, then the subs (presets past a lane's 8th continue down the sub list, once)
@@ -3975,6 +4019,7 @@ body.env-staging .envbar { display: block; }
     presets.forEach((p, k) => { p.n = k + 1; Object.assign(p, mergePresetReads(p.reads)); });
     return { lists: Object.fromEntries(LANES.map(l => [l, rows(l)])), subs, presets };
   }
+
   function mergePresetReads(reads) {
     const vote = (vals) => { const c = {}; for (const v of vals) if (v != null) c[v] = (c[v] || 0) + 1; const top = Object.entries(c).sort((a, z) => z[1] - a[1])[0]; return top ? top[0] : null; };
     const chars = [0, 1, 2].map(k => vote(reads.map(r => (r.chars || [])[k]).map(v => v === "" ? "__none" : v && D.characters.some(c => c.name === v) ? v : null)));

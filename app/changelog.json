@@ -28,7 +28,8 @@
     "Fixed: saving a profile video no longer wipes gear and rune types it didn't read.",
     "Video reads keep going while you use other tabs: a bar pinned to the bottom of the screen shows the progress, has Stop, and an Open (or Review, once it's done) button that takes you back to the reader. If you leave the app mid-read, it picks up when you come back instead of failing.",
     "Rune reading: Echo Scythe is now recognized (it used to be misread as Pulsing Orb), and Plant Summon, Rootguard, Vine Bind, Plant Crit, Equinox Bloom and Orbital Orb read reliably on preset screens.",
-    "Review cards: a rune picked in one slot can't be picked again in another, since a rune can only be used once per build."
+    "Review cards: a rune picked in one slot can't be picked again in another, since a rune can only be used once per build.",
+    "Lanes and presets video: presets stay matched to the right players even when Claude can't read a screen (the device tells preset screens from Team Info on its own), a missing Team Info no longer glues two players' presets together (different characters, mystling, gear or rune slots split them), a misread lane tab can't send presets to another lane (lanes only move forward, and a list already seen keeps its lane), and a scrolled list can't overwrite rows with the wrong numbers."
    ]
   },
   {
