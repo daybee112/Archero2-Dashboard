@@ -172,6 +172,7 @@ table.lb td.num, table.lb th.num { text-align: right; font-variant-numeric: tabu
 .err { color: var(--bad); font-size: .9rem; }
 .ok-msg { color: var(--good); font-size: .9rem; }
 .hintbox { border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; }
+.upl { border-top: 1px solid var(--line); padding: 10px 0; display: grid; gap: 6px; }
 .vcard { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 10px; }
 .vcard.look { border-color: var(--warn); }
 .vcard.off > :not(:first-child) { opacity: .55; }
@@ -3296,7 +3297,7 @@ body.env-staging .envbar { display: block; }
   let vidCtl = null;
   function vidTargets() {
     const sel = $("vid-target"), cur = sel.value;
-    sel.replaceChildren(el("option", { value: "__us", text: "Our guild (update the roster)" }),
+    sel.replaceChildren(el("option", { value: "__us", text: "Our guild: roster and profiles" }), el("option", { value: "__presets", text: "Our guild: lanes and presets" }),
       ...Object.keys(allOpponents()).sort((a, z) => a.localeCompare(z)).map(n => el("option", { value: n, text: `Opponent: ${n}` })),
       el("option", { value: "__new", text: "New opponent guild…" }));
     if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
@@ -3922,6 +3923,7 @@ body.env-staging .envbar { display: block; }
             await saveMember(nm, isNew ? "added member" : "edited roster", `${nm.ign}: ${isNew ? "added " : ""}from a profile video`); n++; if (isNew) added++;
             await addToInventory(nm, { gear, runes, mystling: d.myst.name ? { name: d.myst.name, stars: ms } : null });
           }
+          if (vidCtx) { try { await markUpload(vidCtx, "ours", { players: n }); } catch { /* the players are saved either way */ } }
           msg.className = "small ok-msg"; msg.textContent = `Saved ${n} player${n === 1 ? "" : "s"}${added ? ` (${added} added to the roster)` : ""}.`;
         } else {
           const o = clone(allOpponents()[oppName] || { name: oppName, weeks: [], scans: [] }); o.name = oppName; o.scans = o.scans || [];
@@ -5385,45 +5387,65 @@ body.env-staging .envbar { display: block; }
     pnl.hidden = false; pnl.scrollIntoView({ block: "start", behavior: "smooth" });
   }
   function inWeek(w, date) { if (!date) return false; const d = Date.parse(date + "T12:00:00Z"), st = Date.parse(w.id + "T00:00:00Z"); return d >= st - 864e5 && d < st + 7 * 864e5; }
+  // Each round has its own uploads. For our guild, rounds 2 and 3 can point at the round before ("Use Round 1's")
+  // instead of a new recording: r.uploads.ours / r.uploads.presets = { at, date, n } for a new upload, or { from: n } to reuse.
+  function roundUpload(w, n, key, seen = 0) {   // follows "use Round N's" back to the upload it points at
+    const r = (w.rounds || []).find(x => x.n === n), u = r && r.uploads && r.uploads[key];
+    if (!u || seen > 3) return null;
+    return u.from ? roundUpload(w, u.from, key, seen + 1) : { ...u, n };
+  }
+  async function reuseUpload(w, r, key, from) {
+    const nw = clone(w), nr = nw.rounds.find(x => x.n === r.n);
+    nr.uploads = { ...(nr.uploads || {}), [key]: { from, at: Date.now() } };
+    await saveWeek(nw, `Round ${r.n}: ${key === "presets" ? "our lanes and presets" : "our roster and profiles"} use Round ${from}'s (${w.label})`);
+  }
+  async function markUpload(ctx, key, info) {   // called after a video for a round is saved
+    const w = ctx && expDb[ctx.week]; if (!w) return;
+    const nw = clone(w), nr = (nw.rounds || []).find(x => x.n === ctx.round); if (!nr) return;
+    nr.uploads = { ...(nr.uploads || {}), [key]: { at: Date.now(), date: localDate(Date.now()), ...info } };
+    await saveWeek(nw, `Round ${ctx.round}: ${key === "presets" ? "our lanes and presets" : "our roster and profiles"} uploaded (${w.label})`);
+  }
+  let vidCtx = null;   // which week and round the open reader is for
   function renderUploads(w) {
     const box = $("exp-uploads-list"); box.replaceChildren();
     if (!w) { box.append(el("div", { class: "panel muted", text: "Create a week first (New week)." })); return; }
-    const chip = (k) => k === "saved" ? el("span", { class: "chip good", text: "Saved" }) : k === "part" ? el("span", { class: "chip warn", text: "Partly saved" }) : k === "soon" ? el("span", { class: "chip neutral", text: "Reader coming soon" }) : el("span", { class: "chip neutral", text: "Not uploaded" });
-    const row = (title, hint, k, btnText, onClick) => {
-      const tr = el("tr", {}, el("td", {}, el("b", { text: title }), el("div", { class: "small muted", text: hint })), el("td", {}, chip(k)));
-      const td = el("td", { style: "text-align:right" });
-      if (btnText) { const b = el("button", { type: "button", class: "btn" + (k === "saved" ? " ghost" : ""), style: "white-space:nowrap", text: btnText }); b.addEventListener("click", () => onClick(tr, b)); td.append(b); }
-      tr.append(td); return tr;
-    };
-    const table = (...rows) => el("table", { class: "lb uploads", style: "min-width:0" }, el("tbody", {}, ...rows));
-    // this week
+    const chip = (k, t) => el("span", { class: "chip " + (k === "saved" || k === "reuse" ? "good" : k === "part" ? "warn" : "neutral"), text: t || (k === "saved" ? "Saved" : k === "part" ? "Partly saved" : k === "soon" ? "Reader coming soon" : k === "reuse" ? "Reused" : "Not uploaded") });
+    const btn = (t, ghost, fn) => { const b = el("button", { type: "button", class: "btn" + (ghost ? " ghost" : ""), style: "white-space:nowrap", text: t }); b.addEventListener("click", () => fn(b)); return b; };
+    // stacked rows: title and status, then the hint, then the buttons (they fit on a phone)
+    const item = (title, hint, k, kText, ...btns) => el("div", { class: "upl" }, el("div", { class: "row", style: "justify-content:space-between;gap:8px" }, el("b", { text: title }), chip(k, kText)),
+      el("div", { class: "small muted", text: hint }), btns.filter(Boolean).length ? el("div", { class: "row", style: "gap:8px" }, ...btns.filter(Boolean)) : null);
     const opps = (w.rounds || []).map(r => r.opponent).filter(n => n && n !== "tbd");
-    const matchK = opps.length === 3 ? "saved" : opps.length ? "part" : "todo";
-    // our guild: newest profile-video date on the roster
-    const ms = allMembers().filter(m => m.status !== "left"), vids = ms.map(m => m.power && m.power.src === "profile video" ? m.power.date : null).filter(Boolean).sort();
-    const lastVid = vids[vids.length - 1], nVid = vids.filter(d => d === lastVid).length;
-    const ourK = lastVid && inWeek(w, lastVid) ? (nVid >= ms.length ? "saved" : "part") : "todo";
     const sections = [
       el("h3", { style: "margin:8px 0 0", text: "This week" }),
-      table(row("Matchup and schedule", "Group, opponents, round days" + (opps.length ? ` · ${opps.join(", ")}` : ""), matchK, null)),
-      el("h3", { style: "margin:8px 0 0", text: "Our guild · ArchAcademy" }),
-      table(
-        row("Our roster and profiles", "Profile video of our members: power, artifacts, gear, runes, mystling. Saved as each player's main build and inventory. Monthly, or when someone changes." +
-          (lastVid ? ` Last done ${lastVid}: ${nVid} of ${ms.length} players.` : ""), ourK, "Upload video", () => openVidFor("__us")),
-        el("tr", {}, el("td", { colspan: "3", class: "small muted", text: "New members: a name that isn't on the roster, in any of our videos, is offered as a new member when you review it." })))];
+      item("Matchup and schedule", "Group, opponents, round days" + (opps.length ? ` · ${opps.join(", ")}` : ""), opps.length === 3 ? "saved" : opps.length ? "part" : "todo"),
+      el("p", { class: "small muted", style: "margin:4px 0 0", text: "Each round has its own uploads. For our guild, rounds 2 and 3 can reuse the round before, so you only record again when something changed. New members: a name that isn't on the roster is offered as a new member when you review a video." })];
+    // our profile videos saved before uploads were tracked by round count as Round 1's
+    const ms = allMembers().filter(m => m.status !== "left"), vids = ms.map(m => m.power && m.power.src === "profile video" ? m.power.date : null).filter(Boolean).sort();
+    const legacyVid = vids.length && inWeek(w, vids[vids.length - 1]) ? vids[vids.length - 1] : null;
     for (const r of (w.rounds || [])) {
       const day = r.date ? lockText(new Date(r.date + "T12:00:00Z")) : "";
       const name = r.opponent && r.opponent !== "tbd" ? r.opponent : null;
       const o = name ? allOpponents()[name] : null;
       const scans = (o && o.scans || []).filter(sc => inWeek(w, sc.date));
-      const lanesK = LANES.every(l => ((r.our || {})[l] || {}).players && r.our[l].players.length) ? "saved" : LANES.some(l => ((r.our || {})[l] || {}).players && r.our[l].players.length) ? "part" : "soon";
+      const ctx = { week: w.id, round: r.n };
+      const ours = (key, title, what, target) => {
+        const own = r.uploads && r.uploads[key], got = roundUpload(w, r.n, key), prev = r.n > 1 ? roundUpload(w, r.n - 1, key) : null;
+        const legacy = key === "ours" && r.n === 1 && !own && legacyVid ? { date: legacyVid } : null;
+        const open = () => { vidCtx = ctx; openVidFor(target); };
+        if (own && own.from) return item(title, `Using Round ${own.from}'s${got && got.date ? ` (${got.date})` : ""}. Upload a new one only if something changed.`, "reuse", `Round ${own.from}'s`, btn("Upload new", true, open));
+        if (own || legacy) { const u = own || legacy; return item(title, `Saved ${u.date || ""}${u.players ? `: ${u.players} players` : ""}. ${what}`, "saved", null, btn("Upload again", true, open)); }
+        return item(title, (prev ? `Round ${r.n - 1}'s is available (${prev.date || "saved"}). ` : "") + what, "todo", null,
+          prev ? btn(`Use Round ${r.n - 1}'s`, false, async (b) => { b.disabled = true; try { await reuseUpload(w, r, key, r.n - 1); } catch { b.disabled = false; } }) : null,
+          btn(prev ? "Upload new" : "Upload video", !!prev, open));
+      };
       const resK = (r.stats || []).length ? "saved" : r.result ? "part" : "soon";
-      sections.push(el("h3", { style: "margin:8px 0 0", text: `Round ${r.n}${name ? " · vs " + name : ""}${day ? " · " + day : ""}` }),
-        table(
-          name ? row(`${name} roster and profiles`, `Profile video, saved as this week's ${name} scan` + (scans.length ? ` · ${scans[scans.length - 1].players.length} players on ${scans[scans.length - 1].date}` : ""), scans.length ? "saved" : "todo", "Upload video", () => openVidFor(name))
-               : row("Opponent roster and profiles", "Set this round's opponent first (New week or Rounds)", "todo", null),
-          row("Our lanes and presets", "Team Info for each lane, then each preset: character, resonances, gear, runes, mystling, movement. Saved as each player's Expedition preset", lanesK, null),
-          row("Results", "Overview + 12 detail screens", resK, null)));
+      sections.push(el("h3", { style: "margin:12px 0 0", text: `Round ${r.n}${name ? " · vs " + name : ""}${day ? " · " + day : ""}` }),
+        name ? item(`${name} roster and profiles`, `Profile video, saved as this week's ${name} scan` + (scans.length ? ` · ${scans[scans.length - 1].players.length} players on ${scans[scans.length - 1].date}` : ""), scans.length ? "saved" : "todo", null,
+               btn(scans.length ? "Upload again" : "Upload video", !!scans.length, () => { vidCtx = ctx; openVidFor(name); }))
+             : item("Opponent roster and profiles", "Set this round's opponent first (New week or Rounds)", "todo"),
+        ours("ours", "Our roster and profiles", "Profile video of our members: power, artifacts, gear, runes, mystling. Saved as each player's main build and inventory.", "__us"),
+        ours("presets", "Our lanes and presets", "Team Info for each lane and the subs, then every player's preset in list order. Saved as each player's Expedition preset.", "__presets"),
+        item("Results", "Overview + 12 detail screens", resK));
     }
     box.append(el("div", { class: "panel stack" },
       el("h2", { style: "margin:0", text: "Uploads for the " + w.label.replace(/^Week/, "week") }),
