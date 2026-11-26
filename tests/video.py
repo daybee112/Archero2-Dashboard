@@ -23,8 +23,8 @@ window.__vidScript = (i) => {
   const map = {
     1: { type: "roster_list" },
     2: { type: "namecard", name: "daybee", power_m: 11.07 },
-    3: window.__noGear ? { type: "gear", gear: {} } : gear("Dragoon"),
-    4: { type: "runes" },
+    3: window.__noGear ? { type: "other" } : gear("Dragoon"),
+    4: window.__noGear ? { type: "gear", gear: {} } : { type: "runes" },   // a "gear" screen the device can't read either (it's really the Runes tab)
     5: { type: "mystling", mystling: { name: window.__mystUnclear ? null : "Death Mage", stars: 14 } },
     6: A([["Golden Fleece","Mythic",5],["Goldfinger","Mythic",4],["Golden Mask","Mythic",3],["Tidal Conch","Mythic",2],["Demon King's Eye","Mythic",1],["Voidblade","Mythic",0]]),
     7: A([["Voidblade","Mythic",0],["Magic Harp","Legendary",3],["Dragon Heart","Legendary",3],["Bull Skull","Legendary",3]]),
@@ -134,7 +134,7 @@ async def main():
         await pg.wait_for_function("document.querySelector('#vid-status').textContent.startsWith('Found')", timeout=180000)
         await pg.wait_for_timeout(300)
         cards = await pg.evaluate(CARDS)
-        check("opponent cards show gear, mixed noted", "Dragoon (mixed)" in cards[1]["text"] and "Oracle boots" in cards[1]["text"], cards[1]["text"])
+        check("gear read on the device wins over Claude's (the real screen is all Oracle, Claude's mock said mixed)", "Oracle · all Chaotic" in cards[1]["text"], cards[1]["text"])
         check("opponent: both players ticked", all(c["on"] for c in cards))
         check("Claude can't name it, the device still does", cards[0]["vals"].get("myst") == "Death Mage" and "myst" not in cards[0]["unsure"], str(cards[0]["vals"]))
         check("no Epic page needed: Mythic total counted (15)", cards[0]["vals"].get("mythic") == "15" and "mythic" not in cards[0]["unsure"], json.dumps(cards[0]["vals"]))

@@ -3288,6 +3288,7 @@ body.env-staging .envbar { display: block; }
     return !n ? null : red / n > 0.35 ? "Mythic" : pur / n > 0.35 ? "Epic" : "Legendary";
   }
   if (window.__expose) { window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
+  if (window.__expose) { window.__readGear = readGear; window.__gearTile = async (blob, b, slot) => { const bmp = await createImageBitmap(blob); return gearSlotRead(gearDesc(bmp, b[0], b[1], b[2] - b[0], b[3] - b[1]), slot, await loadGearRefs()); }; }
   if (window.__expose) { window.__readMystling = readMystling; window.__matchMystTile = async (blob, b) => { const bmp = await createImageBitmap(blob); return matchMystTile(bmp, b); }; }
   // ================= Profile video import =================
   // A screen recording of players' profile screens -> one still per screen (on this device) -> Claude reads each still ->
@@ -3422,6 +3423,98 @@ body.env-staging .envbar { display: block; }
     for (let j = 0; j < idx.length; j++) {
       say(`Matching mystlings ${j + 1} of ${idx.length}…`);
       try { screens[idx[j]].mdev = await readMystling(stills[idx[j]].blob); } catch { /* left to Claude's reading */ }
+    }
+  }
+  // ----- Gear on the device -----
+  // A profile's Gear tab has the six pieces in fixed spots (weapon, amulet, ring on the left; helmet, armor, boots on the
+  // right). Set: which colours the piece is made of once the tile's background is left out (Griffin gold and black,
+  // Oracle silver and blue, Dragoon silver and dark), plus a picture match, against gear-refs.jpg for that slot.
+  // Quality: the frame colour (Chaotic magenta ~319, Mythic red ~349) and the yellow +N digit on a Mythic's badge.
+  // Prototype and checks: tools/gear/.
+  let gearRefs = null;
+  const GEAR_PROFILE = { weapon: [87, 495], amulet: [87, 615], ring: [87, 735], helmet: [415, 495], armor: [415, 615], boots: [415, 735] };   // on a 590-wide screen
+  const rgbHsv = (R, G, B) => { const mx = Math.max(R, G, B), mn = Math.min(R, G, B), d = mx - mn; let h = 0;
+    if (d) h = mx === R ? ((G - B) / d) % 6 : mx === G ? (B - R) / d + 2 : (R - G) / d + 4; return [(h * 60 + 360) % 360, mx ? d / mx : 0, mx]; };
+  function gearDesc(src, sx, sy, sw, sh) {
+    const c = document.createElement("canvas"); c.width = 60; c.height = 72; const x = c.getContext("2d", { willReadFrequently: true });
+    x.imageSmoothingEnabled = true; x.drawImage(src, sx, sy, sw, sh, 0, 0, 60, 72); const d = x.getImageData(0, 0, 60, 72).data;
+    let fg = 0, gold = 0, blue = 0, silver = 0, dark = 0; const fh = [], badge = [];
+    for (let y = 0; y < 72; y++) for (let X = 0; X < 60; X++) {
+      const i = (y * 60 + X) * 4, [h, s, v] = rgbHsv(d[i] / 255, d[i + 1] / 255, d[i + 2] / 255), xr = X / 60, yr = y / 72;
+      if (((y >= 14 && y < 18 && X >= 4 && X < 56) || (y >= 60 && y < 64 && X >= 30 && X < 56)) && s > 0.5 && v > 0.3) fh.push(h);
+      if (!(yr > 0.22 && yr < 0.8 && xr > 0.12 && xr < 0.9) || (xr < 0.45 && yr > 0.5)) continue;
+      if (s > 0.5 && (h > 290 || h < 15) && v > 0.25 && v < 0.95) continue;     // the tile's magenta/red background
+      fg++;
+      if (h > 30 && h < 60 && s > 0.45 && v > 0.45) gold++; else if (h > 175 && h < 250 && s > 0.25 && v > 0.4) blue++;
+      if (s < 0.22 && v > 0.6) silver++; if (v < 0.25) dark++;
+    }
+    const n = fg + 1e-9, f = [gold / n, blue / n, silver / n, dark / n];
+    const a = document.createElement("canvas"); a.width = 36; a.height = 30; const ax = a.getContext("2d", { willReadFrequently: true });
+    ax.drawImage(src, sx + sw * 0.18, sy + sh * 0.2, sw * 0.7, sh * 0.52, 0, 0, 36, 30); const ad = ax.getImageData(0, 0, 36, 30).data;
+    const v = new Float32Array(36 * 30 * 3); let k = 0, m = 0; for (let i = 0; i < ad.length; i += 4) { v[k++] = ad[i]; v[k++] = ad[i + 1]; v[k++] = ad[i + 2]; }
+    for (const q of v) m += q; m /= v.length; let nn = 0; for (let i = 0; i < v.length; i++) { v[i] -= m; nn += v[i] * v[i]; } nn = Math.sqrt(nn) + 1e-9; for (let i = 0; i < v.length; i++) v[i] /= nn;
+    // badge: yellow digit strokes in a 26x17 grid
+    const b = document.createElement("canvas"); b.width = 26; b.height = 17; const bx = b.getContext("2d", { willReadFrequently: true });
+    bx.drawImage(src, sx + sw * 0.40, sy + sh * 0.80, sw * 0.26, sh * 0.17, 0, 0, 26, 17); const bd = bx.getImageData(0, 0, 26, 17).data;
+    for (let i = 0; i < bd.length; i += 4) badge.push(bd[i] > 178 && bd[i + 1] > 153 && bd[i + 2] < 115 ? 1 : 0);
+    const med = fh.length ? fh.slice().sort((p, q) => p - q)[fh.length >> 1] : null;
+    return { f, v, frameHue: med, frameN: fh.length, badge };
+  }
+  async function loadGearRefs() {
+    if (gearRefs) return gearRefs;
+    const meta = await (await fetch("gear-refs.json", { cache: "no-store" })).json(), dig = await (await fetch("gear-digits.json", { cache: "no-store" })).json();
+    const bmp = await createImageBitmap(await (await fetch("gear-refs.jpg", { cache: "no-store" })).blob());
+    gearRefs = { refs: meta.refs.map((r, k) => ({ ...r, d: gearDesc(bmp, (k % meta.cols) * meta.cw, ((k / meta.cols) | 0) * meta.ch, meta.cw, meta.ch) })), digits: dig.digits };
+    return gearRefs;
+  }
+  function gearDigit(badge, digits) {
+    const on = badge.reduce((a, x) => a + x, 0); if (on < 6) return null;   // no digit: plain Mythic
+    let xs = [], ys = []; badge.forEach((x, i) => { if (x) { xs.push(i % 26); ys.push((i / 26) | 0); } });
+    const wd = Math.max(...xs) - Math.min(...xs) + 1, ht = Math.max(...ys) - Math.min(...ys) + 1;
+    if (wd / ht < 0.45) return { d: 1, sc: 0.7 };                            // a 1 is a thin upright stroke
+    let best = null;
+    for (const [d, m] of Object.entries(digits)) { let inter = 0, uni = 0; m.flat().forEach((x, i) => { if (x || badge[i]) uni++; if (x && badge[i]) inter++; }); const sc = inter / (uni || 1); if (!best || sc > best.sc) best = { d: +d, sc }; }
+    return best;
+  }
+  function gearQuality(desc, digits) {
+    const h = desc.frameHue; if (h == null || desc.frameN < 20) return { q: null };
+    if (h >= 300 && h < 336) return { q: "Chaotic" };
+    if (h >= 336 || h < 12) { const dg = gearDigit(desc.badge, digits); return dg ? { q: dg.sc >= 0.45 ? `Mythic+${dg.d}` : null, mythicPlus: true } : { q: "Mythic" }; }
+    if (h >= 25 && h < 60) return { q: "Legendary", guess: true };            // not seen on a real screen yet
+    return { q: null };
+  }
+  function gearSlotRead(desc, slot, R) {
+    let by = {};
+    for (const r of R.refs) { if (r.slot !== slot) continue; let ncc = 0; for (let i = 0; i < desc.v.length; i++) ncc += desc.v[i] * r.d.v[i];
+      const dist = Math.hypot(...desc.f.map((x, i) => x - r.d.f[i])), sc = ncc - 4 * dist; if (!(r.set in by) || sc > by[r.set]) by[r.set] = sc; }
+    const top = Object.entries(by).sort((p, q) => q[1] - p[1]), q = gearQuality(desc, R.digits);
+    return { set: top[0] && top[0][1] - (top[1] ? top[1][1] : -9) >= 0.1 ? top[0][0] : null, guess: top[0] ? top[0][0] : null, score: top[0] ? +top[0][1].toFixed(2) : null,
+      margin: top[1] ? +(top[0][1] - top[1][1]).toFixed(2) : null, q: q.q };
+  }
+  // A profile Gear-tab still → {slots: {weapon: {set|null, q|null, ...}, ...}} or null if the tiles aren't where they should be
+  async function readGear(blob) {
+    const R = await loadGearRefs(), bmp = await createImageBitmap(blob), W = bmp.width, s = W / 590;
+    const c = document.createElement("canvas"); c.width = W; c.height = bmp.height; const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0);
+    const img = x.getImageData(0, 0, W, c.height);
+    const frameAt = (bx, by, bw, bh) => { let n = 0, hit = 0;   // share of frame-coloured pixels along the box's left and right edges
+      for (let y = by + bh * 0.25; y < by + bh * 0.9; y += 2) for (const X of [bx + bw * 0.04, bx + bw * 0.96]) {
+        const i = ((Math.round(y) * W) + Math.round(X)) * 4, [h, sa, v] = rgbHsv(img.data[i] / 255, img.data[i + 1] / 255, img.data[i + 2] / 255); n++; if (sa > 0.5 && v > 0.3 && (h > 300 || h < 12)) hit++; }
+      return hit / (n || 1); };
+    let best = null;
+    for (let dy = -0.08; dy <= 0.08; dy += 0.004) {   // the panel can sit a little higher or lower
+      let sc = 0; for (const [, [bx, by]] of Object.entries(GEAR_PROFILE)) sc += frameAt(bx * s, (by - 12 + dy * 590) * s, 88 * s, 100 * s);
+      if (!best || sc > best.sc) best = { dy, sc };
+    }
+    if (best.sc / 6 < 0.3) return null;
+    const slots = {};
+    for (const [slot, [bx, by]] of Object.entries(GEAR_PROFILE)) slots[slot] = gearSlotRead(gearDesc(c, bx * s, (by - 12 + best.dy * 590) * s, 88 * s, 100 * s), slot, R);
+    return { slots };
+  }
+  async function vidGear(screens, stills, say) {
+    const idx = screens.map((x, k) => x.type === "gear" && !x.gdev ? k : -1).filter(k => k >= 0);
+    for (let j = 0; j < idx.length; j++) {
+      say(`Matching gear ${j + 1} of ${idx.length}…`);
+      try { screens[idx[j]].gdev = await readGear(stills[idx[j]].blob); } catch { /* left to Claude's reading */ }
     }
   }
   async function vidRunes(screens, stills, say) {
@@ -3571,7 +3664,7 @@ body.env-staging .envbar { display: block; }
       "Screen types:\n" +
       "- namecard: Namecard tab, shows the player's name, guild and Power. Give name (exact spelling, keep any non-Latin characters) and power in millions.\n" +
       "- gear: Profile > Gear tab, six gear pieces. For each slot give set and quality. Set by color/style: red/crimson pieces = Dragoon, silver-blue pieces = Oracle, black-and-yellow pieces = Griffin. " +
-      "Quality by frame: dark red/purple frame with a gold S = Chaotic; red frame = Mythic (a number badge N = Mythic+N); gold frame = Legendary.\n" +
+      "Quality by frame colour (every high piece shows a gold S, so ignore the S): dark magenta/purple frame = Chaotic; bright red frame = Mythic (a small yellow number N on a badge at the bottom = Mythic+N); gold frame = Legendary.\n" +
       "- runes: Profile > Runes tab. Nothing to extract.\n" +
       "- mystling: Profile > Mystling tab. Give only the mystling marked \"In use\" (its name if you can tell, else null) and its star count: five star icons, each star's color is its level: cyan/teal = 1, yellow/gold = 2, red = 3, pink = 4, dark red = 5, gray/empty = 0; add the five up (3 red + 2 yellow = 13, 5 cyan = 5). Null if unsure.\n" +
       "- artifacts: Profile > Artifact tab. List EVERY artifact you can see with its exact name, its tier from the cushion color (red cushion = Mythic, orange cushion = Legendary, purple or blue cushion = Epic) " +
@@ -3602,7 +3695,11 @@ body.env-staging .envbar { display: block; }
         cur.runes = Object.fromEntries(RTYPES.map(t => [t, sc.runes.filter(r => r.type === t).map(r => r.name ? { name: r.name, q: r.q || "" } : null)]));
         cur.runeRead = sc.runes.filter(r => r.name).length; cur.runeEmpty = sc.runes.filter(r => r.empty).length; cur.runeSlots = sc.runes.length; cur.runeRaw = sc.runes;
       }
-      if (sc.type === "gear") for (const { id } of D.gearSlots) { const g = (sc.gear || {})[id] || {}; const set = SETS.includes(g.set) ? g.set : null, q = D.gearQualities.includes(g.quality) ? g.quality : null; if (set || q) cur.gear[id] = { set, q }; }
+      if (sc.type === "gear") for (const { id } of D.gearSlots) {   // the device's reading wins where it's sure; Claude's fills the rest
+        const g = (sc.gear || {})[id] || {}, dv = sc.gdev && sc.gdev.slots ? sc.gdev.slots[id] : null;
+        const set = dv && dv.set ? dv.set : SETS.includes(g.set) ? g.set : null, q = dv && dv.q ? dv.q : D.gearQualities.includes(g.quality) ? g.quality : null;
+        if ((set || q) && !(cur.gear[id] && cur.gear[id].set && cur.gear[id].q)) cur.gear[id] = { set, q };
+      }
       if (sc.type === "mystling" && (sc.mdev || sc.mystling)) {
         const cl = sc.mystling || {}, clStars = Number.isInteger(cl.stars) && cl.stars >= 0 && cl.stars <= D.mystlingMaxStars ? cl.stars : null, dv = sc.mdev;
         if (dv && dv.found) cur.mystling = { name: dv.name, look: dv.look, stars: dv.stars != null ? dv.stars : clStars, src: "device", uncommon: !dv.name, score: dv.score };
@@ -3662,6 +3759,7 @@ body.env-staging .envbar { display: block; }
       if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; return; }
       await vidRunes(screens, stills, (t) => { st.textContent = t; });
       await vidMystlings(screens, stills, (t) => { st.textContent = t; });
+      await vidGear(screens, stills, (t) => { st.textContent = t; });
       lastVid = { stills, screens, oppName: target === "__us" ? null : oppName, maxImgs }; if (window.__expose) window.__lastVid = lastVid;
       const { players } = vidGroup(screens);
       st.textContent = `Found ${stills.length} screens and ${players.length} player${players.length === 1 ? "" : "s"}. Check and correct anything, then save.`;
@@ -3750,6 +3848,7 @@ body.env-staging .envbar { display: block; }
           const errs = await vidReadInto(lastVid.screens, unreadNums, lastVid.stills, sample, vidCtl.signal, lastVid.maxImgs, (t) => { st.textContent = t; });
           await vidRunes(lastVid.screens, lastVid.stills, (t) => { st.textContent = t; });
           await vidMystlings(lastVid.screens, lastVid.stills, (t) => { st.textContent = t; });
+          await vidGear(lastVid.screens, lastVid.stills, (t) => { st.textContent = t; });
           if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; }
           else { const n = vidGroup(lastVid.screens).players.length; st.textContent = `Found ${lastVid.stills.length} screens and ${n} player${n === 1 ? "" : "s"}. Check and correct anything, then save.`; }
           vidShow();
