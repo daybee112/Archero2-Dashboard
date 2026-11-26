@@ -83,7 +83,7 @@ async def main():
         check("daybee matched to the roster, power and artifact totals (Mythic 15, Leg 15) with no double count",
               d0.get("member") == "m-daybee" and d0.get("power") == "11.07" and d0.get("mythic") == "15" and d0.get("leg") == "15", json.dumps(d0)[:300])
         check("daybee: now values shown under each box", "now:" in cards[0]["text"])
-        check("daybee: mystling and stars in boxes", d0.get("myst") == "Death Mage" and d0.get("mstars") == "14")
+        check("daybee: mystling matched on the device, stars counted by colour (4 yellow + 1 cyan = 9, beats Claude's 14)", d0.get("myst") == "Death Mage" and d0.get("mstars") == "9", json.dumps(d0)[:200])
         import re as _re
         mm = _re.search(r"(\d+) of (\d+) read", cards[0]["text"])
         check("daybee: runes matched on the device (at least 9)", mm and int(mm.group(1)) >= 9, cards[0]["text"])
@@ -117,12 +117,12 @@ async def main():
         mb = doc.get("mainBuild") or {}
         check("main build saved: gear, runes, incomplete, preset untouched", mb.get("incomplete") is True and mb.get("gear", {}).get("weapon", {}).get("set") == "Dragoon"
               and sum(len(v) for v in mb.get("runes", {}).values()) >= 9 and doc["preset"]["chars"][0]["name"] == "Helix", json.dumps(mb)[:300])
-        check("main build includes the mystling", mb.get("mystling") == {"name": "Death Mage", "stars": 14}, json.dumps(mb.get("mystling")))
+        check("main build includes the mystling", mb.get("mystling") == {"name": "Death Mage", "stars": 9}, json.dumps(mb.get("mystling")))
         inv = (await pg.evaluate("window.__store.get('inventory/m-daybee')"))["inv"]
         check("inventory: Mythic rune not lowered, +3 rune not lowered", inv["runes"].get("Sharp Arrow") == "Mythic" and inv["runes"].get("Sprite Link") == "Legendary+3", json.dumps(inv["runes"]))
         check("inventory: new rune added at its tier", inv["runes"].get("Sprite Multishot") == "Legendary" and inv["runes"].get("Revive") == "Legendary")
         check("inventory: better gear kept (Godforge not lowered to Chaotic), new slots added", inv["gear"]["weapon"]["Dragoon"] == "Godforge ★1" and inv["gear"]["boots"]["Dragoon"] == "Chaotic", json.dumps(inv["gear"]))
-        check("inventory: mystling added with stars", inv["mystlings"].get("Death Mage") == 14)
+        check("inventory: mystling added with stars", inv["mystlings"].get("Death Mage") == 9)
         check("inventory edit logged as a video import", any(e.get("action") == "edited inventory" and e.get("src") == "video" for e in ev + await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.startsWith('audit/u-officer/months')).flatMap(([k,v])=>v.events||[])")))
 
         # opponent: new guild, scan saved, no characters
@@ -135,12 +135,12 @@ async def main():
         cards = await pg.evaluate(CARDS)
         check("opponent cards show gear, mixed noted", "Dragoon (mixed)" in cards[1]["text"] and "Oracle boots" in cards[1]["text"], cards[1]["text"])
         check("opponent: both players ticked", all(c["on"] for c in cards))
-        check("unclear mystling outlined in red", "myst" in cards[0]["unsure"], str(cards[0]["unsure"]))
+        check("Claude can't name it, the device still does", cards[0]["vals"].get("myst") == "Death Mage" and "myst" not in cards[0]["unsure"], str(cards[0]["vals"]))
         check("no Epic page needed: Mythic total counted (15)", cards[0]["vals"].get("mythic") == "15" and "mythic" not in cards[0]["unsure"], json.dumps(cards[0]["vals"]))
         check("one unclear Legendary: total counts the visible stars (12) and is outlined", cards[0]["vals"].get("leg") == "12" and "leg" in cards[0]["unsure"] and "1 Legendary artifact" in cards[0]["text"], cards[0]["text"][:400])
         check("needs-a-look box names the player", "needs a look" in await pg.inner_text("#vid-result"))
         await pg.select_option("#vid-result .vcard >> nth=0 >> [data-f=myst]", "Witch")
-        check("fixing it clears the outline", "myst" not in (await pg.evaluate(CARDS))[0]["unsure"])
+        check("a correction sticks", (await pg.evaluate(CARDS))[0]["vals"].get("myst") == "Witch")
         await pg.click("#vid-save"); await pg.wait_for_timeout(800)
         scans = await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.includes('/scans/')).map(([k,v])=>v)")
         sc = scans[-1] if scans else {}
@@ -148,7 +148,7 @@ async def main():
         txt = json.dumps(sc)
         check("no character names in the scan", not any(ch in txt for ch in ["Helix", "Otta", "Thor", "Phynx", "deployed", "resonance"]))
         check("daybee row in scan has stars and gear", sc["players"][0].get("mythic") == 15 and sc["players"][0].get("gear", "").startswith("Dragoon"))
-        check("corrected mystling in the scan", sc["players"][0].get("mystling") == "Witch ★14", json.dumps(sc["players"][0])[:200])
+        check("corrected mystling in the scan", sc["players"][0].get("mystling") == "Witch ★9", json.dumps(sc["players"][0])[:200])
         check("opponent scan has rune names (no qualities)", "Sharp Arrow" in json.dumps(sc["players"][0].get("runes", {})), json.dumps(sc["players"][0].get("runes"))[:200])
         # limits: platform allows 3 images per call; one batch fails once (split into singles); screen 5 always fails
         c2 = await b.new_context(viewport={"width": 390, "height": 844})
