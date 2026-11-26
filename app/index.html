@@ -573,6 +573,7 @@ body.env-staging .envbar { display: block; }
         <div class="field" style="flex:1;min-width:180px"><label for="roster-search">Search</label><input type="text" id="roster-search" placeholder="Name, character, gear…"></div>
         <div class="field"><label for="roster-status">Show</label>
           <select id="roster-status"><option value="active">Active</option><option value="inactive">Inactive</option><option value="left">Left the guild</option><option value="all">Everyone</option></select></div>
+        <label class="row small" style="gap:6px;align-self:flex-end;padding-bottom:8px"><input type="checkbox" id="roster-missing">Missing a build only</label>
       </div>
       <p class="small muted" style="margin:0" id="roster-summary"></p>
       <div class="row" style="justify-content:space-between"><p class="small muted" style="margin:0" id="roster-sort"></p><span id="roster-img"></span></div>
@@ -2591,7 +2592,7 @@ body.env-staging .envbar { display: block; }
     { key: "hp", label: ["Lane HP", "(if anchor)"], num: true, calc: true, val: m => calcHp(m) ?? -1 },
     { key: "dps", label: "Avg DPS", num: true, calc: true, val: m => rosterDps(m) ?? -1 },
     { key: "upd", label: ["Last", "updated"], val: m => lastUpdated(m) },
-    { key: "preset", label: "Preset", val: m => PSTATUS.indexOf(m.presetStatus) },
+    { key: "builds", label: "Builds", sub: "Main · Exp", val: m => buildScore(m) },
     { key: "acct", label: ["Account", "linked"], val: m => publicLink(m) ? 0 : 1 },
     { key: "inv", label: "Inventory", val: m => invFilled(sharedInv(m)) ? 0 : 1 }
   ];
@@ -2615,6 +2616,34 @@ body.env-staging .envbar { display: block; }
     }
     buildRosterFloat();
   }
+  // ----- build status: is each player's main build and Expedition build on file, and what's missing -----
+  function buildGaps(b, kind) {
+    if (!b) return null;
+    const gear = Object.values(b.gear || {}).filter(g => g && g.set).length, runes = RTYPES.reduce((a, t) => a + ((b.runes || {})[t] || []).filter(r => r && r.name).length, 0);
+    const chars = (b.chars || []).filter(c => c && c.name).length, gaps = [];
+    if (kind === "exp") { if (!(b.chars || [])[0]?.name) gaps.push("no character"); else if (chars < 3) gaps.push(`${3 - chars} resonance${chars === 2 ? "" : "s"} missing`); }
+    if (gear < 6) gaps.push(gear ? `${gear} of 6 gear` : "no gear");
+    if (runes < 13) gaps.push(runes ? `${runes} of 13 runes` : "no runes");
+    if (!b.mystling?.name) gaps.push("no mystling");
+    if (kind === "exp" && !(b.behavior && (b.behavior.movement || b.behavior.range))) gaps.push("no behavior");
+    const empty = !chars && !gear && !runes && !b.mystling?.name;
+    return empty ? null : gaps;
+  }
+  const buildState = (m) => ({ main: buildGaps(m.mainBuild, "main"), exp: buildGaps(m.preset, "exp") });
+  const buildScore = (m) => { const s = buildState(m), v = (g) => g == null ? 0 : g.length ? 1 : 2; return v(s.main) + v(s.exp) * 3; };   // sorts the worst first
+  function buildChip(label, gaps, date) {
+    const k = gaps == null ? "bad" : gaps.length ? "warn" : "good", mark = gaps == null ? "✗" : gaps.length ? "◐" : "✓";
+    const txt = `${mark} ${label}` + (gaps && gaps.length ? ` · ${gaps.length} gap${gaps.length > 1 ? "s" : ""}` : "");
+    const tip = gaps == null ? `No ${label === "Main" ? "main build" : "Expedition preset"} on file` : (gaps.length ? gaps.join(", ") : "Complete") + (date ? ` · ${date}` : "");
+    const b = el("button", { type: "button", class: "chip " + k, style: "white-space:nowrap", title: tip, "aria-label": `${label === "Main" ? "Main build" : "Expedition preset"}: ${tip}`, text: txt });
+    b.addEventListener("click", (e) => { e.stopPropagation(); const pop = b.nextSibling && b.nextSibling.classList && b.nextSibling.classList.contains("bgap") ? b.nextSibling : null;
+      if (pop) pop.remove(); else b.after(el("div", { class: "small bgap", style: "max-width:14em;white-space:normal", text: tip })); });   // tap shows the gaps on phones
+    return b;
+  }
+  function buildsCell(m) {
+    const s = buildState(m);
+    return el("td", {}, el("div", { class: "stack", style: "gap:4px" }, buildChip("Main", s.main, m.mainBuild?.date), buildChip("Exp", s.exp, m.presetDate)));
+  }
   function invCell(m) {
     const sh = sharedInv(m), filled = invFilled(sh), mine = myMember() && myMember().id === m.id;
     if (!filled && !isEditor && !mine) return el("td", {}, el("span", { class: "small muted", text: "Empty" }));
@@ -2629,6 +2658,7 @@ body.env-staging .envbar { display: block; }
     const st = $("roster-status").value;
     const all = allMembers();
     let rows = all.filter(m => st === "all" || (m.status || "active") === st);
+    if ($("roster-missing").checked) rows = rows.filter(m => { const b = buildState(m); return !(b.main && !b.main.length && b.exp && !b.exp.length); });
     if (q) rows = rows.filter(m => [m.ign, m.rank, gearSummary(m), ...(m.preset?.chars || []).filter(Boolean).map(c => c.name), m.notes].join(" ").toLowerCase().includes(q));
     rows.sort((a, z) => {
       for (const s of sortStack) { const col = COLS.find(c => c.key === s.key); const x = col.val(a), y = col.val(z); if (x !== y) return (x < y ? -1 : 1) * s.dir; }
@@ -2667,7 +2697,7 @@ body.env-staging .envbar { display: block; }
         el("td", { class: "num", text: hp != null ? "+" + Math.round(hp) + "%" : "—" }),
         el("td", { class: "num", text: rosterDps(m) != null ? rosterDps(m) + " K/s" : "—" }),
         el("td", { class: "small muted", text: lastUpdated(m) ? shortDate(lastUpdated(m)) : "—", title: lastUpdated(m) || null }),
-        el("td", {}, m.presetStatus ? el("span", { class: "chip " + (m.presetStatus === "Complete" ? "good" : m.presetStatus === "Bare" ? "bad" : "warn"), text: m.presetStatus }) : ""),
+        buildsCell(m),
         el("td", {}, publicLink(m) ? el("span", { class: "chip good", title: linkedTo(m) ? "Linked by an officer" : "Linked by the player", text: "🔗 Linked" }) : el("span", { class: "small muted", text: "Not linked" })),
         invCell(m));
       tb.append(tr);
@@ -2684,6 +2714,7 @@ body.env-staging .envbar { display: block; }
   }
   $("roster-search").addEventListener("input", renderRoster);
   $("roster-status").addEventListener("change", renderRoster);
+  $("roster-missing").addEventListener("change", renderRoster);
 
   // ----- member profile -----
   function openMember(id) {
