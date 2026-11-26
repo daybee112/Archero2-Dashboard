@@ -3457,9 +3457,9 @@ body.env-staging .envbar { display: block; }
       "- gear: Profile > Gear tab, six gear pieces. For each slot give set and quality. Set by color/style: red/crimson pieces = Dragoon, silver-blue pieces = Oracle, black-and-yellow pieces = Griffin. " +
       "Quality by frame: dark red/purple frame with a gold S = Chaotic; red frame = Mythic (a number badge N = Mythic+N); gold frame = Legendary.\n" +
       "- runes: Profile > Runes tab. Nothing to extract.\n" +
-      "- mystling: Profile > Mystling tab. Give only the mystling marked \"In use\" (its name if you can tell, else null) and its star count: five star icons, gold stars count 1 each; colors go yellow, teal, red, purple/pink/blue fade, dark red with five per color (3 red + 2 teal = 13). Null if unsure.\n" +
+      "- mystling: Profile > Mystling tab. Give only the mystling marked \"In use\" (its name if you can tell, else null) and its star count: five star icons, each star's color is its level: cyan/teal = 1, yellow/gold = 2, red = 3, pink = 4, dark red = 5, gray/empty = 0; add the five up (3 red + 2 yellow = 13, 5 cyan = 5). Null if unsure.\n" +
       "- artifacts: Profile > Artifact tab. List EVERY artifact you can see with its exact name, its tier from the cushion color (red cushion = Mythic, orange cushion = Legendary, purple or blue cushion = Epic) " +
-      "and its star count: gold stars count 1 to 5; red stars replace gold ones and the first red counts as 6 (5 + number of red); blue stars count 10 + number of blue; empty slots count 0.\n" +
+      "and its star count: gold stars count 1 to 5; red stars replace gold ones and the first red counts as 6 (5 + number of red); blue stars count 10 + number of blue; empty slots count 0. Always give your best count for every Mythic and Legendary artifact, never null.\n" +
       "- roster_list: the guild's member list (not a Personal Info window).\n" +
       "- other: anything else.\n" +
       "Do NOT describe or name any characters or heroes shown in the pictures.\n\n" +
@@ -3507,11 +3507,15 @@ body.env-staging .envbar { display: block; }
       players.splice(i, 1);
     }
     for (const p of players) {
-      const arts = Object.values(p.arts), unknown = arts.filter(a => a.stars == null).length;
+      // Per Daby: every player's artifact pages are fully shown, so the totals are the stars that can be seen.
+      // An artifact whose stars couldn't be read adds nothing, and that total is outlined for a check.
+      const arts = Object.values(p.arts), tot = (t) => arts.filter(a => a.tier === t && a.stars != null).reduce((x, a) => x + a.stars, 0);
       p.artCount = arts.length;
-      p.mythic = arts.length && !unknown ? arts.filter(a => a.tier === "Mythic").reduce((x, a) => x + a.stars, 0) : null;
-      p.leg = arts.length && !unknown ? arts.filter(a => a.tier === "Legendary").reduce((x, a) => x + a.stars, 0) : null;
-      p.artsComplete = arts.length > 0 && !unknown && p.sawEpic;
+      p.mythUnclear = arts.filter(a => a.tier === "Mythic" && a.stars == null).length;
+      p.legUnclear = arts.filter(a => a.tier === "Legendary" && a.stars == null).length;
+      p.mythic = arts.length ? tot("Mythic") : null;
+      p.leg = arts.length ? tot("Legendary") : null;
+      p.artsComplete = arts.length > 0 && !p.mythUnclear && !p.legUnclear;
       Object.assign(p, vidGearSummary(p.gear));
     }
     return { players, loose };
@@ -3575,15 +3579,15 @@ body.env-staging .envbar { display: block; }
       name: p.name || "", memberId: m ? m.id : near ? near.id : "", near: near ? near.ign : "",
       mode: !us ? "opp" : m ? "match" : near ? "existing" : "new",
       power: p.power != null ? p.power.toFixed(2) : "",
-      mythic: p.artsComplete && p.mythic != null ? String(p.mythic) : "", leg: p.artsComplete && p.leg != null ? String(p.leg) : "",
-      artNote: !p.artCount ? "" : p.artsComplete ? "" : `Saw ${p.artCount} artifacts but not every page${p.mythic != null ? ` (partial count ${p.mythic} / ${p.leg})` : ""}, so the stars are left blank.`,
+      mythic: p.mythic != null ? String(p.mythic) : "", leg: p.leg != null ? String(p.leg) : "",
+      artNote: !p.artCount || p.artsComplete ? "" : `The stars on ${[p.mythUnclear ? `${p.mythUnclear} Mythic` : "", p.legUnclear ? `${p.legUnclear} Legendary` : ""].filter(Boolean).join(" and ")} artifact${p.mythUnclear + p.legUnclear > 1 ? "s" : ""} couldn't be read, so ${p.mythUnclear && p.legUnclear ? "those totals count" : "that total counts"} only the stars that could. Check against the screens.`,
       gear, sawGear, sawRunes: !!p.runeRaw, sawMyst: !!p.mystling,
       myst: { name: p.mystling?.name || "", stars: p.mystling?.stars != null ? String(p.mystling.stars) : "" },
       runes, frames: p.frames, unsure };
     if (!d.name) unsure.add("name");
     if (!d.power) unsure.add("power");
-    if (p.artCount && !d.mythic) unsure.add("mythic");
-    if (p.artCount && !d.leg) unsure.add("leg");
+    if (p.mythUnclear) unsure.add("mythic");
+    if (p.legUnclear) unsure.add("leg");
     if (d.sawMyst && !d.myst.name) unsure.add("myst");
     if (d.sawMyst && !d.myst.stars) unsure.add("mstars");
     d.on = !!d.name && (d.power !== "" || d.mythic !== "" || sawGear || d.sawRunes || d.sawMyst) && (!us || d.mode !== "new" || !!d.name);

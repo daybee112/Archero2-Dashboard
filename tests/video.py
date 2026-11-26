@@ -28,7 +28,7 @@ window.__vidScript = (i) => {
     5: { type: "mystling", mystling: { name: window.__mystUnclear ? null : "Death Mage", stars: 14 } },
     6: A([["Golden Fleece","Mythic",5],["Goldfinger","Mythic",4],["Golden Mask","Mythic",3],["Tidal Conch","Mythic",2],["Demon King's Eye","Mythic",1],["Voidblade","Mythic",0]]),
     7: A([["Voidblade","Mythic",0],["Magic Harp","Legendary",3],["Dragon Heart","Legendary",3],["Bull Skull","Legendary",3]]),
-    8: A([["Healing Grail","Legendary",3],["Attack Horn","Legendary",3],["Some Epic Thing","Epic",2]]),
+    8: window.__artUnclear ? A([["Healing Grail","Legendary",3],["Attack Horn","Legendary",null]]) : A([["Healing Grail","Legendary",3],["Attack Horn","Legendary",3],["Some Epic Thing","Epic",2]]),
     9: { type: "roster_list" },
     10: { type: "namecard", name: "NotAMember", power_m: 10.15 },
     11: gear("mix"),
@@ -126,7 +126,7 @@ async def main():
         check("inventory edit logged as a video import", any(e.get("action") == "edited inventory" and e.get("src") == "video" for e in ev + await pg.evaluate("[...window.__store.entries()].filter(([k])=>k.startsWith('audit/u-officer/months')).flatMap(([k,v])=>v.events||[])")))
 
         # opponent: new guild, scan saved, no characters
-        await pg.evaluate("window.__mystUnclear = true")
+        await pg.evaluate("window.__mystUnclear = true; window.__artUnclear = true")
         await pg.select_option("#vid-target", "__new"); await pg.fill("#vid-newopp", "TestGuild")
         await pg.evaluate("document.querySelector('#vid-status').textContent = ''")
         await pg.click("#btn-vid-read")
@@ -136,6 +136,8 @@ async def main():
         check("opponent cards show gear, mixed noted", "Dragoon (mixed)" in cards[1]["text"] and "Oracle boots" in cards[1]["text"], cards[1]["text"])
         check("opponent: both players ticked", all(c["on"] for c in cards))
         check("unclear mystling outlined in red", "myst" in cards[0]["unsure"], str(cards[0]["unsure"]))
+        check("no Epic page needed: Mythic total counted (15)", cards[0]["vals"].get("mythic") == "15" and "mythic" not in cards[0]["unsure"], json.dumps(cards[0]["vals"]))
+        check("one unclear Legendary: total counts the visible stars (12) and is outlined", cards[0]["vals"].get("leg") == "12" and "leg" in cards[0]["unsure"] and "1 Legendary artifact" in cards[0]["text"], cards[0]["text"][:400])
         check("needs-a-look box names the player", "needs a look" in await pg.inner_text("#vid-result"))
         await pg.select_option("#vid-result .vcard >> nth=0 >> [data-f=myst]", "Witch")
         check("fixing it clears the outline", "myst" not in (await pg.evaluate(CARDS))[0]["unsure"])
