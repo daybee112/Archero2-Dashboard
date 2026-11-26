@@ -4089,8 +4089,8 @@ body.env-staging .envbar { display: block; }
         let pw2 = 0;   // power for registered players whose preset wasn't saved
         for (const p of regNames) { const m = findIgn(p.name); if (!m || done.has(m.id) || p.power == null || (m.power && m.power.m === Math.round(p.power * 100) / 100)) continue;
           const nm = clone(m); nm.power = { m: Math.round(p.power * 100) / 100, date: today, src: "Team Info" }; await saveMember(nm, "edited roster", `${m.ign}: power from Team Info`); pw2++; }
-        if (vidCtx && expDb[vidCtx.week]) {
-          const w = expDb[vidCtx.week], nw = clone(w), nr = (nw.rounds || []).find(x => x.n === vidCtx.round);
+        if (vidCtx && weekById(vidCtx.week)) {
+          const w = weekById(vidCtx.week), nw = clone(w), nr = (nw.rounds || []).find(x => x.n === vidCtx.round);
           if (nr) { nr.registered = { ...Object.fromEntries(LANES.map(l => [l, g.lists[l].map(p => ({ name: p.name, power: p.power }))])), subs: g.subs.map(p => ({ name: p.name, power: p.power })), at: Date.now() };
             nr.uploads = { ...(nr.uploads || {}), presets: { at: Date.now(), date: today, players: n } };
             await saveWeek(nw, `Round ${vidCtx.round}: our lanes and presets uploaded (${n} presets) (${w.label})`); }
@@ -5833,7 +5833,7 @@ body.env-staging .envbar { display: block; }
     await saveWeek(nw, `Round ${r.n}: ${key === "presets" ? "our lanes and presets" : "our roster and profiles"} use Round ${from}'s (${w.label})`);
   }
   async function markUpload(ctx, key, info) {   // called after a video for a round is saved
-    const w = ctx && expDb[ctx.week]; if (!w) return;
+    const w = ctx && weekById(ctx.week); if (!w) return;   // the full week (id and rounds), not the stored head
     const nw = clone(w), nr = (nw.rounds || []).find(x => x.n === ctx.round); if (!nr) return;
     nr.uploads = { ...(nr.uploads || {}), [key]: { at: Date.now(), date: localDate(Date.now()), ...info } };
     await saveWeek(nw, `Round ${ctx.round}: ${key === "presets" ? "our lanes and presets" : "our roster and profiles"} uploaded (${w.label})`);
