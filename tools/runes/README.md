@@ -6,7 +6,9 @@ cell and its type. The page matches rune icons against these on the device (see 
 Made from Daby's recordings of rune popups (Nov 23, 2026): 46 icons covering 43 runes, plus 105 small icons cut
 from real profile Runes and Team Info preset screens (each checked by eye), so matching works at the size runes
 actually appear, on Mythic red frames, and behind some glow. Cells marked `small: true` in the JSON are those. Potion Spring, Meteor Split and Orbital Orb
-were added Nov 24 (popups plus 4 small icons). Still missing (always blank): Echo Scythe (Etched).
+were added Nov 24 (popups plus 4 small icons). Nov 26: Echo Scythe added (popup + 1 small) and one small cell that was
+cut as Pulsing Orb relabelled to Echo Scythe (it was an Echo Scythe); small cells added for Vine Bind, Rootguard,
+Plant Crit, Plant Summon, Equinox Bloom and Orbital Orb from Daby's preset screenshots.
 
 Scripts (Python prototypes, paths point at the original frame folders):
 - `find_icon.py`: finds the icon tile in a popup screenshot.

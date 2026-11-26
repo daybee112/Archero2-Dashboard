@@ -4049,6 +4049,15 @@ body.env-staging .envbar { display: block; }
     if (names(nw) !== names(old)) { const a = new Set(names(old).split("|")), n = names(nw).split("|").filter(x => x && !a.has(x)); out.push(n.length ? `runes: ${n.length} new (${n.slice(0, 3).join(", ")}${n.length > 3 ? "…" : ""})` : "runes changed"); }
     return out;
   }
+  // A rune can only be used once in a build: a name picked in one slot is hidden from the others. A read that put the
+  // same rune in two slots keeps the first and leaves the second blank and flagged.
+  function runeDedupe(rows) {   // rows: [{ sel, r }] for one card's runes
+    const seen = new Set();
+    for (const x of rows) { const v = x.sel.value; if (!v || v === "__empty") continue; if (seen.has(v)) { x.sel.value = ""; x.r.name = ""; x.r.unsure = true; x.sel.classList.add("unsure"); } else seen.add(v); }
+    const sync = () => { const used = rows.map(x => x.sel.value).filter(v => v && v !== "__empty");
+      for (const x of rows) for (const o of x.sel.options) { const taken = !!o.value && o.value !== "__empty" && o.value !== x.sel.value && used.includes(o.value); o.disabled = taken; o.hidden = taken; } };
+    rows.forEach(x => x.sel.addEventListener("change", sync)); sync();
+  }
   // opts.one: { m, box, state, onClose } = one member's preset screenshot(s) on their Roster page (no lists, no round)
   function renderPresetResult(g, screens, stills, opts = {}) {
     const one = opts.one || null, S = one ? one.state : lastVid;
@@ -4129,6 +4138,7 @@ body.env-staging .envbar { display: block; }
       }));
       const rn = RTYPES.reduce((n, t) => n + d.runes[t].filter(r => r.name && r.name !== "__empty").length, 0), re = RTYPES.reduce((n, t) => n + d.runes[t].filter(r => r.name === "__empty").length, 0);
       card.append(fold("Runes", `${rn} of ${13 - re} read` + (re ? ` · ${re} empty` : ""), RTYPES.some(t => d.runes[t].some(r => r.unsure)), (body) => {
+        const rsel = [];
         for (const t of RTYPES) { const row = el("div", { class: "stack", style: "gap:4px" }, el("span", { class: "small muted", text: RLABEL[t] }));
           d.runes[t].forEach((r, k) => { const f = `r-${t}-${k}`;
             const nS = el("select", { "data-f": f }, el("option", { value: "", text: r.unsure ? "— not sure —" : "—" }), el("option", { value: "__empty", text: "(empty slot)" }), ...D.runes[t].map(x => el("option", { value: x.name, text: x.name })));
@@ -4136,8 +4146,9 @@ body.env-staging .envbar { display: block; }
             const qS = el("select", { "data-f": f + "-q", "aria-label": "Quality" }, ...D.runeQualities.filter(q => !["Common", "Fine", "Rare"].includes(q)).map(q => el("option", { value: q, text: q }))); qS.value = r.q;
             nS.addEventListener("change", () => { r.name = nS.value; r.unsure = false; nS.classList.remove("unsure"); card.classList.toggle("look", !!(draftIssues(d) || d.warn)); touch(d); });
             qS.addEventListener("change", () => { r.q = qS.value; touch(d); });
-            row.append(el("div", { class: "vslot" }, nS, qS)); });
+            rsel.push({ sel: nS, r }); row.append(el("div", { class: "vslot" }, nS, qS)); });
           body.append(row); }
+        runeDedupe(rsel);
       }));
       if (m) { const ch = presetChanges(d, m); card.append(el("div", { class: "small muted", text: ch.length ? "Changes from the current Expedition preset: " + ch.join("; ") + "." : "Same as the current Expedition preset." })); }
       return card;
@@ -4385,6 +4396,7 @@ body.env-staging .envbar { display: block; }
       const rn = RTYPES.reduce((n, t) => n + d.runes[t].filter(r => r.name && r.name !== "__empty").length, 0), re = RTYPES.reduce((n, t) => n + d.runes[t].filter(r => r.name === "__empty").length, 0);
       const runeIssues = RTYPES.some(t => d.runes[t].some(r => r.unsure));
       card.append(fold("Runes", d.sawRunes || rn ? `${rn} of ${13 - re} read` + (re ? ` · ${re} empty` : "") : "not in the video", runeIssues, (body) => {
+        const rsel = [];
         for (const t of RTYPES) {
           const row = el("div", { class: "stack", style: "gap:4px" }, el("span", { class: "small muted", text: RLABEL[t] }));
           d.runes[t].forEach((r, k) => {
@@ -4396,10 +4408,11 @@ body.env-staging .envbar { display: block; }
             qS.value = r.q;
             nS.addEventListener("change", () => { r.name = nS.value; r.unsure = false; nS.classList.remove("unsure"); card.classList.toggle("look", !!draftIssues(d)); touch(d); });
             qS.addEventListener("change", () => { r.q = qS.value; touch(d); });
-            row.append(el("div", { class: "vslot" }, nS, qS));
+            rsel.push({ sel: nS, r }); row.append(el("div", { class: "vslot" }, nS, qS));
           });
           body.append(row);
         }
+        runeDedupe(rsel);
         body.append(el("span", { class: "small muted", text: "Quality from the icon frame is a floor (the +N can't be seen), so it never lowers what the inventory has." }));
       }));
       return card;

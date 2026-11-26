@@ -47,6 +47,15 @@ async def main():
         check("gear matched, Mythic+N read at full size", g == {"armor": ("Dragoon", "Mythic"), "helmet": ("Dragoon", "Mythic+3"), "amulet": ("Griffin", "Mythic+2")}, str(g))
         check("boots read (the row is scrolled to the armor)", v.get("g-boots-set") == "Dragoon", v.get("g-boots-set"))
         check("weapon not on the screenshot: left blank (keeps what's on file)", v.get("g-weapon-set") == "", v.get("g-weapon-set"))
+        lk = pg.locator("#sp-result a[data-f=edit-runes]")
+        if await lk.count() and await lk.is_visible(): await lk.click()
+        dup = await pg.evaluate("""() => { const a = document.querySelector('#sp-result [data-f="r-enhancement-0"]'), b = document.querySelector('#sp-result [data-f="r-enhancement-1"]');
+          if (!a || !b || !a.value || !b.value) return 'not read: ' + (a && a.value) + ' / ' + (b && b.value);
+          const o = [...b.options].find(o => o.value === a.value); return o && o.disabled ? 'ok' : 'pickable'; }""")
+        check("a rune in one slot can't be picked in another (review card)", dup == "ok", dup)
+        await pg.select_option('#sp-result [data-f="r-enhancement-0"]', "Flamenox Seal")
+        check("picking a new rune frees the old one and blocks the new one elsewhere", await pg.evaluate("""() => { const b = document.querySelector('#sp-result [data-f="r-enhancement-1"]'), o = (n) => [...b.options].find(o => o.value === n); return o('Flamenox Seal').disabled && !o('Sharp Arrow').disabled; }"""))
+        await pg.select_option('#sp-result [data-f="r-enhancement-0"]', "Sharp Arrow")
         await pg.click("#sp-save"); await pg.wait_for_timeout(2500)
         d = await pg.evaluate("window.__store.get('roster/m-gaga94')")
         pr = d.get("preset", {})

@@ -26,7 +26,9 @@
     "Read preset screenshot on a member's page: one screenshot (or two, before and after swiping the gear row) becomes that player's Expedition preset after a one-card review. Officers can do it for anyone, members for themselves.",
     "Roster: a Builds column shows whether each player has a main build and an Expedition build on file, with a Missing a build filter.",
     "Fixed: saving a profile video no longer wipes gear and rune types it didn't read.",
-    "Video reads keep going while you use other tabs: a bar pinned to the bottom of the screen shows the progress, has Stop, and an Open (or Review, once it's done) button that takes you back to the reader. If you leave the app mid-read, it picks up when you come back instead of failing."
+    "Video reads keep going while you use other tabs: a bar pinned to the bottom of the screen shows the progress, has Stop, and an Open (or Review, once it's done) button that takes you back to the reader. If you leave the app mid-read, it picks up when you come back instead of failing.",
+    "Rune reading: Echo Scythe is now recognized (it used to be misread as Pulsing Orb), and Plant Summon, Rootguard, Vine Bind, Plant Crit, Equinox Bloom and Orbital Orb read reliably on preset screens.",
+    "Review cards: a rune picked in one slot can't be picked again in another, since a rune can only be used once per build."
    ]
   },
   {
