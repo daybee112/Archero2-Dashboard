@@ -32,7 +32,7 @@ json.dump({"cw": CW, "ch": CH, "cols": N, "refs": [{"set": s, "slot": sl, "src":
 # digits: yellow strokes in the badge, from known Mythic+N tiles
 def badge_mask(tile):
     w, h = tile.size; a = np.asarray(tile.crop((int(w * .40), int(h * .80), int(w * .66), int(h * .97))).resize((26, 17)), dtype=float) / 255
-    r, g, b = a[..., 0], a[..., 1], a[..., 2]; return (r > .7) & (g > .6) & (b < .45)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]; return (r > .59) & (g > .47) & (b < .51) & (r - b > .24) & (g > r * .75)   # loose enough for small tiles; g/r keeps the orange diamond of a plain Mythic out
 dig = {}
 for f, first, labels in (("griffin-preset-a.png", 0, ["4", "3", "4", None, None]), ("griffin-preset-b.png", 1, ["3", "4", None, None, "3"]), ("preset-gaga94.png", 1, [None, None, "3", "2", None])):
     im = O(f)
