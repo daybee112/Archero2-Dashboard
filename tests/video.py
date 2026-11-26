@@ -103,6 +103,7 @@ async def main():
         # a player typed in by hand, then skipped
         await pg.click("text=+ Add a player by hand"); await pg.wait_for_timeout(200)
         check("hand-added card appears", len(await pg.evaluate(CARDS)) == 3)
+        check("nothing read for a hand-added player: an Add gear button, not a tiny link", await pg.locator("#vid-result .vcard >> nth=2 >> button[data-f=edit-gear]").count() == 1)
         await pg.click("#vid-result .vcard >> nth=2 >> [data-f=mode-skip]")
         check("skipped card isn't counted", (await pg.inner_text("#vid-save")) == "Save 2 players")
         await pg.click("#vid-save"); await pg.wait_for_timeout(1200)
@@ -153,8 +154,11 @@ async def main():
         # a second video where daybee's gear wasn't read: the gear already on file stays (it used to be wiped)
         await pg.evaluate("window.__noGear = true; window.__mystUnclear = false; window.__artUnclear = false")
         await pg.select_option("#vid-target", "__us")
+        await pg.evaluate("document.querySelector('#vid-status').textContent = ''")
         await pg.click("#btn-vid-read")
         await pg.wait_for_function("document.querySelector('#vid-status').textContent.startsWith('Found')", timeout=180000)
+        c0 = (await pg.evaluate(CARDS))[0]
+        check("gear shown but not read: the six slots open, outlined", sum(1 for f in c0["unsure"] if f and f.startswith("g-") and f.endswith("-set")) == 6, str(c0["unsure"]) + c0["text"][:500])
         n2 = await pg.locator("#vid-result .vcard").count()
         for k in range(1, n2): await pg.uncheck(f"#vid-result .vcard >> nth={k} >> .von")
         await pg.click("#vid-save"); await pg.wait_for_timeout(1200)

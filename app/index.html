@@ -3564,6 +3564,8 @@ body.env-staging .envbar { display: block; }
       if (sc.type === "roster_list" || sc.type === "other") { if (sc.type === "roster_list") cur = null; else if (cur) cur.frames.push(sc.i); continue; }
       if (!cur) { loose.push(sc.i); continue; }
       cur.frames.push(sc.i);
+      if (sc.type === "runes") cur.runeScreen = true;   // the Runes tab was on screen, whether or not its icons could be read
+      if (sc.type === "gear") cur.gearScreen = true;
       if (sc.type === "runes" && Array.isArray(sc.runes)) {
         cur.runes = Object.fromEntries(RTYPES.map(t => [t, sc.runes.filter(r => r.type === t).map(r => r.name ? { name: r.name, q: r.q || "" } : null)]));
         cur.runeRead = sc.runes.filter(r => r.name).length; cur.runeEmpty = sc.runes.filter(r => r.empty).length; cur.runeSlots = sc.runes.length; cur.runeRaw = sc.runes;
@@ -3590,7 +3592,7 @@ body.env-staging .envbar { display: block; }
       for (const [k, g] of Object.entries(p.gear)) if (!q.gear[k]) q.gear[k] = g;
       if (!q.mystling) q.mystling = p.mystling;
       for (const [k, a] of Object.entries(p.arts)) if (!q.arts[k] || (q.arts[k].stars == null && a.stars != null)) q.arts[k] = a;
-      q.sawEpic = q.sawEpic || p.sawEpic;
+      q.sawEpic = q.sawEpic || p.sawEpic; q.runeScreen = q.runeScreen || p.runeScreen; q.gearScreen = q.gearScreen || p.gearScreen;
       if (p.runeRead > q.runeRead) { q.runes = p.runes; q.runeRaw = p.runeRaw; q.runeRead = p.runeRead; q.runeEmpty = p.runeEmpty; q.runeSlots = p.runeSlots; }
       players.splice(i, 1);
     }
@@ -3655,13 +3657,13 @@ body.env-staging .envbar { display: block; }
       const raw = (p.runeRaw || []).filter(r => r.type === t);
       runes[t] = Array.from({ length: RSLOTS[t] }, (_, k) => {
         const r = raw[k];
-        if (!p.runeRaw) return { name: "", q: "Legendary", unsure: false };
+        if (!p.runeRaw) return { name: "", q: "Legendary", unsure: !!p.runeScreen };   // Runes tab shown but nothing read: every slot needs filling
         if (r && r.name) return { name: r.name, q: D.runeQualities.includes(r.q) ? r.q : "Legendary", unsure: false };
         if (r && r.empty) return { name: "__empty", q: "Legendary", unsure: false };
         return { name: "", q: "Legendary", unsure: true };
       });
     }
-    const sawGear = Object.keys(p.gear).length > 0, gear = {};
+    const sawGear = Object.keys(p.gear).length > 0 || !!p.gearScreen, gear = {};
     for (const { id } of D.gearSlots) { const g = p.gear[id] || {}; gear[id] = { set: g.set || "", q: g.q || "" }; if (sawGear && (!g.set || !g.q)) unsure.add("g-" + id); }
     const d = {
       key: p.name ? "n:" + p.name.toLowerCase() : "f:" + p.frames[0], hand: false, touched: false,
@@ -3670,7 +3672,7 @@ body.env-staging .envbar { display: block; }
       power: p.power != null ? p.power.toFixed(2) : "",
       mythic: p.mythic != null ? String(p.mythic) : "", leg: p.leg != null ? String(p.leg) : "",
       artNote: !p.artCount || p.artsComplete ? "" : `The stars on ${[p.mythUnclear ? `${p.mythUnclear} Mythic` : "", p.legUnclear ? `${p.legUnclear} Legendary` : ""].filter(Boolean).join(" and ")} artifact${p.mythUnclear + p.legUnclear > 1 ? "s" : ""} couldn't be read, so ${p.mythUnclear && p.legUnclear ? "those totals count" : "that total counts"} only the stars that could. Check against the screens.`,
-      gear, sawGear, sawRunes: !!p.runeRaw, sawMyst: !!p.mystling,
+      gear, sawGear, sawRunes: !!p.runeRaw || !!p.runeScreen, sawMyst: !!p.mystling,
       myst: { name: p.mystling?.name || "", stars: p.mystling?.stars != null ? String(p.mystling.stars) : "" },
       runes, frames: p.frames, unsure };
     if (!d.name) unsure.add("name");
@@ -3795,15 +3797,18 @@ body.env-staging .envbar { display: block; }
       // gear and runes: a one-line summary with "edit", opened straight away when anything is unsure
       const fold = (title, summary, open, build) => {
         const box = el("div", { class: "stack", style: "gap:6px" }), body = el("div", { class: "stack", style: "gap:6px" });
-        const sum = el("div", { class: "small" }, el("b", { text: title + ": " }), summary + " · ");
-        const a = el("a", { href: "#", text: "edit", "data-f": "edit-" + title.toLowerCase() }); sum.append(a);
-        const show = () => { sum.hidden = true; body.hidden = false; if (!body.childNodes.length) build(body); };
+        const none = /^not in the video/.test(summary);
+        const sum = el("div", { class: "small row", style: "gap:8px;align-items:center" }, el("span", {}, el("b", { text: title + ": " }), summary + (none ? "" : " · ")));
+        const a = none ? el("button", { type: "button", class: "btn ghost", text: "Add " + title.toLowerCase(), "data-f": "edit-" + title.toLowerCase() })
+          : el("a", { href: "#", text: "edit", "data-f": "edit-" + title.toLowerCase() }); sum.append(a);
+        let built = false;
+        const show = () => { sum.hidden = true; body.hidden = false; if (!built) { built = true; build(body); } };
         a.addEventListener("click", (e) => { e.preventDefault(); show(); });
         box.append(sum, body); body.hidden = true; if (open) { body.append(el("b", { class: "small", text: title })); show(); }
         return box;
       };
       const gs = vidGearSummary(draftGear(d)), gearIssues = D.gearSlots.some(({ id }) => d.unsure.has("g-" + id));
-      card.append(fold("Gear", d.sawGear || Object.values(d.gear).some(g => g.set) ? [gs.gearSet, gs.gearQ, gs.gearNote].filter(Boolean).join(" · ") || "unclear" : "not in the video", gearIssues, (body) => {
+      card.append(fold("Gear", d.sawGear || Object.values(d.gear).some(g => g.set) ? [gs.gearSet, gs.gearQ, gs.gearNote].filter(Boolean).join(" · ") || "shown but not read: fill in the slots" : "not in the video", gearIssues, (body) => {
         for (const { id, label } of D.gearSlots) {
           const now = m?.mainBuild?.gear?.[id];
           const setS = sel("g-" + id + "-set", [["", "—"], ...SETS.map(x => [x, x])], d.gear[id].set, (v) => { d.gear[id].set = v; });
