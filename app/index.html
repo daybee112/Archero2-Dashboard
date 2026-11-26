@@ -736,7 +736,7 @@ body.env-staging .envbar { display: block; }
       <details>
         <summary><b>Common tasks</b></summary>
         <div class="help-body">
-          <p><b>Update your Expedition preset.</b> Change it on the Builds tab and save, or use <b>Edit my preset</b> in your Roster profile. The two stay in sync, and whichever you changed last wins. Do this whenever you change your in-game preset, since officers plan lanes from it.</p>
+          <p><b>Update your Expedition preset.</b> Change it on the Builds tab and save, use <b>Edit my preset</b> in your Roster profile, or tap <b>Read preset screenshot</b> there and pick a screenshot of your preset. The two stay in sync, and whichever you changed last wins. Do this whenever you change your in-game preset, since officers plan lanes from it.</p>
           <p><b>Check how you did in Expedition.</b> Go to Expedition, then Roster, and tap your name. You'll see your damage, seconds survived and DPS for every round, plus your average over your last 6 rounds using your current build preset. <b>← Back</b> at the top returns to the roster.</p>
           <p><b>Read the plan for a round.</b> Go to Expedition, then Rounds, and pick the round. The <b>Message to the officers</b> at the top explains the lineup. Tap <b>Show the full message</b> if it's cut off.</p>
           <p><b>Share something on Discord.</b> Look for the <b>Copy as image</b> buttons on the lineup, round results, officer message, player history, the Expedition roster table and the main Roster. The picture goes to your clipboard, ready to paste. If your browser blocks that, a preview opens with a <b>Download</b> button instead. On the officer message, <b>Copy text</b> copies it with its Discord formatting.</p>
@@ -754,6 +754,7 @@ body.env-staging .envbar { display: block; }
             <li><b>Roster:</b> edit any profile, tap a gear piece to change its set and quality, add members, mark members inactive or left.</li>
             <li><b>Inventories:</b> on the Roster, tap a player's Inventory cell to open it, edit, and press <b>Save to (their name)</b>. They get your changes the next time they open the dashboard, and the edit is logged.</li>
             <li><b>Preset screenshots:</b> at the bottom of the Roster tab, import Expedition preset screenshots. Each screenshot needs the player's name typed in. The dashboard never guesses whose preset it is.</li>
+            <li><b>One player's preset:</b> on their Roster page, tap <b>Read preset screenshot</b> and pick a screenshot of their Expedition preset (a second one after swiping the gear row gets all six pieces). Check the one card, then save.</li>
             <li><b>Lineups:</b> edit the lineup of a round that hasn't been played yet, slot by slot, or copy the previous round. Played rounds are locked.</li>
             <li><b>Message to the officers:</b> post a new message for a round. Pasting a Discord message keeps its formatting. Older messages move into the notes.</li>
             <li><b>Notes and reasoning:</b> add decisions or logic worth keeping, like why a player moved lanes. Notes can be added but not edited.</li>
@@ -2302,7 +2303,7 @@ body.env-staging .envbar { display: block; }
       const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {};
       const changes = diffObj({ preset: clone(mm.preset || {}) }, { preset: presetOf(ex) });
       await ref.set({ ...d, memberId: mm.id, ign: mm.ign, preset: presetOf(ex), at, v: d.log || d.shared ? 1 : 2 });
-      await logEvent("updated own preset", `${mm.ign} (from ${presetFrom || "the Builds tab"})`, { src: presetFrom ? "typed" : "builds", changes });
+      await logEvent("updated own preset", `${mm.ign} (from ${presetFrom || "the Builds tab"})`, { src: !presetFrom ? "builds" : /screenshot/.test(presetFrom) ? "screenshot" : "typed", changes });
     }
     return "pushed";
   }
@@ -2893,7 +2894,7 @@ body.env-staging .envbar { display: block; }
     if (ms && D.mystlings.some(x => x.name === ms.name)) { if (Number.isInteger(ms.stars)) inv.mystlings[ms.name] = ms.stars; else if (!ownsMyst(ms.name)) inv.mystlings[ms.name] = null; }
   }
   let presetFrom = null;   // where a member's own preset save came from, for the Activity log
-  async function savePresetAsPlayer(preset, from = "Edit my preset") {
+  async function savePresetAsPlayer(preset, from = null) {   // from: where it came from, for the Activity log (default: the Builds tab)
     const ex = expeditionBuild(); if (!ex) throw new Error("no build");
     applyPresetToInventory(preset);
     ex.chars = [0, 1, 2].map(i => { const c = (preset.chars || [])[i]; return c && charByName(c.name) ? { name: c.name, star: owned(c.name) ? inv.chars[c.name] : (c.star ?? null) } : null; });
@@ -2919,7 +2920,7 @@ body.env-staging .envbar { display: block; }
     const save = el("button", { type: "button", class: "btn", text: "Save" });
     save.addEventListener("click", async () => {
       save.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
-      try { await savePresetAsPlayer({ chars: edited.chars, gear: edited.gear, runes: edited.runes, mystling: edited.mystling, behavior: edited.behavior }); editing = false; renderMemberPanel(); }
+      try { await savePresetAsPlayer({ chars: edited.chars, gear: edited.gear, runes: edited.runes, mystling: edited.mystling, behavior: edited.behavior }, "Edit my preset"); editing = false; renderMemberPanel(); }
       catch { msg.className = "small err"; msg.textContent = "Couldn't save. Check your connection and try again."; save.disabled = false; }
     });
     box.append(el("div", { class: "row" }, save, el("button", { type: "button", class: "btn ghost", text: "Cancel", onclick: () => { editing = false; renderMemberPanel(); } }), msg));

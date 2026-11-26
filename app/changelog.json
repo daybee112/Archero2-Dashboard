@@ -19,7 +19,13 @@
     "Expedition: a safe way to delete an empty week.",
     "Round lock times show in each viewer's own time zone.",
     "Faster start on phones, and Help's first-visit welcome is remembered properly in the Claude app.",
-    "Arena (with Peak Arena) and All-Star Cup are listed as coming areas."
+    "Arena (with Peak Arena) and All-Star Cup are listed as coming areas.",
+    "Profile video reading on the device: mystlings (the In use tile, stars counted by color) and gear (set, quality and Mythic+N) are matched against reference pictures, so fewer values need a look. Artifacts assume every page is shown and count the visible Mythic and Legendary stars.",
+    "Lanes and presets video: record Team Info for each lane and the subs, then every player's preset in list order. The dashboard shows who's registered (for matching only, not a plan), matches each preset to its player by order, reads characters, range and movement with Claude and the mystling, gear and runes on the device, and saves them as Expedition presets after a review.",
+    "Uploads by round: each round has our roster and our lanes and presets, and rounds 2 and 3 can use the round before's instead of a new recording.",
+    "Read preset screenshot on a member's page: one screenshot (or two, before and after swiping the gear row) becomes that player's Expedition preset after a one-card review. Officers can do it for anyone, members for themselves.",
+    "Roster: a Builds column shows whether each player has a main build and an Expedition build on file, with a Missing a build filter.",
+    "Fixed: saving a profile video no longer wipes gear and rune types it didn't read."
    ]
   },
   {
