@@ -1,0 +1,162 @@
+{
+ "cw": 120,
+ "ch": 144,
+ "cols": 10,
+ "refs": [
+  {
+   "set": "Dragoon",
+   "slot": "weapon",
+   "src": "profile-dragoon.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "amulet",
+   "src": "profile-dragoon.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "ring",
+   "src": "profile-dragoon.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "helmet",
+   "src": "profile-dragoon.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "armor",
+   "src": "profile-dragoon.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "boots",
+   "src": "profile-dragoon.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "weapon",
+   "src": "profile-oracle.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "amulet",
+   "src": "profile-oracle.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "ring",
+   "src": "profile-oracle.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "helmet",
+   "src": "profile-oracle.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "armor",
+   "src": "profile-oracle.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "boots",
+   "src": "profile-oracle.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "weapon",
+   "src": "preset-daybee.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "armor",
+   "src": "preset-daybee.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "ring",
+   "src": "preset-daybee.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "helmet",
+   "src": "preset-daybee.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "amulet",
+   "src": "preset-daybee.png"
+  },
+  {
+   "set": "Dragoon",
+   "slot": "boots",
+   "src": "preset-heynow.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "weapon",
+   "src": "preset-shoex.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "armor",
+   "src": "preset-shoex.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "ring",
+   "src": "preset-shoex.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "helmet",
+   "src": "preset-shoex.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "amulet",
+   "src": "preset-shoex.png"
+  },
+  {
+   "set": "Oracle",
+   "slot": "boots",
+   "src": "preset-archerojj.png"
+  },
+  {
+   "set": "Griffin",
+   "slot": "weapon",
+   "src": "griffin-preset-a.png"
+  },
+  {
+   "set": "Griffin",
+   "slot": "armor",
+   "src": "griffin-preset-a.png"
+  },
+  {
+   "set": "Griffin",
+   "slot": "ring",
+   "src": "griffin-preset-a.png"
+  },
+  {
+   "set": "Griffin",
+   "slot": "helmet",
+   "src": "griffin-preset-a.png"
+  },
+  {
+   "set": "Griffin",
+   "slot": "amulet",
+   "src": "griffin-preset-a.png"
+  },
+  {
+   "set": "Griffin",
+   "slot": "boots",
+   "src": "griffin-preset-b.png"
+  },
+  {
+   "set": "Griffin",
+   "slot": "amulet",
+   "src": "preset-gaga94.png"
+  }
+ ]
+}
