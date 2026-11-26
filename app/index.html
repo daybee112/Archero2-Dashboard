@@ -222,6 +222,13 @@ tr.tampered td { background: color-mix(in srgb, var(--bad) 7%, transparent); }
 .md i { color: var(--muted); }
 .note { border-left: 3px solid var(--line); padding-left: 10px; }
 .imgbtn { padding: 6px 10px; font-size: .85rem; }
+/* the video reader's dock: pinned to the screen while a read runs, so you can use other tabs; it holds the video (iPhones stop a video that isn't on screen) */
+#vid-dock { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 60; margin: 0 auto; max-width: 560px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 6px 22px rgba(0,0,0,.18); }
+#vid-dock[hidden] { display: none; }
+#vid-dock-vid { flex: none; width: 34px; height: 60px; border-radius: 6px; overflow: hidden; background: var(--bg); }
+#vid-dock-vid video { width: 100%; height: 100%; object-fit: cover; display: block; }
+#vid-dock-txt { flex: 1; min-width: 0; font-size: 14px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+#vid-dock .btn { flex: none; padding: 6px 12px; }
 .imgov { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 100; display: grid; place-items: center; padding: 16px; }
 .imgbox { background: var(--surface); border-radius: 12px; padding: 14px; max-width: min(1040px, 96vw); max-height: 92vh; overflow: auto; }
 .laneboard { display: grid; gap: 14px; }
@@ -754,6 +761,7 @@ body.env-staging .envbar { display: block; }
             <li><b>Roster:</b> edit any profile, tap a gear piece to change its set and quality, add members, mark members inactive or left.</li>
             <li><b>Inventories:</b> on the Roster, tap a player's Inventory cell to open it, edit, and press <b>Save to (their name)</b>. They get your changes the next time they open the dashboard, and the edit is logged.</li>
             <li><b>Preset screenshots:</b> at the bottom of the Roster tab, import Expedition preset screenshots. Each screenshot needs the player's name typed in. The dashboard never guesses whose preset it is.</li>
+            <li><b>Reading takes a while?</b> Use other tabs while a video is read: the bar pinned to the bottom of the screen shows how it's going, and its <b>Open</b> or <b>Review</b> button takes you back. Leaving the app pauses the read until you come back.</li>
             <li><b>One player's preset:</b> on their Roster page, tap <b>Read preset screenshot</b> and pick a screenshot of their Expedition preset (a second one after swiping the gear row gets all six pieces). Check the one card, then save.</li>
             <li><b>Lineups:</b> edit the lineup of a round that hasn't been played yet, slot by slot, or copy the previous round. Played rounds are locked.</li>
             <li><b>Message to the officers:</b> post a new message for a round. Pasting a Discord message keeps its formatting. Older messages move into the notes.</li>
@@ -826,6 +834,12 @@ body.env-staging .envbar { display: block; }
   </section>
 </div>
 
+<div id="vid-dock" role="status" aria-live="polite" hidden>
+  <div id="vid-dock-vid"></div>
+  <div id="vid-dock-txt"></div>
+  <button type="button" class="btn ghost" id="vid-dock-open">Open</button>
+  <button type="button" class="btn ghost" id="vid-dock-stop">Stop</button>
+</div>
 <script>
 (() => {
   "use strict";
@@ -898,6 +912,7 @@ body.env-staging .envbar { display: block; }
       if (v === cur) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
     }
     $("example-banner").classList.toggle("offtab", !["inventory", "builds", "training"].includes(cur));   // example notice only where it matters
+    try { if (dockState) setTimeout(dockSync, 0); } catch { /* before the dock is set up */ }
     if (D) { if (cur === "builds") renderBuildsTab(); if (cur === "training") refreshTgSource(); if (cur === "roster") renderRoster(); if (cur === "expedition") renderExpedition(); if (cur === "next") renderNext(); }
   }
   // The changelog view's links are #changelog (Change log tab) and #activity (Activity log tab); the old #changes still works.
@@ -3309,7 +3324,34 @@ body.env-staging .envbar { display: block; }
     $("vid-newopp-f").hidden = sel.value !== "__new";
   }
   function vidReady() { $("btn-vid-read").disabled = !$("vid-file").files.length || ($("vid-target").value === "__new" && !$("vid-newopp").value.trim()); }
-  $("btn-vid").addEventListener("click", () => { vidTargets(); vidReady(); $("vid-panel").hidden = false; $("vid-panel").scrollIntoView({ block: "start", behavior: "smooth" }); });
+  $("btn-vid").addEventListener("click", () => {
+    if (vidPending() && $("exp-uploads-reader").contains($("vid-panel"))) return openVidPanel();   // a read (or its review) is still going in Uploads
+    parkVidPanel(); vidTargets(); vidReady(); $("vid-panel").hidden = false; $("vid-panel").scrollIntoView({ block: "start", behavior: "smooth" }); });
+  // ----- the dock: pinned to the screen while a read runs, so you can work on other tabs (it holds the video) -----
+  let vidBusy = false, dockState = null;
+  const vidPending = () => vidBusy || !!($("vid-result").childElementCount && lastVid && !lastVid.saved);   // a read, or a review not saved yet   // null | "busy" | "done" (finished while you were elsewhere)
+  const vidPanelOnScreen = () => { const p = $("vid-panel"); return !!(p && !p.hidden && p.offsetParent !== null); };
+  function dockSync() {
+    if (dockState === "done" && vidPanelOnScreen()) dockState = null;   // you're looking at it
+    const st = $("vid-status").textContent.trim();
+    $("vid-dock").hidden = !dockState; $("vid-dock-stop").hidden = dockState !== "busy";
+    $("vid-dock-open").hidden = dockState === "busy" && vidPanelOnScreen();
+    $("vid-dock-open").textContent = dockState === "done" && st.startsWith("Found") ? "Review" : "Open";
+    $("vid-dock-txt").textContent = dockState === "done" && st.startsWith("Found") ? "Video read. Review ready: check it and save." : st || "Reading the video…";
+  }
+  function openVidPanel() {
+    const p = $("vid-panel");
+    if ($("exp-uploads-reader").contains(p)) { expSub = "uploads"; expPlayer = null; goTo("expedition"); }
+    else { goTo("roster"); p.hidden = false; }
+    if (dockState === "done") dockState = null;
+    dockSync(); setTimeout(() => p.scrollIntoView({ block: "start", behavior: "smooth" }), 60);
+  }
+  $("vid-dock-open").addEventListener("click", openVidPanel);
+  $("vid-dock-stop").addEventListener("click", () => vidCtl?.abort());
+  new MutationObserver(() => { if (dockState) dockSync(); }).observe($("vid-status"), { childList: true, characterData: true, subtree: true });
+  document.addEventListener("visibilitychange", () => {   // back in the app: keep the video going where it stopped
+    if (document.hidden || !vidBusy) return; const v = $("vid-dock-vid").querySelector("video"); if (v && v.paused && !v.ended) v.play().catch(() => {});
+  });
   $("btn-vid-close").addEventListener("click", () => { vidCtl?.abort(); $("vid-panel").hidden = true; });
   $("vid-target").addEventListener("change", () => { $("vid-newopp-f").hidden = $("vid-target").value !== "__new"; vidReady(); });
   $("vid-newopp").addEventListener("input", vidReady);
@@ -3587,7 +3629,7 @@ body.env-staging .envbar { display: block; }
     const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto"; v.setAttribute("playsinline", ""); v.setAttribute("muted", "");
     v.className = "vid-preview"; v.setAttribute("aria-hidden", "true");
     const url = URL.createObjectURL(file); v.src = url;
-    const host = $("vid-preview-box"); host.replaceChildren(v); host.hidden = false;   // iPhones won't keep playing a video that isn't on screen
+    const host = $("vid-dock-vid"); host.replaceChildren(v);   // in the dock, always on screen: iPhones won't keep playing a video that isn't
     const stopped = () => new Error("stopped");
     const abortable = (pr) => new Promise((ok, bad) => { if (signal.aborted) return bad(stopped()); const on = () => bad(stopped()); signal.addEventListener("abort", on, { once: true }); pr.then((x) => { signal.removeEventListener("abort", on); ok(x); }, (e) => { signal.removeEventListener("abort", on); bad(e); }); });
     try {
@@ -3633,7 +3675,7 @@ body.env-staging .envbar { display: block; }
       }
       await abortable(Promise.all(pending));
       return out.filter(x => x.blob);
-    } finally { try { v.pause(); } catch {} URL.revokeObjectURL(url); v.removeAttribute("src"); v.load(); host.replaceChildren(); host.hidden = true; }
+    } finally { try { v.pause(); } catch {} URL.revokeObjectURL(url); v.removeAttribute("src"); v.load(); host.replaceChildren(); }
   }
   // Play the video muted at up to 4x and sample frames as they're shown. Resolves true at the end; false if this browser
   // won't play it here (then the caller jumps frame by frame); rejects "stopped" on Stop. If it stops moving for 15
@@ -3650,6 +3692,7 @@ body.env-staging .envbar { display: block; }
       const frame = (_now, meta) => { if (finished) return; tick(meta && meta.mediaTime != null ? meta.mediaTime : v.currentTime); v.requestVideoFrameCallback(frame); };
       const poll = setInterval(() => { if (!useRvfc) tick(v.currentTime); }, 40);
       const watch = setInterval(() => {
+        if (document.hidden) { lastMove = Date.now(); return; }   // time away from the app isn't a stall: it picks up when you're back
         if (Date.now() - lastMove < 15000) return;
         if (!nudged) { nudged = true; lastMove = Date.now(); v.play().catch(() => {}); return; }
         finish(false);
@@ -3751,6 +3794,7 @@ body.env-staging .envbar { display: block; }
     try { const lim = await sample.limits(); if (!lim || !lim.images) { st.className = "small err"; st.textContent = "Image reading isn't available on this account."; return; } } catch {}
     vidCtl?.abort(); vidCtl = new AbortController(); const signal = vidCtl.signal;
     $("btn-vid-read").disabled = true; $("btn-vid-stop").hidden = false; st.className = "small";
+    vidBusy = true; dockState = "busy"; dockSync();
     try {
       let stills;
       try { stills = await videoStills(file, signal, (f, n) => { st.textContent = `Finding screens in the video… ${Math.round(f * 100)}% (${n} so far)`; }, target === "__presets" ? { allExtra: true, extraEvery: 3 } : {}); }
@@ -3779,7 +3823,8 @@ body.env-staging .envbar { display: block; }
       vidShow();
     } catch (e) {
       st.className = "small"; st.textContent = e && e.message === "stopped" ? "Stopped." : "Something went wrong reading the video.";
-    } finally { $("btn-vid-read").disabled = false; $("btn-vid-stop").hidden = true; vidReady(); }
+    } finally { $("btn-vid-read").disabled = false; $("btn-vid-stop").hidden = true; vidReady();
+      vidBusy = false; dockState = st.textContent === "Stopped." ? null : "done"; dockSync(); }
   });
   // ================= Lanes and presets video =================
   // Recorded in Expedition → Team Info: Left's list (rows 1-8 and, below them, the subs), then each player's preset in
@@ -4674,7 +4719,7 @@ body.env-staging .envbar { display: block; }
     for (const b of $("exp-sub").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.sub === expSub));
     $("exp-sub").querySelector('[data-sub="uploads"]').hidden = !isEditor;
     if (expSub === "uploads" && !isEditor) expSub = "rounds";
-    if (expSub !== "uploads") parkVidPanel();
+    if (expSub !== "uploads" && !vidPending()) parkVidPanel();   // a read or an unsaved review stays put
     for (const s of ["rounds", "results", "opponents", "players", "findings", "uploads"]) $("exp-" + s).hidden = s !== expSub;
     const w = weekById(expWeekId);
     const head = $("exp-week-head"); head.replaceChildren();

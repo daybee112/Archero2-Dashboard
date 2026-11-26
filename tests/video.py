@@ -190,7 +190,7 @@ async def main():
         await p3.goto("http://127.0.0.1:8795/index.html#roster"); await p3.wait_for_timeout(2500)
         await p3.click("#btn-vid"); await p3.set_input_files("#vid-file", FIX); await p3.click("#btn-vid-read")
         await p3.wait_for_function("document.querySelector('#vid-status').textContent.includes('Finding screens')", timeout=30000)
-        check("a small preview plays while reading", await p3.is_visible("#vid-preview-box video"))
+        check("a small preview plays while reading (in the pinned bar)", await p3.is_visible("#vid-dock-vid video"))
         await p3.wait_for_timeout(1500); await p3.click("#btn-vid-stop"); await p3.wait_for_timeout(700)
         st3 = await p3.inner_text("#vid-status")
         check("Stop stops within a second", st3 == "Stopped.", st3)
