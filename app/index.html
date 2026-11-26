@@ -3256,6 +3256,7 @@ body.env-staging .envbar { display: block; }
     return !n ? null : red / n > 0.35 ? "Mythic" : pur / n > 0.35 ? "Epic" : "Legendary";
   }
   if (window.__expose) { window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
+  if (window.__expose) { window.__readMystling = readMystling; window.__matchMystTile = async (blob, b) => { const bmp = await createImageBitmap(blob); return matchMystTile(bmp, b); }; }
   // ================= Profile video import =================
   // A screen recording of players' profile screens -> one still per screen (on this device) -> Claude reads each still ->
   // grouped by player (a Namecard starts each player) -> review table -> Apply. Opponents: never characters, only
@@ -3308,6 +3309,89 @@ body.env-staging .envbar { display: block; }
     return out;
   }
   // Runes screens: the rune icons are matched on this device (Claude only says which screen it is)
+  // ----- Mystlings on the device -----
+  // The profile's Mystling tab shows pictures without names. The tile under the green "In use" label is matched by
+  // colour against mystling-refs.jpg (the common mystlings, several looks each), and its five stars are read by colour:
+  // cyan 1, yellow 2, red 3, pink 4, dark red 5, dull grey-gold 0. Prototype and checks: tools/mystlings/match.py.
+  let mystRefs = null;
+  const MYST_OK = 0.8, MYST_MARGIN = 0.1;
+  function mystDesc(src, sx, sy, sw, sh) {   // the tile's picture without frame or stars, as a unit vector
+    const c = document.createElement("canvas"); c.width = 32; c.height = 24; const x = c.getContext("2d", { willReadFrequently: true });
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
+    x.drawImage(src, sx + sw * 0.12, sy + sh * 0.12, sw * 0.76, sh * 0.58, 0, 0, 32, 24);
+    const d = x.getImageData(0, 0, 32, 24).data, v = new Float32Array(32 * 24 * 3); let m = 0, k = 0;
+    for (let i = 0; i < d.length; i += 4) { v[k++] = d[i]; v[k++] = d[i + 1]; v[k++] = d[i + 2]; }
+    for (const a of v) m += a; m /= v.length; let n = 0;
+    for (let i = 0; i < v.length; i++) { v[i] -= m; n += v[i] * v[i]; } n = Math.sqrt(n) + 1e-9;
+    for (let i = 0; i < v.length; i++) v[i] /= n;
+    return v;
+  }
+  async function loadMystRefs() {
+    if (mystRefs) return mystRefs;
+    const meta = await (await fetch("mystling-refs.json", { cache: "no-store" })).json();
+    const bmp = await createImageBitmap(await (await fetch("mystling-refs.jpg", { cache: "no-store" })).blob()), C = meta.cell;
+    mystRefs = meta.refs.map((r, k) => ({ ...r, d: mystDesc(bmp, (k % meta.cols) * C, ((k / meta.cols) | 0) * C, C, C) }));
+    return mystRefs;
+  }
+  function mystStars(img, W, b) {   // img: ImageData of the whole still
+    const [x0, y0, x1, y1] = b, w = x1 - x0, h = y1 - y0, out = [];
+    for (let k = 0; k < 5; k++) {
+      const cx = x0 + (0.15 + 0.175 * k) * w, cy = y0 + 0.84 * h, r = Math.max(2, 0.04 * w), hs = [], vs = []; let n = 0;
+      for (let y = Math.round(cy - r); y < cy + r; y++) for (let x = Math.round(cx - r); x < cx + r; x++) {
+        if (x < 0 || y < 0 || x >= W || y >= img.height) continue; n++;
+        const i = (y * W + x) * 4, R = img.data[i] / 255, G = img.data[i + 1] / 255, B = img.data[i + 2] / 255;
+        const mx = Math.max(R, G, B), mn = Math.min(R, G, B), s = mx ? (mx - mn) / mx : 0;
+        if (s <= 0.35 || mx <= 0.35) continue;
+        let hh = mx === mn ? 0 : mx === R ? ((G - B) / (mx - mn)) % 6 : mx === G ? (B - R) / (mx - mn) + 2 : (R - G) / (mx - mn) + 4;
+        hh = (hh * 60 + 360) % 360; hs.push(hh); vs.push(mx);
+      }
+      if (!n || hs.length < n * 0.2) { out.push(0); continue; }
+      const med = (a) => a.slice().sort((p, q) => p - q)[a.length >> 1], hue = med(hs), val = med(vs);
+      out.push(hue >= 255 && hue <= 345 ? 4 : hue < 22 || hue > 345 ? (val > 0.72 ? 3 : 5) : hue >= 28 && hue <= 65 ? (val > 0.8 ? 2 : 0) : hue >= 140 && hue <= 210 ? 1 : null);
+    }
+    return out;
+  }
+  // Match the tile in box b of an image source; returns {name, look, score, second, box}.
+  async function matchMystTile(src, b) {
+    const refs = await loadMystRefs(), s = b[2] - b[0]; let best = null;
+    for (const dx of [-0.06, -0.03, 0, 0.03, 0.06]) for (const dy of [-0.06, -0.03, 0, 0.03, 0.06]) {
+      const bx = [b[0] + dx * s, b[1] + dy * s, b[2] + dx * s, b[3] + dy * s], d = mystDesc(src, bx[0], bx[1], s, b[3] - b[1]), by = {};
+      for (const r of refs) { let sc = 0; for (let i = 0; i < d.length; i++) sc += d[i] * r.d[i]; if (!(r.name in by) || sc > by[r.name].sc) by[r.name] = { sc, look: r.look }; }
+      const top = Object.entries(by).sort((p, q) => q[1].sc - p[1].sc);
+      if (!best || top[0][1].sc > best.score) best = { name: top[0][0], look: top[0][1].look, score: top[0][1].sc, second: top[1] ? top[1][1].sc : -1, box: bx.map(Math.round) };
+    }
+    return best;
+  }
+  // The "In use" label: bright green letters on a near-black pill.
+  function findInUse(img, W) {
+    const H = img.height, sc = 300 / W, w = 300, h = Math.round(H * sc), pts = [];
+    const px = (x, y) => { const i = (Math.min(H - 1, Math.round(y / sc)) * W + Math.min(W - 1, Math.round(x / sc))) * 4; return [img.data[i], img.data[i + 1], img.data[i + 2]]; };
+    for (let y = 3; y < h - 3; y++) for (let x = 8; x < w - 8; x++) {
+      const [r, g, b] = px(x, y); if (!(g > 170 && r < 150 && b < 150 && g - r > 70)) continue;
+      let dk = 0, n = 0;
+      for (let yy = y - 3; yy <= y + 3; yy++) for (let xx = x - 8; xx <= x + 8; xx++) { const q = px(xx, yy); n++; if (Math.max(...q) < 50) dk++; }
+      if (dk / n > 0.3) pts.push([x, y]);
+    }
+    if (pts.length < 4) return null;
+    const med = (a) => a.slice().sort((p, q) => p - q)[a.length >> 1], cx = med(pts.map(p => p[0])) / sc, cy = med(pts.map(p => p[1])) / sc;
+    return [Math.round(cx - 0.0788 * W), Math.round(cy + 0.007 * W), Math.round(cx + 0.0788 * W), Math.round(cy + 0.165 * W)];
+  }
+  // A profile Mystling-tab still → {found, name|null, look, score, stars|null, starCols}
+  async function readMystling(blob) {
+    const bmp = await createImageBitmap(blob), c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+    const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0); const img = x.getImageData(0, 0, c.width, c.height), W = c.width;
+    const b = findInUse(img, W); if (!b) return { found: false };
+    const m = await matchMystTile(c, b), ok = m.score >= MYST_OK && m.score - m.second >= MYST_MARGIN;
+    const cols = mystStars(img, W, m.box), stars = cols.every(v => v != null) ? cols.reduce((a, v) => a + v, 0) : null;
+    return { found: true, name: ok ? m.name : null, look: ok ? m.look : null, score: Math.round(m.score * 100) / 100, stars, starCols: cols };
+  }
+  async function vidMystlings(screens, stills, say) {
+    const idx = screens.map((x, k) => x.type === "mystling" && !x.mdev ? k : -1).filter(k => k >= 0);
+    for (let j = 0; j < idx.length; j++) {
+      say(`Matching mystlings ${j + 1} of ${idx.length}…`);
+      try { screens[idx[j]].mdev = await readMystling(stills[idx[j]].blob); } catch { /* left to Claude's reading */ }
+    }
+  }
   async function vidRunes(screens, stills, say) {
     const idx = screens.map((x, k) => x.type === "runes" && !x.runes ? k : -1).filter(k => k >= 0);
     for (let j = 0; j < idx.length; j++) {
@@ -3485,7 +3569,11 @@ body.env-staging .envbar { display: block; }
         cur.runeRead = sc.runes.filter(r => r.name).length; cur.runeEmpty = sc.runes.filter(r => r.empty).length; cur.runeSlots = sc.runes.length; cur.runeRaw = sc.runes;
       }
       if (sc.type === "gear") for (const { id } of D.gearSlots) { const g = (sc.gear || {})[id] || {}; const set = SETS.includes(g.set) ? g.set : null, q = D.gearQualities.includes(g.quality) ? g.quality : null; if (set || q) cur.gear[id] = { set, q }; }
-      if (sc.type === "mystling" && sc.mystling) cur.mystling = { name: D.mystlings.some(m => m.name === mystRen(sc.mystling.name)) ? mystRen(sc.mystling.name) : null, stars: Number.isInteger(sc.mystling.stars) && sc.mystling.stars >= 0 && sc.mystling.stars <= D.mystlingMaxStars ? sc.mystling.stars : null };
+      if (sc.type === "mystling" && (sc.mdev || sc.mystling)) {
+        const cl = sc.mystling || {}, clStars = Number.isInteger(cl.stars) && cl.stars >= 0 && cl.stars <= D.mystlingMaxStars ? cl.stars : null, dv = sc.mdev;
+        if (dv && dv.found) cur.mystling = { name: dv.name, look: dv.look, stars: dv.stars != null ? dv.stars : clStars, src: "device", uncommon: !dv.name, score: dv.score };
+        else if (!cur.mystling || !cur.mystling.name) cur.mystling = { name: null, stars: clStars, src: "claude", notFound: !!dv };
+      }
       if (sc.type === "artifacts") for (const a of (Array.isArray(sc.artifacts) ? sc.artifacts : [])) {
         const nm = String(a && a.name || "").trim(); if (!nm) continue;
         if (a.tier === "Epic") { cur.sawEpic = true; continue; }
@@ -3539,6 +3627,7 @@ body.env-staging .envbar { display: block; }
       const errs = await vidReadInto(screens, screens.map(x => x.i), stills, sample, signal, maxImgs, (t) => { st.textContent = t; });
       if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; return; }
       await vidRunes(screens, stills, (t) => { st.textContent = t; });
+      await vidMystlings(screens, stills, (t) => { st.textContent = t; });
       lastVid = { stills, screens, oppName: target === "__us" ? null : oppName, maxImgs }; if (window.__expose) window.__lastVid = lastVid;
       const { players } = vidGroup(screens);
       st.textContent = `Found ${stills.length} screens and ${players.length} player${players.length === 1 ? "" : "s"}. Check and correct anything, then save.`;
@@ -3588,7 +3677,10 @@ body.env-staging .envbar { display: block; }
     if (!d.power) unsure.add("power");
     if (p.mythUnclear) unsure.add("mythic");
     if (p.legUnclear) unsure.add("leg");
-    if (d.sawMyst && !d.myst.name) unsure.add("myst");
+    // a mystling outside the common set (or a new look) isn't a reading problem: the card just asks for it
+    d.mystNote = !d.sawMyst || d.myst.name ? "" : p.mystling.uncommon ? `Not one of the common mystlings (or a look we haven't seen yet): pick it if you know it.`
+      : p.mystling.notFound ? `Couldn't find the mystling marked "In use" on the screen.` : "";
+    if (d.sawMyst && !d.myst.name && !p.mystling.uncommon && !p.mystling.notFound) unsure.add("myst");
     if (d.sawMyst && !d.myst.stars) unsure.add("mstars");
     d.on = !!d.name && (d.power !== "" || d.mythic !== "" || sawGear || d.sawRunes || d.sawMyst) && (!us || d.mode !== "new" || !!d.name);
     if (us && d.mode === "existing") d.on = !!d.memberId;
@@ -3623,6 +3715,7 @@ body.env-staging .envbar { display: block; }
         try {
           const errs = await vidReadInto(lastVid.screens, unreadNums, lastVid.stills, sample, vidCtl.signal, lastVid.maxImgs, (t) => { st.textContent = t; });
           await vidRunes(lastVid.screens, lastVid.stills, (t) => { st.textContent = t; });
+          await vidMystlings(lastVid.screens, lastVid.stills, (t) => { st.textContent = t; });
           if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; }
           else { const n = vidGroup(lastVid.screens).players.length; st.textContent = `Found ${lastVid.stills.length} screens and ${n} player${n === 1 ? "" : "s"}. Check and correct anything, then save.`; }
           vidShow();
@@ -3698,6 +3791,7 @@ body.env-staging .envbar { display: block; }
       card.append(el("div", { class: "vrow" },
         fld("Mystling in use", sel("myst", [["", d.unsure.has("myst") ? "— not sure —" : "—"], ...D.mystlings.map(x => [x.name, x.name])], d.myst.name, (v) => { d.myst.name = v; }), mystNow),
         fld("Stars", text("mstars", d.myst.stars, (v) => { d.myst.stars = v; }, { inputmode: "numeric", style: "width:4.5em" }))));
+      if (d.mystNote) card.append(el("div", { class: "small muted", text: d.mystNote }));
       // gear and runes: a one-line summary with "edit", opened straight away when anything is unsure
       const fold = (title, summary, open, build) => {
         const box = el("div", { class: "stack", style: "gap:6px" }), body = el("div", { class: "stack", style: "gap:6px" });

@@ -1,0 +1,46 @@
+{
+ "cell": 120,
+ "cols": 10,
+ "refs": [
+  {
+   "name": "Queen Medusa",
+   "look": "normal"
+  },
+  {
+   "name": "Fool",
+   "look": "normal"
+  },
+  {
+   "name": "Death Mage",
+   "look": "normal"
+  },
+  {
+   "name": "Witch",
+   "look": "normal"
+  },
+  {
+   "name": "Mr. Meeseeks",
+   "look": "normal"
+  },
+  {
+   "name": "Nian Beast",
+   "look": "normal"
+  },
+  {
+   "name": "Snow Owl",
+   "look": "variant"
+  },
+  {
+   "name": "Snow Owl",
+   "look": "normal"
+  },
+  {
+   "name": "Death Mage",
+   "look": "normal"
+  },
+  {
+   "name": "Egg Demon",
+   "look": "normal"
+  }
+ ]
+}
