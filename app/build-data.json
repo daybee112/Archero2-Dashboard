@@ -138,12 +138,15 @@
 
   "mystlings": [
     {"name": "Witch", "skill": "12 bouncing whirlwinds that apply Elemental Vulnerability", "tags": ["elemental-payoff"]},
-    {"name": "The Fool", "skill": "Scare Box: pulsing area damage + DMG-taken debuff; Lv6 adds 4 tracking spirits", "tags": ["damage"]},
+    {"name": "Fool", "aliases": ["The Fool"], "skill": "Scare Box: pulsing area damage + DMG-taken debuff; Lv6 adds 4 tracking spirits", "tags": ["damage"]},
     {"name": "Queen Medusa", "skill": "9 homing serpents, Hit Rate reduction; dispels 1 buff from Lv5", "tags": ["damage", "pvp-debuff"]},
     {"name": "Nian Beast", "skill": "Collision + firecracker rain, Healing reduction, brief paralyze", "tags": ["damage", "anti-heal"]},
     {"name": "Death Mage", "skill": "8 bouncing scythes applying random debuffs", "tags": ["damage"]},
-    {"name": "Snowy Owl", "skill": "Self-buff: CRIT DMG/CRIT Rate for 3s, 20s cooldown", "tags": ["crit-buff"]}
+    {"name": "Snow Owl", "aliases": ["Snowy Owl"], "looks": ["normal: white owl", "variant: black owl"], "skill": "Self-buff: CRIT DMG/CRIT Rate for 3s, 20s cooldown", "tags": ["crit-buff"]},
+    {"name": "Mr. Meeseeks", "skill": "Golf ball: 900% ATK area hit (Lv2); if the target survives, cooldown drops to 4s and the next hit does +50%", "tags": ["damage"]},
+    {"name": "Egg Demon", "skill": "Fires 40 fireballs forward, each 90% ATK (Lv3), 25s cooldown", "tags": ["damage"]}
   ],
+  "mystlingRenames": {"The Fool": "Fool", "Snowy Owl": "Snow Owl"},
   "runeRenames": {"Fairy Multishot": "Sprite Multishot", "Fairy Combo": "Sprite Link", "Root Guard": "Rootguard", "Potion Gravity": "Potion Magnet", "Blade Bounce": "Ricochet Strike", "Sword Strike Aerie": "Swordstrike Aerie"},
   "runeRenamesNote": "Per Daby 2026-11-21: use the in-game names Sprite Multishot and Sprite Link. Saved accounts using the old names are migrated on load. Per Daby 2026-11-23 (rune icon recordings): Root Guard is Rootguard, Potion Gravity is Potion Magnet, Blade Bounce is Ricochet Strike and Sword Strike Aerie is Swordstrike Aerie in game.",
   "mystlingMaxStars": 25,

@@ -881,7 +881,7 @@ body.env-staging .envbar { display: block; }
              "Flamenox Touch": "Legendary", "Frostshock Touch": "Epic+1", "Healing Sprite": "Epic",
              "Elemental Crit": "Legendary", "Sprite Multishot": "Epic+1", "Meteor Split": "Epic+2", "Arrow of Echoes": "Legendary+1" },
     etched: 2,
-    mystlings: { "Witch": 9, "The Fool": 4, "Nian Beast": 0 }
+    mystlings: { "Witch": 9, "Fool": 4, "Nian Beast": 0 }
   };
 
   // ================= tabs =================
@@ -1017,8 +1017,8 @@ body.env-staging .envbar { display: block; }
     return { S, slots, covered: coverage(t, S) };
   }
   function mystScore(m, elemental) {
-    const base = m.name === "Witch" ? (elemental ? 6 : 2.5) : m.name === "The Fool" ? 5 : m.name === "Nian Beast" ? (mode === "pvp" ? 4.5 : 3)
-      : m.name === "Queen Medusa" ? (mode === "pvp" ? 4.2 : 3.2) : m.name === "Snowy Owl" ? 3.5 : 3;
+    const base = m.name === "Witch" ? (elemental ? 6 : 2.5) : m.name === "Fool" ? 5 : m.name === "Nian Beast" ? (mode === "pvp" ? 4.5 : 3)
+      : m.name === "Queen Medusa" ? (mode === "pvp" ? 4.2 : 3.2) : m.name === "Snow Owl" ? 3.5 : 3;
     return base + (inv.mystlings[m.name] || 0) / 25;     // higher stars nudge the pick
   }
   function synergyTest(chars, gear, runeNames, mystNames) {
@@ -1697,8 +1697,8 @@ body.env-staging .envbar { display: block; }
     else if (x.runes && typeof x.runes === "object") for (const [n0, q] of Object.entries(x.runes)) { const n = ren(n0); if (allRunes.has(n) && D.runeQualities.includes(q)) out.runes[n] = q; }
     if ([0, 1, 2, 3].includes(x.etched)) out.etched = x.etched;
     const known = (n) => D.mystlings.some(m => m.name === n);
-    if (Array.isArray(x.mystlings)) { for (const n of x.mystlings) if (known(n)) out.mystlings[n] = 0; }            // v2 saves had no stars
-    else if (x.mystlings && typeof x.mystlings === "object") for (const [n, s] of Object.entries(x.mystlings)) if (known(n) && (s === null || (Number.isInteger(s) && s >= 0 && s <= D.mystlingMaxStars))) out.mystlings[n] = s;
+    if (Array.isArray(x.mystlings)) { for (const n0 of x.mystlings) { const n = mystRen(n0); if (known(n)) out.mystlings[n] = 0; } }            // v2 saves had no stars
+    else if (x.mystlings && typeof x.mystlings === "object") for (const [n0, s] of Object.entries(x.mystlings)) if (known(mystRen(n0)) && (s === null || (Number.isInteger(s) && s >= 0 && s <= D.mystlingMaxStars))) out.mystlings[mystRen(n0)] = s;
     return out;
   }
   function normalizeBuild(b) {
@@ -1709,6 +1709,7 @@ body.env-staging .envbar { display: block; }
     if (Array.isArray(b.chars)) out.chars = [0, 1, 2].map(i => { const c = b.chars[i]; return c && charByName(c.name) ? { name: c.name, star: Number.isInteger(c.star) ? c.star : null } : null; });
     if (b.gear && typeof b.gear === "object") for (const { id } of D.gearSlots) { const g = b.gear[id]; if (g && SETS.includes(g.set)) out.gear[id] = { set: g.set, q: D.gearQualities.includes(g.q) ? g.q : "" }; }
     if (b.runes && typeof b.runes === "object") for (const t of RTYPES) if (Array.isArray(b.runes[t])) out.runes[t] = b.runes[t].slice(0, RSLOTS[t]).map(r => r && r.name ? { ...r, name: (D.runeRenames || {})[r.name] || r.name } : r).map(r => r && runeInfo(t, r.name) ? { name: r.name, q: D.runeQualities.includes(r.q) ? r.q : "" } : null);
+    if (b.mystling) b = { ...b, mystling: renameMyst(b.mystling) };
     if (b.mystling && D.mystlings.some(m => m.name === b.mystling.name)) out.mystling = { name: b.mystling.name, stars: Number.isInteger(b.mystling.stars) ? b.mystling.stars : null };
     if (b.behavior) out.behavior = { range: D.behaviorOptions.range.includes(b.behavior.range) ? b.behavior.range : "", movement: D.behaviorOptions.movement.includes(b.behavior.movement) ? b.behavior.movement : "" };
     out.notes = typeof b.notes === "string" ? b.notes.slice(0, 400) : "";
@@ -2348,9 +2349,12 @@ body.env-staging .envbar { display: block; }
       if ((s.at || 0) > presetTime(m)) out.set(m.id, { ...m, preset: s.preset, presetDate: localDate(s.at), presetUpdatedAt: s.at, presetSrc: "Updated by the player", presetBy: uidV });
     }
     return [...out.values()].map(fillFromWeapon).map(m => m.preset && m.preset.gearAssumed ? { ...m, preset: { ...m.preset, gearAssumed: [] } } : m)   // filled pieces count as known (per Daby)
-      .map(m => { for (const k of ["preset", "mainBuild"]) if (m[k] && m[k].runes) m = { ...m, [k]: { ...m[k], runes: renameRunes(m[k].runes) } }; return m; });
+      .map(m => { for (const k of ["preset", "mainBuild"]) { if (m[k] && m[k].runes) m = { ...m, [k]: { ...m[k], runes: renameRunes(m[k].runes) } }; if (m[k] && m[k].mystling) m = { ...m, [k]: { ...m[k], mystling: renameMyst(m[k].mystling) } }; } return m; });
   }
   // old rune names (saved before the in-game names were confirmed) read as the current ones
+  // Old mystling names (The Fool, Snowy Owl) become the in-game ones wherever they were saved.
+  function mystRen(n) { return (typeof D !== "undefined" && D && D.mystlingRenames || {})[n] || n; }
+  function renameMyst(ms) { return ms && ms.name && mystRen(ms.name) !== ms.name ? { ...ms, name: mystRen(ms.name) } : ms; }
   function renameRunes(rs) {
     const ren = (n) => (D && D.runeRenames || {})[n] || n, out = {};
     for (const [t, list] of Object.entries(rs || {})) out[t] = Array.isArray(list) ? list.map(r => r && r.name ? { ...r, name: ren(r.name) } : r) : list;
@@ -3045,6 +3049,7 @@ body.env-staging .envbar { display: block; }
       out.runes[t] = (Array.isArray((x.runes || {})[t]) ? x.runes[t] : []).filter(r => r && runeInfo(t, r.name) && !seen.has(r.name) && seen.add(r.name))
         .slice(0, RSLOTS[t]).map(r => ({ name: r.name, q: D.runeQualities.includes(r.quality) ? r.quality : "" }));
     }
+    if (x.mystling) x = { ...x, mystling: renameMyst(x.mystling) };
     if (x.mystling && D.mystlings.some(m => m.name === x.mystling.name)) out.mystling = { name: x.mystling.name, stars: Number.isInteger(x.mystling.stars) && x.mystling.stars >= 0 && x.mystling.stars <= D.mystlingMaxStars ? x.mystling.stars : null };
     if (x.behavior) out.behavior = { range: D.behaviorOptions.range.includes(x.behavior.range) ? x.behavior.range : "", movement: D.behaviorOptions.movement.includes(x.behavior.movement) ? x.behavior.movement : "" };
     out.unclear = (Array.isArray(x.unclear) ? x.unclear : []).map(String).slice(0, 10);
@@ -3480,7 +3485,7 @@ body.env-staging .envbar { display: block; }
         cur.runeRead = sc.runes.filter(r => r.name).length; cur.runeEmpty = sc.runes.filter(r => r.empty).length; cur.runeSlots = sc.runes.length; cur.runeRaw = sc.runes;
       }
       if (sc.type === "gear") for (const { id } of D.gearSlots) { const g = (sc.gear || {})[id] || {}; const set = SETS.includes(g.set) ? g.set : null, q = D.gearQualities.includes(g.quality) ? g.quality : null; if (set || q) cur.gear[id] = { set, q }; }
-      if (sc.type === "mystling" && sc.mystling) cur.mystling = { name: D.mystlings.some(m => m.name === sc.mystling.name) ? sc.mystling.name : null, stars: Number.isInteger(sc.mystling.stars) && sc.mystling.stars >= 0 && sc.mystling.stars <= D.mystlingMaxStars ? sc.mystling.stars : null };
+      if (sc.type === "mystling" && sc.mystling) cur.mystling = { name: D.mystlings.some(m => m.name === mystRen(sc.mystling.name)) ? mystRen(sc.mystling.name) : null, stars: Number.isInteger(sc.mystling.stars) && sc.mystling.stars >= 0 && sc.mystling.stars <= D.mystlingMaxStars ? sc.mystling.stars : null };
       if (sc.type === "artifacts") for (const a of (Array.isArray(sc.artifacts) ? sc.artifacts : [])) {
         const nm = String(a && a.name || "").trim(); if (!nm) continue;
         if (a.tier === "Epic") { cur.sawEpic = true; continue; }
@@ -5570,7 +5575,7 @@ body.env-staging .envbar { display: block; }
     ["Testing", "planned", "Knowledge checks (QA tiers 1 to 4)", "Quiz and scenario tests of the game-knowledge docs, the build advisor and the lineup planner, with severity and root cause logged for every mismatch."],
     ["Testing", "planned", "Training Ground guild test builds", "12 build tests for members to run in Training Ground (T5-BUILD-01 to 12). Start with the easy single-change ones: Thor + Weapon Enchantment, and Elemental Crit before/after."],
     ["Testing", "waiting", "Training Ground open questions", "Run limits, whether duo/party tests are possible, and how to compare runs fairly. Needs a few screenshots from whoever runs the first test."],
-    ["Game knowledge", "waiting", "More mystlings", "Add new mystlings as screenshots come in, and confirm The Fool's level 4 and 5 values."],
+    ["Game knowledge", "waiting", "More mystlings", "Add new mystlings as screenshots come in, and confirm Fool's level 4 and 5 values."],
     ["Game knowledge", "waiting", "Guild Raid scoring and rewards", "Exact scoring, default attempts, buff values and rewards, from screenshots when the event runs again."],
     ["Game knowledge", "idea", "How much unproven synergies should count", "Decide how much a hypothesis-level synergy moves a recommendation compared with a confirmed one."],
     ["Game knowledge", "idea", "Keep synergy rules in step with the docs", "Decide whether synergy rules are written by hand as we find them, regenerated from the docs, or both."],
