@@ -12,5 +12,7 @@ The profile's Mystling tab and the Expedition preset screen show mystlings as pi
     0.1 lead over the next mystling, otherwise it's "not one of the common ones" (the card asks, it isn't flagged);
   - the empty egg slot on a preset is flat beige (low saturation, bright);
   - stars by colour, each star 1 to 5: cyan 1, yellow 2, red 3, pink 4, dark red 5; dull grey-gold = not earned (0).
-    Pink stars shade into cyan and white. Dark red hasn't been seen on a real screen yet (guessed: red but darker).
+    Pink stars shade into cyan and white. Measured on Daby's Death Mage star-up screenshot (Nov 25): dark red hue 353-354,
+    brightness 0.57-0.59 (red stars on tiles: hue 7-13, brightness 0.93-1.0; the cut-off is 0.72); pink hue 281-287,
+    brightness 0.97 (pink range 255-345); yellow hue 45, brightness 0.96.
 - Checked on 2 profile tabs and 7 preset screens (tests/mystlings.py): all names, the empty slot and every star count.
