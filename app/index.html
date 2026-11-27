@@ -2670,14 +2670,15 @@ body.env-staging .envbar { display: block; }
     const k = gaps == null ? "bad" : gaps.length ? "warn" : "good", mark = gaps == null ? "✗" : gaps.length ? "◐" : "✓";
     const txt = `${mark} ${label}` + (gaps && gaps.length ? ` · ${gaps.length} gap${gaps.length > 1 ? "s" : ""}` : "");
     const tip = gaps == null ? `No ${label === "Main" ? "main build" : "Expedition preset"} on file` : (gaps.length ? gaps.join(", ") : "Complete") + (date ? ` · ${date}` : "");
-    const b = el("button", { type: "button", class: "chip " + k, style: "white-space:nowrap", title: tip, "aria-label": `${label === "Main" ? "Main build" : "Expedition preset"}: ${tip}`, text: txt });
+    const b = el("button", { type: "button", class: "chip " + k, style: "white-space:nowrap;width:max-content;flex:none", title: tip, "aria-label": `${label === "Main" ? "Main build" : "Expedition preset"}: ${tip}`, text: txt });
     b.addEventListener("click", (e) => { e.stopPropagation(); const pop = b.nextSibling && b.nextSibling.classList && b.nextSibling.classList.contains("bgap") ? b.nextSibling : null;
       if (pop) pop.remove(); else b.after(el("div", { class: "small bgap", style: "max-width:14em;white-space:normal", text: tip })); });   // tap shows the gaps on phones
     return b;
   }
   function buildsCell(m) {
     const s = buildState(m);
-    return el("td", {}, el("div", { class: "stack", style: "gap:4px" }, buildChip("Main", s.main, m.mainBuild?.date), buildChip("Exp", s.exp, m.presetDate)));
+    // its own column layout, not .stack (whose items may shrink below their text): the pill always fits "◐ Main · 1 gap"
+    return el("td", { style: "white-space:nowrap" }, el("div", { style: "display:flex;flex-direction:column;align-items:flex-start;gap:4px" }, buildChip("Main", s.main, m.mainBuild?.date), buildChip("Exp", s.exp, m.presetDate)));
   }
   function invCell(m) {
     const sh = sharedInv(m), filled = invFilled(sh), mine = myMember() && myMember().id === m.id;
