@@ -30,7 +30,7 @@ async def main():
         pg = await ctx.new_page(); errs = []
         pg.on("pageerror", lambda e: errs.append(str(e))); pg.on("console", lambda m: m.type == "error" and errs.append(m.text))
         await pg.goto("http://127.0.0.1:8765/index.html#inventory"); await pg.wait_for_timeout(1500)
-        check("badge shows v3", (await pg.text_content("#release-badge")).strip() == "v9.1.0")
+        check("badge shows v3", (await pg.text_content("#release-badge")).strip() == __import__("json").load(open(__import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)), "..", "app", "changelog.json")))["releases"][0]["id"])
         for v in ["inventory", "builds", "training", "roster", "expedition", "changes"]:
             await pg.click("#release-badge" if v == "changes" else f"#tab-{v}"); await pg.wait_for_timeout(150)
             vis = await pg.evaluate("[...document.querySelectorAll('section[id^=view-]')].filter(s=>!s.hidden).map(s=>s.id)")
@@ -217,7 +217,7 @@ async def main():
         await mpg.fill("#roster-search", ""); await mpg.wait_for_timeout(100)
         check("member can't edit other rows", await mpg.locator("#roster-body button.gchip").count() == 6)
         await mpg.fill("#roster-search", "shoex"); await mpg.click("#roster-body tr:first-child"); await mpg.wait_for_timeout(300)
-        check("member sees 'Edit my preset'", "Edit my preset" in await mpg.inner_text("#member-panel"))
+        check("member sees 'Edit my builds'", "Edit my builds" in await mpg.inner_text("#member-panel"))
         await mc.close()
         # mobile
         m = await b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2)

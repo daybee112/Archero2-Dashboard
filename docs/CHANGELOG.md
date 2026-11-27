@@ -50,6 +50,14 @@ urgent fix can still ship alone as a patch. Details in the repo README.
    Files carried over unchanged aren't re-archived; the release entry says which earlier
    archive holds them. Confirm each archived file's project version (sha256) matches live.
 
+### Data changes waiting on the next release
+
+Live data changes that need the release's code first. Do them right after publishing, log them (`src: "claude"`), then
+remove them from this list.
+
+- **v10.0.0:** rename `roster/m-mharu` on live: `ign` MHARU → мнαяυ, `aliases: ["MHARU"]` (per Daby 2026-11-26; done on
+  staging already). Needs v10.0.0's former-names lookup, or the live lane planner can't find their stats under the new name.
+
 ## In-tool changes (activity log), per Daby 2026-11-22
 
 Changes made inside the tool aren't releases, so they aren't entries here. They live in the activity log (version

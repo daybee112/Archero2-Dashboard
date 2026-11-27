@@ -21,6 +21,20 @@ async def main():
             await pg.goto("http://127.0.0.1:8774/index.html"); await pg.wait_for_timeout(1200)
             check(f"{name}: second visit opens on the Roster, no welcome", not await pg.is_hidden("#view-roster") and await pg.locator("#help-welcome").count() == 0)
             await ctx.close()
+            # Claude phone app: browser storage is empty on every visit, but the database remembers this person saw Help
+            ctx = await b.new_context(viewport={"width": vw[0], "height": vw[1]})
+            await ctx.add_init_script("window.__firstVisit = true; window.__preseed = {'data/users/u-officer/prefs': {helpSeen: true}};" + open(_os.path.join(HERE, "mock.js")).read())
+            pg = await ctx.new_page(); pg.on("pageerror", lambda e: errs.append(str(e)))
+            await pg.goto("http://127.0.0.1:8774/index.html"); await pg.wait_for_timeout(1500)
+            check(f"{name}: storage wiped but seen in the database: opens on the Roster", not await pg.is_hidden("#view-roster") and await pg.locator("#help-welcome").count() == 0 and not pg.url.endswith("#help"))
+            await ctx.close()
+            # first visit with a plain link saves it to the database too
+            ctx = await b.new_context(viewport={"width": vw[0], "height": vw[1]}); await ctx.add_init_script("window.__firstVisit = true;" + open(_os.path.join(HERE, "mock.js")).read())
+            pg = await ctx.new_page(); pg.on("pageerror", lambda e: errs.append(str(e)))
+            await pg.goto("http://127.0.0.1:8774/index.html"); await pg.wait_for_timeout(1500)
+            pr = await pg.evaluate("window.__store.get('data/users/u-officer/prefs')")
+            check(f"{name}: first Help visit remembered in the database", bool(pr and pr.get("helpSeen")), str(pr))
+            await ctx.close()
             # first visit straight to a tab: stays on that tab; the Roster hint still points to Help
             ctx = await b.new_context(viewport={"width": vw[0], "height": vw[1]}); await ctx.add_init_script("window.__firstVisit = true;" + open(_os.path.join(HERE, "mock.js")).read())
             pg = await ctx.new_page(); pg.on("pageerror", lambda e: errs.append(str(e)))

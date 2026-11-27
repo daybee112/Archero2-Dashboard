@@ -32,6 +32,7 @@
   const user = { async me() { return window.__member ? { id: "u-member", name: "Test Member", canEdit: false, isOwner: false } : { id: "u-officer", name: "Test Officer", canEdit: true, isOwner: false }; },
     async profiles(ids) { return Object.fromEntries(ids.map(i => [i, { name: i === "u-officer" ? "Test Officer" : "someone" }])); } };
   const sample = async (prompt, opts) => { window.__lastPrompt = prompt; (window.__calls = window.__calls || []).push((opts.images || []).length);
+    if (window.__sampleImpl) return window.__sampleImpl(prompt, opts);
     return { text: 'Here you go: {"power_millions": 14.4, "deployed": "Helix", "resonance": ["Otta", "Thor"], "mystling": {"name": "Death Mage", "stars": null}, ' +
       '"gear": {"weapon": {"set": "Dragoon", "quality": "Chaotic"}, "amulet": {"set": "Griffin", "quality": "Chaotic"}, "ring": {"set": null, "quality": "Chaotic"}, "helmet": {"set": "Dragoon", "quality": "Chaotic"}, "armor": {"set": "Oracle", "quality": "Chaotic"}, "boots": {"set": "Dragoon", "quality": "Bogus"}}, ' +
       '"runes": {"blessing": [{"name": "Revive", "quality": "Legendary"}, {"name": "Not A Rune", "quality": null}], "enhancement": [], "ability": [], "etched": []}, ' +

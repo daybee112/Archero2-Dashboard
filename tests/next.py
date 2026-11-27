@@ -30,7 +30,9 @@ async def main():
         check("seed log entry", any(e["action"] == "added to What's next" for e in await pg.evaluate(EV("audit/u-officer/months"))))
         # officer adds and edits an item
         await pg.click("#next-add"); await pg.fill("#nf-title", "Discord bot for lineups"); await pg.fill("#nf-detail", "Post the lineup image automatically.")
-        await pg.select_option("#nf-area", "Dashboard"); await pg.select_option("#nf-status", "idea"); await pg.click("#nf-save"); await pg.wait_for_timeout(400)
+        areas = await pg.eval_on_selector_all("#nf-area option", "o=>o.map(x=>x.value)")
+        check("Arena and All-Star Cup areas offered", "Arena" in areas and "All-Star Cup" in areas, str(areas))
+        await pg.select_option("#nf-area", "Arena"); await pg.select_option("#nf-status", "idea"); await pg.click("#nf-save"); await pg.wait_for_timeout(400)
         t = await pg.inner_text("#next-upcoming [data-status=idea]")
         check("officer adds an item", "Discord bot for lineups" in t)
         rid = await pg.evaluate("[...window.__store.entries()].find(([k,v])=>k.startsWith('roadmap/')&&v.title==='Discord bot for lineups')[0]")
