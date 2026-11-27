@@ -30,7 +30,7 @@ async def main():
         check("sections in order", all(x in tl for x in ("this week", "round 1 · vs unity", "round 2 · vs 그랑", "round 3 · vs happiness")) and tl.index("this week") < tl.index("round 1 · vs unity") < tl.index("round 2 · vs 그랑") < tl.index("round 3 · vs happiness"), t[:400])
         check("each round has our roster and our lanes rows", tl.count("our roster and profiles") == 3 and tl.count("our lanes and presets") == 3)
         check("matchup saved (3 of 3 opponents)", "matchup and schedule" in tl and "saved" in tl.split("matchup and schedule")[1][:200])
-        check("results reader marked coming soon", tl.count("reader coming soon") == 3, str(tl.count("reader coming soon")))
+        check("each round has a Results row with Upload screenshots", tl.count("upload screenshots") == 3 and "reader coming soon" not in tl, str(tl.count("upload screenshots")))
         r2 = await pg.inner_text("#exp-uploads .upl:has-text('Our roster and profiles') >> nth=1")
         check("round 2 has nothing to reuse yet: just Upload video", "Use Round" not in r2 and "Upload video" in r2, r2)
         check("opponent rows not uploaded yet", tl.count("not uploaded") >= 4)
