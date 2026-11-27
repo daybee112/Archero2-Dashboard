@@ -859,6 +859,28 @@
    "name": "Ring of Agony",
    "type": "ability",
    "src": "Daby's Ring of Agony popup, Nov 26 (Mythic)"
+  },
+  {
+   "name": "Spin SPD Up",
+   "type": "enhancement",
+   "small": true,
+   "src": "Daby's preset screenshot, Nov 26 (Mythic)"
+  },
+  {
+   "name": "Spin SPD Up",
+   "type": "enhancement",
+   "src": "Daby's Spin SPD Up popup, Nov 26 (Mythic)"
+  },
+  {
+   "name": "Sawblade Circle",
+   "type": "enhancement",
+   "small": true,
+   "src": "Daby's preset screenshot, Nov 26 (Mythic)"
+  },
+  {
+   "name": "Sawblade Circle",
+   "type": "enhancement",
+   "src": "Daby's Sawblade Circle popup, Nov 26 (Mythic)"
   }
  ]
 }
