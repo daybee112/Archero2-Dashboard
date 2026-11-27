@@ -55,8 +55,7 @@ urgent fix can still ship alone as a patch. Details in the repo README.
 Live data changes that need the release's code first. Do them right after publishing, log them (`src: "claude"`), then
 remove them from this list.
 
-- **v10.0.0:** rename `roster/m-mharu` on live: `ign` MHARU → мнαяυ, `aliases: ["MHARU"]` (per Daby 2026-11-26; done on
-  staging already). Needs v10.0.0's former-names lookup, or the live lane planner can't find their stats under the new name.
+(None right now. The v10.0.0 MHARU → мнαяυ rename was done on live right after publishing, 2026-11-26.)
 
 ## In-tool changes (activity log), per Daby 2026-11-22
 
@@ -146,6 +145,36 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 ---
 
 ## Releases (newest first)
+
+### v10.0.0 — 2026-11-26 — live
+- **Type:** major (new features: profile and lanes-and-presets video uploads, Expedition Uploads tab, edit builds from
+  screenshots). Branches: `feature/expedition-uploads` (which already held `feature/video-import`,
+  `feature/staging-env` and `feature/next-areas-arena`) → `release/v10.0.0` → `main`.
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v9.1.0 files exactly, platform version `1795454866-4ac8`; permission rules
+  same as staging's)
+- **Headless test before publish:** full suite (`tests/run_all.sh`): all pass except the known offline `run` "plain: no
+  JS errors" check (font unreachable in sandbox) and `presets` preset 7, which fails about 1 run in 3 (Archerojj's
+  weapon read as Dragoon when only one frame catches it; the review card lets you fix it).
+- **Platform version:** `1795744763-2645`
+- **Files** (17; all sha256 confirmed against live):
+  - `index.html` · 575,719 bytes · `af34857a0df22751fc4590fe383ad9c005376aabbda0f2c7c61f4e416aa1fdd3` (changed)
+  - `changelog.json` · 38,375 · `68682166b938069df248a539f69e323856bdc8c9f3903a3fac842ef9e1b5bfe7` (changed)
+  - `build-data.json` · 26,487 · `0280d6f7fb9b1ba9c0190e65f05d4da031e9a5c19fda85518a480a6a0246901f` (changed)
+  - `env.js` · 24 · `42b55c06…` (new, `AA_ENV = "live"`)
+  - `rune-refs.jpg` `3b27158d…`, `rune-refs.json` `acd60aba…`, `gear-refs.jpg` `84e71296…`, `gear-refs.json`
+    `83d57b83…`, `gear-digits.json` `961e9a23…`, `mystling-refs.jpg` `3b33dbd0…`, `mystling-refs.json` `f09ae1de…`,
+    `examples/matchup-main.jpg` `9d2daa0f…`, `matchup-r1.jpg` `93c324ce…`, `matchup-r2.jpg` `2972a780…`,
+    `matchup-r3.jpg` `0b3d76c3…` (new)
+  - `expedition-seed.json` `009ef9b9…`, `roster-seed.json` `9e63aecd…` (unchanged)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** see the v10.0.0 entry in `app/changelog.json` (25 items).
+- **Data copied from staging after publishing** (logged in Claude's audit doc): 43 roster members' video-read fields
+  (power, artifacts, mystling, main build, Expedition preset; live-only fields such as the account link and DPS history
+  kept), new members jamzai, Jess19 and sles, 46 shared inventories, the Week of Nov 24 with its 3 rounds and 3
+  opponents. Daby's corrections applied on both: daybee's player-entered preset kept (blessing Rabbit's Foot), Gaga94's
+  mixed gear, Tw3aKZ ★5, Abr0 ★5, slenderu ★2, sles ★0, TylerG ★0, taz96's preset gear = main build. MHARU renamed мнαяυ.
+- **Archive:** GitHub `main`, commit "Release v10.0.0" (`200751a`).
 
 ### v9.1.0 — 2026-11-23 — live
 - **Type:** minor (page improvement). First release under the branch workflow: `feature/help-first-visit` →
