@@ -5,6 +5,20 @@
   "numbering": "Versions are major.minor.patch, each part starting at 0 (per Daby 2026-11-22): major (v7.0.0) for new features, minor (v6.8.0) for page improvements and adjustments, patch (v6.8.1) for maintenance and bug fixes (from v8.0.0, per Daby; before that, patch meant a data-only release). From v8.0.0 guild data lives in the database, so data updates aren't releases. Releases before v6.8.0 used two numbers (v6.7 = v6.7.0). Versions before 2026-11-21's rename were called r1, r2, r2.1."
  },
  "releases": [
+    {
+      "id": "v10.1.0",
+      "date": "not released yet",
+      "by": "Daby (staging preview)",
+      "draft": true,
+      "title": "Round results from screenshots (in testing)",
+      "changes": [
+        "Uploads: each round's Results row reads the Schedule screen and all 12 Details screens (or a screen recording of them). This device sorts the screens by their highlighted tabs and reads the lane flags; Claude reads the names and numbers.",
+        "Every value is checked against the % printed under it, so a misread number is outlined in red before you save. Every value can be corrected.",
+        "Survival time comes from the survival % (to a fraction of a second), which makes DPS more exact. Whole seconds are used when the % can't be read. Damage taken is saved too.",
+        "Saving fills in the round's score, lane results, our players' stats, the opponent's lanes and stats, and the other battle in our group. A missing screenshot is saved as a marked gap.",
+        "Week standings use total damage as the last tiebreak, the same way the game ranks guilds."
+      ]
+    },
   {
    "id": "v10.0.0",
    "date": "2026-11-26",
