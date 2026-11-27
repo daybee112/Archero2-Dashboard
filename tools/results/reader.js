@@ -226,7 +226,8 @@
     if (!nr.opponent || nr.opponent === "tbd") nr.opponent = opp;
     if (sc) { nr.score = `${sc[0]}-${sc[1]}`; nr.result = sc[0] > sc[1] ? "W" : "L"; }
     if (B.missing.length) nr.partialStats = true; else delete nr.partialStats;
-    nr.uploads = { ...(nr.uploads || {}), results: { at: Date.now(), date: localDate(Date.now()), screens: res.count, ...(B.missing.length ? { missing: B.missing } : {}) } };
+    const allMissing = res.battles.flatMap(O => O.missing || []);   // both battles' gaps, so the Results row shows them
+    nr.uploads = { ...(nr.uploads || {}), results: { at: Date.now(), date: localDate(Date.now()), screens: res.count, ...(allMissing.length ? { missing: allMissing } : {}) } };
     await saveWeek(nw, `Round ${nr.n} results read from screenshots: ${sc ? (sc[0] > sc[1] ? "won " : "lost ") + sc.join("-") : "score unknown"} vs ${opp} (${w.label})`);
     // the group's other battle: one observation per guild, with its lanes and players
     let other = 0;
@@ -251,7 +252,7 @@
     }
     renderExpedition();
     const un = stats.filter(s => s.unmatched).map(s => s.ign);
-    return `Saved: ${stats.length} of our players, ${theirStats.length} of ${opp}'s${other ? ", and the other battle" : ""}.` + (un.length ? ` Not on the roster: ${un.join(", ")}.` : "") + (B.missing.length ? ` Missing: ${B.missing.join(", ")}.` : "");
+    return `Saved: ${stats.length} of our players, ${theirStats.length} of ${opp}'s${other ? ", and the other battle" : ""}.` + (un.length ? ` Not on the roster: ${un.join(", ")}.` : "") + (allMissing.length ? ` Missing: ${allMissing.join(", ")}.` : "");
   }
   function openResultsFor(ctx) {
     const pnl = $("res-panel"); $("exp-uploads-reader").append(pnl);

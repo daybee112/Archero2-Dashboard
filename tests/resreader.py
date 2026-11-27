@@ -50,7 +50,9 @@ for l, pw in ((L, False), (M, True), (R, False)):   # PWNZ won Middle only
     SCREENS.append({"type": "details", "guilds": ["PWNZ", "Happiness"], "selected": "right", "lane": l, "rows": synth("H", not pw, 12)})
 SAMPLE = "window.__resScreens = " + json.dumps(SCREENS, ensure_ascii=False) + """;
 window.__sampleImpl = async (prompt, opts) => { const nums = (prompt.match(/screens ([\\d, ]+), in this order/) || [])[1].split(',').map(x => +x.trim());
-  return { text: JSON.stringify({ screens: nums.map(i => ({ i, ...(window.__resScreens[i - 1] || { type: 'other' }) })) }) }; };"""
+  (window.__resBatches = window.__resBatches || []).push(nums.length);
+  // like the real Claude on Nov 27: answers numbered 1, 2, 3… instead of the screen numbers it was given
+  return { text: JSON.stringify({ screens: nums.map((i, j) => ({ ...(window.__resScreens[i - 1] || { type: 'other' }), i: window.__resRenumber ? j + 1 : i })) }) }; };"""
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
@@ -74,10 +76,15 @@ async def main():
         await pg.evaluate("window.__openResultsFor({ week: '2026-11-02', round: 3 })")
         check("results panel opens for the round", await pg.is_visible("#res-panel") and "Round 3 results" in await pg.inner_text("#res-title"))
         files = [_os.path.join(FIX, "w1102-r3", f) for f in sorted(_os.listdir(_os.path.join(FIX, "w1102-r3"))) if f.endswith(".png")]
+        await pg.evaluate("window.__resRenumber = true; window.__resBatches = []")
         await pg.set_input_files("#res-files", files); await pg.click("#btn-res-read")
         await pg.wait_for_function("/^Read |went wrong|isn't|couldn't/.test(document.querySelector('#res-status').textContent)", timeout=60000)
         st = await pg.inner_text("#res-status")
         check("read 13 screens, 2 battles", st.startswith("Read 13 screens: 2 battles"), st)
+        check("13 screens go to Claude in even batches (5, 4, 4), none alone", await pg.evaluate("window.__resBatches") == [5, 4, 4], str(await pg.evaluate("window.__resBatches")))
+        gaps = await pg.evaluate("window.__lastRes.battles.flatMap(b => b.missing)")
+        check("answers numbered 1, 2, 3… are matched by order: no screen dropped", gaps == [], str(gaps))
+        await pg.evaluate("window.__resRenumber = false")
         txt = await pg.inner_text("#res-result")
         check("our battle shown ours first: ArchAcademy 0 : 3 BlockMagic", "ARCHACADEMY 0 : 3 BLOCKMAGIC" in txt.upper(), txt[:120])
         check("other battle shown with its score", "PWNZ 1 : 2 HAPPINESS" in txt.upper())
@@ -123,6 +130,18 @@ async def main():
         await pg.set_input_files("#res-files", [f for f in files if not f.endswith("07.png")]); await pg.click("#btn-res-read")
         await pg.wait_for_function("/^Read /.test(document.querySelector('#res-status').textContent)", timeout=60000)
         check("a missing screen is named in the review", "Missing: ArchAcademy Right" in await pg.inner_text("#res-result"))
+        # a gap in the other battle shows on the round's Results row too (Nov 27: 그랑 Right dropped, row still said Saved)
+        await pg.evaluate("window.__openResultsFor({ week: '2026-11-02', round: 3 })")
+        await pg.set_input_files("#res-files", [f for f in files if not f.endswith("13.png")]); await pg.click("#btn-res-read")
+        await pg.wait_for_function("/^Read /.test(document.querySelector('#res-status').textContent)", timeout=60000)
+        await pg.click("#res-result button.btn:has-text('Save results')")
+        await pg.wait_for_function("/Saved|Couldn|isn't|but Round/.test([...document.querySelectorAll('#res-result .small')].map(x => x.textContent).join(' '))", timeout=20000)
+        await pg.wait_for_timeout(400)
+        rd2 = await pg.evaluate("JSON.parse(JSON.stringify([...window.__store.entries()].find(([k]) => k === 'expedition/2026-11-02/rounds/3')[1]))")
+        check("the other battle's gap is kept on the round's upload record", rd2["uploads"]["results"].get("missing") == ["Happiness Right"], str(rd2["uploads"]["results"]))
+        await pg.select_option("#exp-week", "2026-11-02"); await pg.wait_for_timeout(300)
+        row = await pg.inner_text("#exp-uploads-list")
+        check("and named on the Results row", "missing Happiness Right" in row, row[:600])
         # 4) the same Nov 24 screens as a screen recording (Daby's, re-encoded to H.264 at half size for this browser)
         await pg.set_input_files("#res-files", _os.path.join(FIX, "w1124-r1", "recording-h264.mp4"))
         kinds = await pg.evaluate("""async () => { const f = document.querySelector('#res-files').files[0];

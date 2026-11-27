@@ -3420,13 +3420,18 @@ body.env-staging .envbar { display: block; }
       const r = await sample(promptFn(part), { images: part.map(n => stills[n - 1].blob), signal, modelTier: "default" });
       const got = (parseJsonLoose(r.text).screens || []).filter(x => x && Number.isInteger(x.i));
       if (r.truncated && got.length < part.length) throw { code: "truncated", message: "answer cut short" };
-      for (const n of part) { const g = got.find(x => x.i === n); if (g) screens[n - 1] = g; }
+      // a lone screen often comes back numbered 1 instead of its own number: when every screen is answered but the numbers
+      // don't match, they're matched by order instead
+      if (got.length === part.length && !part.every(n => got.some(x => x.i === n))) got.forEach((g, j) => { screens[part[j] - 1] = { ...g, i: part[j] }; });
+      else for (const n of part) { const g = got.find(x => x.i === n); if (g) screens[n - 1] = g; }
     };
     const stop = (e) => { if (e && e.code === "cancelled") throw new Error("stopped");
       if (e && ["rate_limited", "not_granted", "sampling_disabled", "session_expired", "images_unavailable"].includes(e.code)) { out.fatal = SAMPLE_ERR[e.code] || "Claude can't read images here right now."; return true; } return false; };
     const why = (e) => ({ image_rejected: "a picture was rejected", truncated: "the answer was cut short", upstream_error: "a connection problem", refused: "Claude declined" }[e && e.code] || (e && e.message) || "an unreadable answer");
-    for (let k = 0; k < nums.length; k += maxImgs) {
-      const part = nums.slice(k, k + maxImgs);
+    const nb = Math.ceil(nums.length / maxImgs), parts = [];   // even batches (13 → 5, 4, 4), so no screen goes alone
+    for (let j = 0, at = 0; j < nb; j++) { const sz = Math.floor(nums.length / nb) + (j < nums.length % nb ? 1 : 0); parts.push(nums.slice(at, at + sz)); at += sz; }
+    for (let pi = 0, k = 0; pi < parts.length; k += parts[pi].length, pi++) {
+      const part = parts[pi];
       say(`Reading screens ${k + 1}–${k + part.length} of ${nums.length}…`);
       try { await call(part); }
       catch (e) {
@@ -6400,7 +6405,8 @@ body.env-staging .envbar { display: block; }
     if (!nr.opponent || nr.opponent === "tbd") nr.opponent = opp;
     if (sc) { nr.score = `${sc[0]}-${sc[1]}`; nr.result = sc[0] > sc[1] ? "W" : "L"; }
     if (B.missing.length) nr.partialStats = true; else delete nr.partialStats;
-    nr.uploads = { ...(nr.uploads || {}), results: { at: Date.now(), date: localDate(Date.now()), screens: res.count, ...(B.missing.length ? { missing: B.missing } : {}) } };
+    const allMissing = res.battles.flatMap(O => O.missing || []);   // both battles' gaps, so the Results row shows them
+    nr.uploads = { ...(nr.uploads || {}), results: { at: Date.now(), date: localDate(Date.now()), screens: res.count, ...(allMissing.length ? { missing: allMissing } : {}) } };
     await saveWeek(nw, `Round ${nr.n} results read from screenshots: ${sc ? (sc[0] > sc[1] ? "won " : "lost ") + sc.join("-") : "score unknown"} vs ${opp} (${w.label})`);
     // the group's other battle: one observation per guild, with its lanes and players
     let other = 0;
@@ -6425,7 +6431,7 @@ body.env-staging .envbar { display: block; }
     }
     renderExpedition();
     const un = stats.filter(s => s.unmatched).map(s => s.ign);
-    return `Saved: ${stats.length} of our players, ${theirStats.length} of ${opp}'s${other ? ", and the other battle" : ""}.` + (un.length ? ` Not on the roster: ${un.join(", ")}.` : "") + (B.missing.length ? ` Missing: ${B.missing.join(", ")}.` : "");
+    return `Saved: ${stats.length} of our players, ${theirStats.length} of ${opp}'s${other ? ", and the other battle" : ""}.` + (un.length ? ` Not on the roster: ${un.join(", ")}.` : "") + (allMissing.length ? ` Missing: ${allMissing.join(", ")}.` : "");
   }
   function openResultsFor(ctx) {
     const pnl = $("res-panel"); $("exp-uploads-reader").append(pnl);
