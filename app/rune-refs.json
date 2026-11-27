@@ -848,6 +848,17 @@
    "name": "Swordstrike Aerie",
    "type": "etched",
    "src": "Daby's Swordstrike Aerie popup, Nov 26"
+  },
+  {
+   "name": "Ring of Agony",
+   "type": "ability",
+   "small": true,
+   "src": "Daby's preset screenshot, Nov 26 (Mythic)"
+  },
+  {
+   "name": "Ring of Agony",
+   "type": "ability",
+   "src": "Daby's Ring of Agony popup, Nov 26 (Mythic)"
   }
  ]
 }

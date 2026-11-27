@@ -32,7 +32,7 @@
     "Lanes and presets video: presets stay matched to the right players even when Claude can't read a screen (the device tells preset screens from Team Info on its own), a missing Team Info no longer glues two players' presets together (different characters, mystling, gear or rune slots split them), a misread lane tab can't send presets to another lane (lanes only move forward, and a list already seen keeps its lane), and a scrolled list can't overwrite rows with the wrong numbers.",
     "Renamed players keep their history: a member can have former names, so old rounds, lineups and stats under the old name still link to them, and names written in look-alike letters (like мнαяυ for MHARU) are matched.",
     "Lanes and presets video: when Claude can't read some screens, the review says how this device sorted them instead of warning that the order is off.",
-    "Preset reading: Ricochet Strike in its Mythic look is recognized, and Demon King Atreus is read more reliably (a clearer description for Claude, and a short answer like \"Atreus\" now counts).",
+    "Preset reading: Ricochet Strike and Ring of Agony in their Mythic look are recognized, and Demon King Atreus is read more reliably (a clearer description for Claude, and a short answer like \"Atreus\" now counts).",
     "Subs in the lanes and presets video: pages of Sub rows are read in order (a repeated name on the last page counts once) and each sub's preset is matched by order, whether the subs are in their own video or in the same video as the lanes. Swordstrike Aerie is recognized.",
     "Saving a lanes and presets video to a round only updates what the video shows: a subs-only video keeps the round's lanes, and a lanes-only video keeps its subs."
    ]
