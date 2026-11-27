@@ -2350,6 +2350,20 @@ body.env-staging .envbar { display: block; }
     if (/^[\x00-\x7f]+$/.test(ign) && /[a-z0-9]/.test(s)) return "m-" + s;
     return "m-x" + [...new TextEncoder().encode(ign)].map(b => b.toString(16).padStart(2, "0")).join("");
   }
+  // Find a member by a name as written anywhere (a list, a lineup, an old round): the current name, a former name
+  // (m.aliases, for a renamed player, so old rounds and stats still link), or the same name in look-alike letters
+  // (Cyrillic and Greek letters that look Latin, e.g. мнαяυ and MHARU).
+  const LOOKALIKE = { "а": "a", "в": "b", "е": "e", "к": "k", "м": "m", "н": "h", "о": "o", "р": "p", "с": "c", "т": "t", "у": "y", "х": "x", "я": "r", "і": "i", "ѕ": "s", "ј": "j",
+    "α": "a", "β": "b", "ε": "e", "η": "n", "ι": "i", "κ": "k", "μ": "u", "ν": "v", "ο": "o", "ρ": "p", "τ": "t", "υ": "u", "χ": "x", "ω": "w" };
+  const nameShape = (s) => [...String(s || "").trim().toLowerCase()].map(c => LOOKALIKE[c] || c).join("");
+  function memberByName(ign) {
+    const t = String(ign || "").trim().toLowerCase(); if (!t) return null;
+    const ms = allMembers(), names = (m) => [m.ign, ...(Array.isArray(m.aliases) ? m.aliases : [])].filter(Boolean);
+    return ms.find(m => String(m.ign || "").toLowerCase() === t)
+      || ms.find(m => names(m).some(n => n.toLowerCase() === t))
+      || memberById(memberId(String(ign).trim()))
+      || (() => { const sh = nameShape(ign), hit = ms.filter(m => names(m).some(n => nameShape(n) === sh)); return hit.length === 1 ? hit[0] : null; })();
+  }
   function blankMember(ign) {
     return { id: memberId(ign), ign, rank: "Member", status: "active", power: { m: null, date: "", src: "" },
       artifacts: { mythic: null, leg: null, date: "" }, preset: { chars: [null, null, null], gear: {}, runes: { blessing: [], enhancement: [], ability: [], etched: [] }, mystling: null, behavior: { range: "", movement: "" } },
@@ -3011,7 +3025,7 @@ body.env-staging .envbar { display: block; }
   $("btn-import").addEventListener("click", () => { $("import-panel").hidden = false; $("import-panel").scrollIntoView({ block: "start", behavior: "smooth" }); });
   $("btn-import-close").addEventListener("click", () => { $("import-panel").hidden = true; });
   let impCtl = null, shots = [];   // [{file, url, name}]
-  const findIgn = (s) => { const t = String(s || "").trim().toLowerCase(); return t ? allMembers().find(m => m.ign.toLowerCase() === t && (m.status || "active") !== "left") || null : null; };
+  const findIgn = (s) => { const m = memberByName(s); return m && (m.status || "active") !== "left" ? m : null; };
   const hueOf = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.codePointAt(0)) % 360; return h; };
   function shotGroups() {
     const groups = [];
@@ -3305,7 +3319,7 @@ body.env-staging .envbar { display: block; }
     }
     return !n ? null : red / n > 0.35 ? "Mythic" : pur / n > 0.35 ? "Epic" : "Legendary";
   }
-  if (window.__expose) { window.__presetGroup = (sc) => presetGroup(sc); window.__presetKind = (b) => presetKind(b); window.__presetDiffers = (a, b) => presetDiffers(a, b); window.__videoStills = (f, o) => videoStills(f, new AbortController().signal, () => {}, o); window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
+  if (window.__expose) { window.__presetGroup = (sc) => presetGroup(sc); window.__memberByName = (n) => (memberByName(n) || {}).id || null; window.__memberIgn = (id) => (memberById(id) || {}).ign; window.__presetKind = (b) => presetKind(b); window.__presetDiffers = (a, b) => presetDiffers(a, b); window.__videoStills = (f, o) => videoStills(f, new AbortController().signal, () => {}, o); window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
   if (window.__expose) { window.__readPresetStill = (b) => readPresetStill(b); }
   if (window.__expose) { window.__readGear = readGear; window.__gearTile = async (blob, b, slot) => { const bmp = await createImageBitmap(blob); return gearSlotRead(gearDesc(bmp, b[0], b[1], b[2] - b[0], b[3] - b[1]), slot, await loadGearRefs()); }; }
   if (window.__expose) { window.__readMystling = readMystling; window.__matchMystTile = async (blob, b) => { const bmp = await createImageBitmap(blob); return matchMystTile(bmp, b); }; }
@@ -4107,8 +4121,13 @@ body.env-staging .envbar { display: block; }
   function renderPresetResult(g, screens, stills, opts = {}) {
     const one = opts.one || null, S = one ? one.state : lastVid;
     const res = one ? one.box : $("vid-result"); res.replaceChildren();
-    const unread = screens.filter(x => x.type === "unread").map(x => x.i);
-    if (unread.length && !one) res.append(el("div", { class: "hintbox err small", text: `${unread.length} of ${screens.length} screens couldn't be read: ${unread.join(", ")}. A preset on one of them is missing, which shifts the matches after it: check the order.` }));
+    const unread = screens.filter(x => x.type === "unread"), unNums = unread.map(x => x.i);
+    if (unread.length && !one) {   // the device sorted them (preset or not), so the order holds; only Claude's part is missing on those
+      const nPre = unread.filter(x => x.devKind === "preset").length, sorted = unread.every(x => x.devKind);
+      res.append(el("div", { class: sorted ? "hintbox small" : "hintbox err small", text: sorted
+        ? `Claude couldn't read ${unread.length} of ${screens.length} screens (${unNums.join(", ")}), so this device sorted them: ${nPre ? `${nPre} preset screen${nPre === 1 ? "" : "s"}` : "no presets"}${nPre < unread.length ? ` and ${unread.length - nPre} Team Info or other screen${unread.length - nPre === 1 ? "" : "s"}` : ""}. The order still holds.${nPre ? " On those presets the characters and range/movement are blank: fill them in or leave them to keep what's on file." : ""}${unread.some(x => x.devKind !== "preset") ? " A Team Info Claude couldn't read adds no names, so if a row looks missing below, check that lane." : ""}`
+        : `${unread.length} of ${screens.length} screens couldn't be read: ${unNums.join(", ")}. If a preset is on one of them, the matches after it may be off by one: check the order.` }));
+    }
     const old = S.drafts || new Map(), drafts = new Map();
     for (const p of g.presets) { const d = presetDraft(p), was = old.get(d.key); drafts.set(d.key, was && was.touched ? was : d); }
     S.drafts = drafts; if (S.saved == null) S.saved = false;
@@ -4216,7 +4235,7 @@ body.env-staging .envbar { display: block; }
       }
       const ids = picked.map(d => d.mode === "new" ? memberId(d.name.trim()) : d.memberId), dup = ids.find((x, i) => ids.indexOf(x) !== i);
       if (dup) return bad(`${memberById(dup)?.ign || dup} has two presets ticked. Untick or change one.`);
-      const clash = picked.find(d => d.mode === "new" && memberById(memberId(d.name.trim()))); if (clash) return bad(`${clash.name} is already on the roster: choose "It's an existing member".`);
+      const clash = picked.find(d => d.mode === "new" && memberByName(d.name.trim())); if (clash) return bad(`${clash.name} is already on the roster: choose "It's an existing member".`);
       saveBtn.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
       if (one) {   // one member: officers write the roster, a member saves their own preset through their profile
         const d = picked[0], today = localDate(Date.now());
@@ -4487,7 +4506,7 @@ body.env-staging .envbar { display: block; }
       if (us) {
         const ids = picked.map(d => d.mode === "new" ? memberId(d.name.trim()) : d.memberId), dup = ids.find((x, i) => ids.indexOf(x) !== i);
         if (dup) return bad(`${memberById(dup)?.ign || dup} is picked for two cards. Untick or change one.`);
-        const clash = picked.find(d => d.mode === "new" && memberById(memberId(d.name.trim())));
+        const clash = picked.find(d => d.mode === "new" && memberByName(d.name.trim()));
         if (clash) return bad(`${clash.name} is already on the roster: choose "It's an existing member" instead.`);
       }
       saveBtn.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
@@ -4715,7 +4734,7 @@ body.env-staging .envbar { display: block; }
   // ----- lane math -----
   const sacredGear = (m) => { const g = m?.preset?.gear || {}; let c = 0, my = 0; for (const s of D.gearSlots) { const q = (g[s.id] || {}).q || ""; if (q === "Chaotic" || /^Godforge/.test(q)) c++; else if (/^Mythic/.test(q)) my++; } return Math.min(10.8, c * 1.8 + my * 1.2); };
   function ourLaneStats(igns) {
-    const ms = igns.filter(Boolean).map(i => memberById(memberId(i)) || { ign: i, artifacts: {}, preset: {} });
+    const ms = igns.filter(Boolean).map(i => memberByName(i) || { ign: i, artifacts: {}, preset: {} });
     let anchor = null;
     for (const m of ms) if (m.artifacts?.mythic != null && (!anchor || m.artifacts.mythic > anchor.artifacts.mythic || (m.artifacts.mythic === anchor.artifacts.mythic && (m.artifacts.leg || 0) > (anchor.artifacts.leg || 0)))) anchor = m;
     const dps = ms.map(m => estDps(m));
@@ -4919,7 +4938,7 @@ body.env-staging .envbar { display: block; }
       if (alive || lr.note) lines.push(`*${[alive, lr.note].filter(Boolean).join(". ")}*`);
       const rows = (r.stats || []).filter(s => s.lane === l).map(s => ({ s, dps: s.surv ? s.dmg / s.surv : null })).sort((a, z) => (z.dps ?? z.s.dmg / 1e3) - (a.dps ?? a.s.dmg / 1e3));
       for (const { s, dps } of rows) {
-        const m = memberById(memberId(s.ign)), off = (r.offSet || []).includes(s.ign);
+        const m = memberByName(s.ign), off = (r.offSet || []).includes(s.ign);
         const gear = off ? "earlier gear set" : (m && weaponSet(m)) || "";
         lines.push(`- ${s.ign}${gear ? " · " + gear : ""} · ${dps != null ? fmtK(dps) + " DPS" : fmtK(s.dmg) + " dmg"}${dps != null ? ` (${fmtK(s.dmg)} in ${s.surv}s)` : ""}`);
       }
@@ -4947,7 +4966,7 @@ body.env-staging .envbar { display: block; }
   }
   // ----- image specs -----
   function lineupSpec(w, r, theirLanes) {
-    const cell = (ign) => { const m = memberById(memberId(ign)); const ws = m ? weaponSet(m) : ""; return { text: ign, bar: ws || "line" }; };
+    const cell = (ign) => { const m = memberByName(ign); const ws = m ? weaponSet(m) : ""; return { text: ign, bar: ws || "line" }; };
     const ours = LANES.map(l => r.our?.[l]?.players || []), anchors = LANES.map(l => { const st = ourLaneStats(r.our?.[l]?.players || []); return `⚓ ${(r.result && r.our?.[l]?.anchor) || st.anchor || "—"} +${Math.round(st.hp)}%`; });
     const rows = [anchors.map(a => ({ text: a, color: "muted" }))];
     for (let i = 0; i < 8; i++) rows.push(LANES.map((l, k) => ours[k][i] ? cell(ours[k][i]) : ""));
@@ -5012,7 +5031,7 @@ body.env-staging .envbar { display: block; }
 
   // ----- rounds -----
   function playerChip(ign, extra) {
-    const m = memberById(memberId(ign));
+    const m = memberByName(ign);
     const ws = m ? weaponSet(m) : "";
     const a = dpsAvg5(ign);
     return el("span", { class: "pchip" + (ws ? " g-" + ws : ""), title: `${ign}${ws ? " · " + ws : ""}${a ? ` · Avg DPS ${fmtRate(a.avg)} (${a.n})` : " · no DPS yet"}` },
@@ -5197,7 +5216,7 @@ body.env-staging .envbar { display: block; }
           list.append(el("div", { class: "prow" }, playerChip(ign, ign === ((r.result && recAnchor) || os.anchor) ? " ⚓" : ""),
             st && st.dmg != null ? el("span", { class: "small muted", text: `${fmtK(st.dmg)}${st.surv ? ` · ${st.surv}s · ${fmtRate(st.dmg / st.surv)}` : ""}` })
               : (() => { const a = dpsAvg5(ign); if (a) return el("span", { class: "small muted", title: `Average of the last ${a.n} counted round${a.n > 1 ? "s" : ""}`, text: `avg ${fmtRate(a.avg)}` });
-                  const m = memberById(memberId(ign)), e = m ? estDps(m) : null; return el("span", { class: "small muted", title: "No counted rounds on this gear yet; estimate from gear set", text: e ? `est. ${fmtRate(e.v)}` : "no data yet" }); })()));
+                  const m = memberByName(ign), e = m ? estDps(m) : null; return el("span", { class: "small muted", title: "No counted rounds on this gear yet; estimate from gear set", text: e ? `est. ${fmtRate(e.v)}` : "no data yet" }); })()));
         }
         if (!igns.length) list.append(el("div", { class: "small muted", text: "No lineup yet." }));
         ourCard.append(list);
@@ -5575,7 +5594,7 @@ body.env-staging .envbar { display: block; }
       out.push({ t: "info", w: 0.05, text: offN ? "1 round using current build preset" : "new: 1 round",
         why: offN ? `Only 1 round so far on the gear set they use now. The ${offN} earlier round${offN > 1 ? "s" : ""} on a different gear set ${offN > 1 ? "are" : "is"} listed below but not counted.` : "Only one counted round so far." });
     }
-    const m = memberById(memberId(ign));
+    const m = memberByName(ign);
     if (m && (m.status || "active") === "active" && m.presetStatus && m.presetStatus !== "Complete") out.push({ t: "down", w: 0.1, text: `preset ${m.presetStatus.toLowerCase()}`, why: "Empty preset slots have underperformed every logged week." });
     return out.sort((a, z) => (z.major ? 1 : 0) - (a.major ? 1 : 0) || z.w - a.w);
   }
@@ -5710,7 +5729,7 @@ body.env-staging .envbar { display: block; }
     return el("span", { class: "perf" }, svg, el("span", { class: "perflast", text: fmtK(vals[vals.length - 1]) }));
   }
   function playerDetail(ign) {
-    const m = memberById(memberId(ign));
+    const m = memberByName(ign);
     const ms = playerMatches(ign), c = ms.filter(x => x.counts), a = dpsAvg5(ign);
     const panel = el("div", { class: "panel stack" });
     const detailSpec = () => ({ title: `${ign}: Expedition history`, subtitle: `Avg DPS ${a ? fmtRate(a.avg) : "—"} · ${c.length} of ${ms.length} rounds counted · gear ${m ? (weaponSet(m) || "—") : "—"}`,

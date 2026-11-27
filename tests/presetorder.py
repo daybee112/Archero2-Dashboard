@@ -70,6 +70,14 @@ async def main():
         d = await pg.evaluate("""() => [window.__presetDiffers({ chars: ['Helix'] }, { chars: ['Thor'] }), window.__presetDiffers({ chars: ['Helix'] }, { chars: [null] }),
           window.__presetDiffers({ pdev: { gear: { weapon: { set: 'Oracle', q: 'Chaotic' }, armor: { set: 'Oracle', q: 'Chaotic' }, ring: { set: 'Oracle', q: 'Chaotic' } } } }, { pdev: { gear: { weapon: { set: 'Dragoon', q: 'Chaotic' }, armor: { set: 'Dragoon', q: 'Chaotic' }, ring: { set: 'Oracle', q: 'Chaotic' } } } })]""")
         check("differs: other deployed character yes, unsure no, 2 of 3 gear sets changed yes", d == [True, False, True], str(d))
+        # names: a renamed player keeps their record through a former name; look-alike letters match
+        nm = await pg.evaluate("() => [window.__memberByName('\u043c\u043d\u03b1\u044f\u03c5'), window.__memberByName('mharu'), window.__memberByName('Nobody Here')]")
+        check("look-alike letters: \u043c\u043d\u03b1\u044f\u03c5 finds MHARU before the rename", nm == ["m-mharu", "m-mharu", None], str(nm))
+        await pg.evaluate("window.__store.set('roster/m-mharu', Object.assign({}, window.__store.get('roster/m-mharu') || {}, { ign: '\u043c\u043d\u03b1\u044f\u03c5', aliases: ['MHARU'] })); window.__fire && window.__fire()")
+        await pg.wait_for_timeout(800)
+        check("the rename took (record shows the new name)", await pg.evaluate("window.__memberIgn('m-mharu')") == "\u043c\u043d\u03b1\u044f\u03c5", await pg.evaluate("window.__memberIgn('m-mharu')"))
+        nm = await pg.evaluate("() => [window.__memberByName('MHARU'), window.__memberByName('\u043c\u043d\u03b1\u044f\u03c5')]")
+        check("after the rename: the old name (in old rounds) and the new one both find the same record", nm == ["m-mharu", "m-mharu"], str(nm))
         check("no page errors", not errs, str(errs[:3]))
         await b.close()
     print(f"{sum(res)} / {len(res)}")
