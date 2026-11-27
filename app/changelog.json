@@ -7,10 +7,9 @@
  "releases": [
   {
    "id": "v10.0.0",
-   "date": "not released yet",
-   "by": "Daby (staging preview)",
-   "draft": true,
-   "title": "Video uploads and the Expedition Uploads tab (in testing)",
+   "date": "2026-11-26",
+   "by": "Daby (published by Claude)",
+   "title": "Video uploads and the Expedition Uploads tab",
    "changes": [
     "Profile video import: screen-record players' profiles and the dashboard pulls out one still per screen on your device. Runes are matched on the device, so they don't use Claude.",
     "Review before saving: a card per player where every value can be corrected (power, artifact stars, mystling, gear, runes), with what the roster has now shown underneath. Unsure values are outlined and left blank. New names can be added as members, matched to an existing member, or skipped.",
