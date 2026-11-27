@@ -6,17 +6,17 @@
  },
  "releases": [
     {
-      "id": "v10.1.0",
-      "date": "not released yet",
-      "by": "Daby (staging preview)",
-      "draft": true,
-      "title": "Round results from screenshots (in testing)",
+      "id": "v11.0.0",
+      "date": "2026-11-27",
+      "by": "Daby (published by Claude)",
+      "title": "Round results from screenshots",
       "changes": [
         "Uploads: each round's Results row reads the Schedule screen and all 12 Details screens (or a screen recording of them). This device sorts the screens by their highlighted tabs and reads the lane flags; Claude reads the names and numbers.",
         "Every value is checked against the % printed under it, so a misread number is outlined in red before you save. Every value can be corrected.",
         "Survival time comes from the survival % (to a fraction of a second), which makes DPS more exact. Whole seconds are used when the % can't be read. Damage taken is saved too.",
         "Saving fills in the round's score, lane results, our players' stats, the opponent's lanes and stats, and the other battle in our group. A missing screenshot is saved as a marked gap.",
-        "Week standings use total damage as the last tiebreak, the same way the game ranks guilds."
+        "Week standings use total damage as the last tiebreak, the same way the game ranks guilds.",
+        "Screenshots and video stills go to Claude in even batches, and answers are matched to their screens even when Claude numbers them differently, so the last screen of an upload is never dropped."
       ]
     },
   {
