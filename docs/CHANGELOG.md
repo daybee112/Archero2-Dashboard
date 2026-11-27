@@ -63,6 +63,8 @@ remove them from this list.
   (`index.html`, `changelog.json`, `build-data.json`, `env.js`, `gear-digits.json`, `gear-refs.json`,
   `mystling-refs.json`, `rune-refs.json`) under the project's `dashboard/releases/v10.0.0/`. The `.jpg` reference
   sheets stay in GitHub only. Skipped at release time to save usage. Remove this item once done.
+- **v11.0.0:** archive `index.html` and `changelog.json` under the project's `dashboard/releases/v11.0.0/` (the other
+  files are unchanged from v10.0.0), and copy this file again.
 
 ## In-tool changes (activity log), per Daby 2026-11-22
 
@@ -152,6 +154,30 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 ---
 
 ## Releases (newest first)
+
+### v11.0.0 — 2026-11-27 — live
+- **Type:** major (new feature: round results from screenshots). Branches: `feature/results-reader` → `release/v11.0.0`
+  → `main`. Tested on staging first with Daby's real R1 upload (13 screenshots, checked value by value).
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v10.0.0 files exactly, platform version `1795744763-2645`; permission rules
+  same as staging's)
+- **Headless test before publish:** full suite (`tests/run_all.sh`): all pass except the known offline `run` "plain: no
+  JS errors" check (font unreachable in sandbox). `resreader` 36/36.
+- **Fix found in staging testing:** the first R1 upload dropped screen 13 (그랑 Right). Screens went to Claude in batches
+  of 6 (6, 6, 1) and Claude answered the lone 13th screen as "screen 1". Now: answers are matched by order when the
+  numbers don't line up, batches are even (13 → 5, 4, 4; also used by the profile and preset video readers), and the
+  round's Results row names gaps in the other battle too. Re-upload on staging saved all 13.
+- **Platform version:** `1795822130-bdd3`
+- **Files** (17; all sha256 confirmed against live):
+  - `index.html` · 603,886 bytes · `13818495b5c762011258b6570e076d1d2ba2cda90a6da1e6fd20ad74b789d787` (changed)
+  - `changelog.json` · 39,640 · `4e7cc2bc451c363eb63f44fe9270c05dfb49372ddbe65b3bf514b39625dd0aed` (changed)
+  - the other 15 unchanged from v10.0.0 (see its entry)
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** see the v11.0.0 entry in `app/changelog.json` (6 items).
+- **Data copied from staging after publishing** (logged in Claude's audit doc): Week of Nov 24 R1 results (0-3 vs
+  Unity: lane results, our 24 players' stats, Unity's lanes and stats) and the other battle's observations (용기사 L 1-2,
+  그랑 W 2-1). 그랑 names 할퀴기 and 그랑씌망치 use the screenshot spelling (the re-read had 할쿼기 and 그랑씨망치).
+- **Archive:** GitHub `main`, commit "Release v11.0.0: round results from screenshots" (`8d1ffc3`).
 
 ### v10.0.0 — 2026-11-26 — live
 - **Type:** major (new features: profile and lanes-and-presets video uploads, Expedition Uploads tab, edit builds from
