@@ -23,7 +23,7 @@
     "Profile video reading on the device: mystlings (the In use tile, stars counted by color) and gear (set, quality and Mythic+N) are matched against reference pictures, so fewer values need a look. Artifacts assume every page is shown and count the visible Mythic and Legendary stars.",
     "Lanes and presets video: record Team Info for each lane and the subs, then every player's preset in list order. The dashboard shows who's registered (for matching only, not a plan), matches each preset to its player by order, reads characters, range and movement with Claude and the mystling, gear and runes on the device, and saves them as Expedition presets after a review.",
     "Uploads by round: each round has our roster and our lanes and presets, and rounds 2 and 3 can use the round before's instead of a new recording.",
-    "Read preset screenshot on a member's page: one screenshot (or two, before and after swiping the gear row) becomes that player's Expedition preset after a one-card review. Officers can do it for anyone, members for themselves.",
+    "Edit a player's builds from screenshots: Edit (officers) and Edit my builds (members) now have a build switch, Expedition preset or Main build, and Fill from screenshots: a preset screen (plus one after swiping the gear row) or the profile's Gear and Runes tabs. The fields fill in, marked, with anything unsure outlined in red; nothing saves until Save. The main build can now be edited by hand too, and members can save their own main build.",
     "Roster: a Builds column shows whether each player has a main build and an Expedition build on file, with a Missing a build filter.",
     "Fixed: saving a profile video no longer wipes gear and rune types it didn't read.",
     "Video reads keep going while you use other tabs: a bar pinned to the bottom of the screen shows the progress, has Stop, and an Open (or Review, once it's done) button that takes you back to the reader. If you leave the app mid-read, it picks up when you come back instead of failing.",
@@ -34,7 +34,9 @@
     "Lanes and presets video: when Claude can't read some screens, the review says how this device sorted them instead of warning that the order is off.",
     "Preset reading: Ricochet Strike, Ring of Agony, Spin SPD Up and Sawblade Circle in their Mythic look are recognized, and Demon King Atreus is read more reliably (a clearer description for Claude, and a short answer like \"Atreus\" now counts).",
     "Subs in the lanes and presets video: pages of Sub rows are read in order (a repeated name on the last page counts once) and each sub's preset is matched by order, whether the subs are in their own video or in the same video as the lanes. Swordstrike Aerie is recognized.",
-    "Saving a lanes and presets video to a round only updates what the video shows: a subs-only video keeps the round's lanes, and a lanes-only video keeps its subs."
+    "Saving a lanes and presets video to a round only updates what the video shows: a subs-only video keeps the round's lanes, and a lanes-only video keeps its subs.",
+    "Roster Builds badges no longer spill their text on phones.",
+    "Preset reading: when two frames of one preset disagree on a gear piece's set, the piece is left for you to check instead of guessed."
    ]
   },
   {

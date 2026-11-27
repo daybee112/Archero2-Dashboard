@@ -68,7 +68,7 @@ async def main():
             allg = {s: (v.get(f"g-{s}-set"), v.get(f"g-{s}-q") or None) for s in ("weapon", "armor", "ring", "helmet", "amulet", "boots")}
             if isinstance(gear, str):
                 rd = {s: x for s, x in allg.items() if x[0]}
-                check(f"preset {n} ({who}): gear read on the device ({gear}, 5+ pieces)", len(rd) >= 5 and all(x == ("Oracle", "Chaotic") for x in rd.values()), str(allg))
+                check(f"preset {n} ({who}): gear read on the device ({gear}, 4+ pieces, none wrong)", len(rd) >= 4 and all(x == ("Oracle", "Chaotic") for x in rd.values()), str(allg))   # a piece the frames disagree on is left for the review
             else:
                 got = {s: allg[s] for s in gear}
                 check(f"preset {n} ({who}): gear read on the device", got == gear, str(allg))
@@ -76,6 +76,12 @@ async def main():
 
         check("changes from the current preset are listed", "Changes from the current Expedition preset" in cards[0]["text"] or "Same as the current" in cards[0]["text"])
         # save: Expedition presets, power from Team Info, inventory; main builds untouched
+        # a rune can only be used once per build: in a review card, one picked in a slot can't be picked in another
+        lk = pg.locator("#vid-result .vcard[data-key=p1] a[data-f=edit-runes]")
+        if await lk.count() and await lk.is_visible(): await lk.click()
+        dup = await pg.evaluate("""() => { const c = document.querySelector('#vid-result .vcard[data-key=p1]'), a = c.querySelector('[data-f="r-enhancement-0"]'), b = c.querySelector('[data-f="r-enhancement-1"]');
+          if (!a || !b || !a.value || !b.value) return 'not read'; const o = [...b.options].find(o => o.value === a.value); return o && o.disabled ? 'ok' : 'pickable'; }""")
+        check("review card: a rune in one slot can't be picked in another", dup == "ok", dup)
         await pg.click("#vid-save"); await pg.wait_for_timeout(2500)
         msg = await pg.inner_text("#vid-result")
         check("saved 8 presets", "Saved 8 presets" in msg, msg[-200:])

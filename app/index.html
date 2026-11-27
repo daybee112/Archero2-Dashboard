@@ -186,6 +186,10 @@ table.lb td.num, table.lb th.num { text-align: right; font-variant-numeric: tabu
 .vbadge { border: 1px solid var(--warn); color: var(--warn); border-radius: 999px; padding: 1px 8px; font-size: .78rem; }
 .warn-t { color: var(--warn); }
 .unsure { outline: 2px solid var(--bad); outline-offset: -1px; }
+.fromshot { box-shadow: inset 4px 0 0 var(--accent); }   /* a field filled from a screenshot */
+.bseg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.bseg button { border: 0; border-radius: 0; background: transparent; padding: 6px 12px; cursor: pointer; }
+.bseg button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .soonbox { text-align: center; padding: 48px 16px; }
 #ai-out { white-space: pre-wrap; }
 .briefing { border: 1px solid var(--accent); border-left-width: 5px; border-radius: 10px; padding: 12px 14px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); gap: 8px; }
@@ -743,7 +747,7 @@ body.env-staging .envbar { display: block; }
       <details>
         <summary><b>Common tasks</b></summary>
         <div class="help-body">
-          <p><b>Update your Expedition preset.</b> Change it on the Builds tab and save, use <b>Edit my preset</b> in your Roster profile, or tap <b>Read preset screenshot</b> there and pick a screenshot of your preset. The two stay in sync, and whichever you changed last wins. Do this whenever you change your in-game preset, since officers plan lanes from it.</p>
+          <p><b>Update your Expedition preset.</b> Change it on the Builds tab and save, or use <b>Edit my builds</b> in your Roster profile, where you can also fill it from screenshots (your preset screen, plus a second after swiping the gear row). Your main build is there too: pick Main build and use your profile's Gear and Runes tabs. The Builds tab and your profile stay in sync, and whichever you changed last wins. Do this whenever you change your in-game preset, since officers plan lanes from it.</p>
           <p><b>Check how you did in Expedition.</b> Go to Expedition, then Roster, and tap your name. You'll see your damage, seconds survived and DPS for every round, plus your average over your last 6 rounds using your current build preset. <b>← Back</b> at the top returns to the roster.</p>
           <p><b>Read the plan for a round.</b> Go to Expedition, then Rounds, and pick the round. The <b>Message to the officers</b> at the top explains the lineup. Tap <b>Show the full message</b> if it's cut off.</p>
           <p><b>Share something on Discord.</b> Look for the <b>Copy as image</b> buttons on the lineup, round results, officer message, player history, the Expedition roster table and the main Roster. The picture goes to your clipboard, ready to paste. If your browser blocks that, a preview opens with a <b>Download</b> button instead. On the officer message, <b>Copy text</b> copies it with its Discord formatting.</p>
@@ -762,7 +766,7 @@ body.env-staging .envbar { display: block; }
             <li><b>Inventories:</b> on the Roster, tap a player's Inventory cell to open it, edit, and press <b>Save to (their name)</b>. They get your changes the next time they open the dashboard, and the edit is logged.</li>
             <li><b>Preset screenshots:</b> at the bottom of the Roster tab, import Expedition preset screenshots. Each screenshot needs the player's name typed in. The dashboard never guesses whose preset it is.</li>
             <li><b>Reading takes a while?</b> Use other tabs while a video is read: the bar pinned to the bottom of the screen shows how it's going, and its <b>Open</b> or <b>Review</b> button takes you back. Leaving the app pauses the read until you come back.</li>
-            <li><b>One player's preset:</b> on their Roster page, tap <b>Read preset screenshot</b> and pick a screenshot of their Expedition preset (a second one after swiping the gear row gets all six pieces). Check the one card, then save.</li>
+            <li><b>One player's builds:</b> on their Roster page, tap <b>Edit</b>, pick Expedition preset or Main build, and use <b>Fill from screenshots</b>: a preset screen (plus one after swiping the gear row) or the profile's Gear and Runes tabs. The fields fill in with anything unsure outlined in red; check them, then Save.</li>
             <li><b>Lineups:</b> edit the lineup of a round that hasn't been played yet, slot by slot, or copy the previous round. Played rounds are locked.</li>
             <li><b>Message to the officers:</b> post a new message for a round. Pasting a Discord message keeps its formatting. Older messages move into the notes.</li>
             <li><b>Notes and reasoning:</b> add decisions or logic worth keeping, like why a player moved lanes. Notes can be added but not edited.</li>
@@ -797,7 +801,7 @@ body.env-staging .envbar { display: block; }
       <details>
         <summary><b>FAQ</b></summary>
         <div class="help-body">
-          <p><b>My info on the Roster is wrong. How do I fix it?</b> Update your Expedition preset on the Builds tab or with <b>Edit my preset</b> on your profile. For anything else, like rank or power, ping an officer.</p>
+          <p><b>My info on the Roster is wrong. How do I fix it?</b> Update your Expedition preset on the Builds tab or with <b>Edit my builds</b> on your profile (your main build is there too). For anything else, like rank or power, ping an officer.</p>
           <p><b>I saved my preset but the Roster didn't change.</b> Check that you linked the right profile with <b>This is me</b>. If it's still off, refresh the page, then ping an officer.</p>
           <p><b>Who can see my inventory?</b> Everyone in the guild, so officers can plan with real data. Only you and officers can change it, and your builds stay private (except your Expedition preset).</p>
           <p><b>Why wasn't I deployed this round?</b> Lanes are picked mainly by gear set and your DPS average from recent rounds, then artifacts. Players on Mythic gear or with empty preset slots usually sit out. Strong rounds and a complete preset move you up.</p>
@@ -2384,6 +2388,11 @@ body.env-staging .envbar { display: block; }
       if (linkedTo(m) && linkedTo(m) !== uidV) continue;
       if ((s.at || 0) > presetTime(m)) out.set(m.id, { ...m, preset: s.preset, presetDate: localDate(s.at), presetUpdatedAt: s.at, presetSrc: "Updated by the player", presetBy: uidV });
     }
+    for (const [uidV, s] of Object.entries(presetSubs)) {   // a main build a player saved themselves, when newer than the roster's
+      const m = out.get(s && s.memberId); if (!m || !s.mainBuild || s.linked === false) continue;
+      if (linkedTo(m) && linkedTo(m) !== uidV) continue;
+      if ((s.mainAt || 0) > mainTime(m)) out.set(m.id, { ...m, mainBuild: s.mainBuild, mainBy: uidV });
+    }
     return [...out.values()].map(fillFromWeapon).map(m => m.preset && m.preset.gearAssumed ? { ...m, preset: { ...m.preset, gearAssumed: [] } } : m)   // filled pieces count as known (per Daby)
       .map(m => { for (const k of ["preset", "mainBuild"]) { if (m[k] && m[k].runes) m = { ...m, [k]: { ...m[k], runes: renameRunes(m[k].runes) } }; if (m[k] && m[k].mystling) m = { ...m, [k]: { ...m[k], mystling: renameMyst(m[k].mystling) } }; } return m; });
   }
@@ -2769,8 +2778,8 @@ body.env-staging .envbar { display: block; }
       el("div", {}, el("h2", { text: m.ign }), el("div", { class: "small muted", text: [m.rank, MSTATUS[m.status || "active"], linkedTo(m) ? `linked to ${(linkNames[linkedTo(m)] || {}).name || "a Claude account"}` : "no account linked"].filter(Boolean).join(" · ") })),
       el("div", { class: "row" },
         isEditor ? el("button", { type: "button", class: "btn", text: "Edit", onclick: () => { editing = true; renderMemberEdit(m); } })
-          : canEditMember(m) ? el("button", { type: "button", class: "btn", text: "Edit my preset", onclick: () => { editing = true; renderPresetEdit(m); } }) : null,
-        isEditor || canEditMember(m) ? el("button", { type: "button", class: "btn ghost", id: "btn-preset-shot", text: "Read preset screenshot", onclick: () => { if (!$("sp-panel")) { editing = true; head.after(presetShotPanel(m)); } } }) : null,
+          : canEditMember(m) ? el("button", { type: "button", class: "btn", text: "Edit my builds", onclick: () => { editing = true; renderPresetEdit(m); } }) : null,
+
         el("button", { type: "button", class: "btn ghost", text: "Close", onclick: () => { openMemberId = null; box.hidden = true; renderRoster(); } })));
     box.append(head);
     // linking: one roster profile per Claude account. Officers' links are shared (everyone sees "linked");
@@ -2943,18 +2952,24 @@ body.env-staging .envbar { display: block; }
   }
   function renderPresetEdit(m) {
     const box = $("member-panel"); box.replaceChildren();
-    box.append(el("h2", { text: "Edit my Expedition preset" }),
-      el("p", { class: "small muted", style: "margin:0", text: "This is the same build as \"Expedition preset\" on your Builds tab; saving here updates both." }));
-    const edBox = el("div"); box.append(edBox);
-    const pb = { ...emptyBuild("custom", "Expedition preset"), ...clone(m.preset || {}) };
-    pb.gear = Object.fromEntries(Object.entries(pb.gear || {}).filter(([, g]) => g && (g.set || g.q)));
-    let edited = pb;
-    makeEditor(edBox, false, "mp", (nb) => { edited = nb; }).draw(pb);
+    box.append(el("h2", { text: "Edit my builds" }),
+      el("p", { class: "small muted", style: "margin:0", text: "The Expedition preset is the same build as \"Expedition preset\" on your Builds tab; saving it updates both. The main build is what your profile shows." }));
+    const pb = editBuildOf(m.preset, "Expedition preset"), drafts = { exp: pb, main: editBuildOf(m.mainBuild, "Main build") }, touched = { exp: false, main: false }, fromShot = { exp: false, main: false };
+    let kind = "exp", edited = pb;
+    const head = el("h3", { text: "Expedition preset" }), edBox = el("div");
+    const ed = makeEditor(edBox, false, "mp", (nb) => { edited = nb; drafts[kind] = nb; touched[kind] = true; });
+    const shots = shotFillBox("mp", () => kind, (r) => { const a = applyShotRead(ed.get(), r); ed.draw(a.nb); edited = drafts[kind] = a.nb; touched[kind] = fromShot[kind] = true; markShotFields("mp", a.from, a.unsure); return { from: a.from.length, unsure: a.unsure.length }; });
+    box.append(buildSwitch(kind, (k) => { drafts[kind] = ed.get(); kind = k; head.textContent = k === "exp" ? "Expedition preset" : "Main build"; shots.relabel(); ed.draw(drafts[k]); edited = drafts[k]; }), shots.el, head, edBox);
+    ed.draw(pb);
     const msg = el("span", { class: "small" });
     const save = el("button", { type: "button", class: "btn", text: "Save" });
     save.addEventListener("click", async () => {
       save.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
-      try { await savePresetAsPlayer({ chars: edited.chars, gear: edited.gear, runes: edited.runes, mystling: edited.mystling, behavior: edited.behavior }, "Edit my preset"); editing = false; renderMemberPanel(); }
+      drafts[kind] = ed.get();
+      try {
+        if (touched.exp || !touched.main) { const e = drafts.exp; await savePresetAsPlayer({ chars: e.chars, gear: e.gear, runes: e.runes, mystling: e.mystling, behavior: e.behavior }, fromShot.exp ? "a preset screenshot" : "Edit my preset"); }
+        if (touched.main) await saveMainAsPlayer(drafts.main, fromShot.main ? "profile screenshots" : "Edit my builds");
+        editing = false; renderMemberPanel(); }
       catch { msg.className = "small err"; msg.textContent = "Couldn't save. Check your connection and try again."; save.disabled = false; }
     });
     box.append(el("div", { class: "row" }, save, el("button", { type: "button", class: "btn ghost", text: "Cancel", onclick: () => { editing = false; renderMemberPanel(); } }), msg));
@@ -2977,13 +2992,14 @@ body.env-staging .envbar { display: block; }
         inp("me-leg", "Legendary artifact ★", w.artifacts?.leg ?? "", { inputmode: "numeric", style: "width:90px" }),
         inp("me-adate", "Artifacts date", w.artifacts?.date || "", { placeholder: "YYYY-MM-DD", style: "width:130px" }),
         sel("me-pstatus", "Preset status", [["", "—"], ...PSTATUS.map(s => [s, s])], w.presetStatus || ""),
-        inp("me-prdate", "Preset date", w.presetDate || "", { placeholder: "YYYY-MM-DD", style: "width:130px" })),
-      el("h3", { text: "Expedition preset" }));
-    const edBox = el("div"); box.append(edBox);
-    const pb = { ...emptyBuild("custom", "Expedition preset"), ...clone(w.preset || {}) };
-    pb.gear = Object.fromEntries(Object.entries(pb.gear || {}).filter(([, g]) => g && (g.set || g.q)));
-    let edited = pb;
-    const ed = makeEditor(edBox, false, "me", (nb) => { edited = nb; });
+        inp("me-prdate", "Preset date", w.presetDate || "", { placeholder: "YYYY-MM-DD", style: "width:130px" })));
+    // which build the fields below edit: each keeps its own edits while you switch
+    const pb = editBuildOf(w.preset, "Expedition preset"), drafts = { exp: pb, main: editBuildOf(w.mainBuild, "Main build") }, touched = { exp: false, main: false }, fromShot = { exp: false, main: false };
+    let kind = "exp", edited = pb;
+    const head = el("h3", { text: "Expedition preset" }), edBox = el("div");
+    const ed = makeEditor(edBox, false, "me", (nb) => { edited = nb; drafts[kind] = nb; touched[kind] = true; });
+    const shots = shotFillBox("me", () => kind, (r) => { const a = applyShotRead(ed.get(), r); ed.draw(a.nb); edited = drafts[kind] = a.nb; touched[kind] = fromShot[kind] = true; markShotFields("me", a.from, a.unsure); return { from: a.from.length, unsure: a.unsure.length }; });
+    box.append(buildSwitch(kind, (k) => { drafts[kind] = ed.get(); kind = k; head.textContent = k === "exp" ? "Expedition preset" : "Main build"; shots.relabel(); ed.draw(drafts[k]); edited = drafts[k]; }), shots.el, head, edBox);
     ed.draw(pb);
     box.append(el("div", { class: "field" }, el("label", { for: "me-notes", text: "Notes" }), el("textarea", { id: "me-notes", maxlength: "600" }, w.notes || "")));
     const msg = el("span", { class: "small" });
@@ -2998,15 +3014,22 @@ body.env-staging .envbar { display: block; }
       nm.artifacts = { mythic: my, leg: lg, date: $("me-adate").value.trim() };
       nm.presetStatus = $("me-pstatus").value; nm.presetDate = $("me-prdate").value.trim();
       // keep slots where an officer only knew the quality (set unknown) unless they changed that slot
+      drafts[kind] = ed.get(); edited = drafts.exp;
       const g = {};
       for (const { id } of D.gearSlots) { const ng = (edited.gear || {})[id]; const og = (m.preset?.gear || {})[id]; if (ng && (ng.set || ng.q)) g[id] = ng; else if (og && !og.set && og.q && !ng) g[id] = og; }
       nm.preset = { chars: edited.chars, gear: g, gearAssumed: (m.preset?.gearAssumed || []).filter(s => JSON.stringify(g[s] || null) === JSON.stringify((m.preset?.gear || {})[s] || null)), runes: edited.runes, mystling: edited.mystling, behavior: edited.behavior };
       nm.notes = $("me-notes").value.trim();
+      if (fromShot.exp) { nm.presetSrc = "preset screenshot"; if (!nm.presetDate || nm.presetDate === (m.presetDate || "")) nm.presetDate = localDate(Date.now()); }
+      if (touched.main) { const mb = drafts.main, at = Date.now();
+        const next = { ...(m.mainBuild || {}), chars: mb.chars, gear: Object.fromEntries(Object.entries(mb.gear || {}).filter(([, x]) => x && (x.set || x.q))), runes: mb.runes, mystling: mb.mystling };
+        if (JSON.stringify(next) !== JSON.stringify({ ...(m.mainBuild || {}) })) { nm.mainBuild = { ...next, date: localDate(at), updatedAt: at, src: fromShot.main ? "profile screenshots" : "edited by an officer" }; delete nm.mainBuild.incomplete; } }
       const changed = [];
-      for (const k of ["rank", "status", "power", "artifacts", "presetStatus", "presetDate", "preset", "notes"]) if (JSON.stringify(nm[k] ?? null) !== JSON.stringify(m[k] ?? null)) changed.push(k);
+      for (const k of ["rank", "status", "power", "artifacts", "presetStatus", "presetDate", "preset", "mainBuild", "notes"]) if (JSON.stringify(nm[k] ?? null) !== JSON.stringify(m[k] ?? null)) changed.push(k);
       if (!changed.length) { editing = false; renderMemberPanel(); return; }
       save.disabled = true; msg.className = "small"; msg.textContent = "Saving…";
-      try { await saveMember(nm, "edited roster", `${m.ign}: ${changed.join(", ")}`); editing = false; renderMemberPanel(); }
+      try { await saveMember(nm, "edited roster", `${m.ign}: ${changed.join(", ")}${fromShot.exp || fromShot.main ? " (from screenshots)" : ""}`);
+        if (fromShot.exp || fromShot.main) { try { await addToInventory(nm, { gear: { ...(fromShot.exp ? nm.preset.gear : {}), ...(fromShot.main && nm.mainBuild ? nm.mainBuild.gear : {}) }, runes: fromShot.main && nm.mainBuild ? nm.mainBuild.runes : nm.preset.runes, mystling: fromShot.exp ? nm.preset.mystling : null }); } catch { /* inventory is a convenience */ } }
+        editing = false; renderMemberPanel(); }
       catch { msg.className = "small err"; msg.textContent = "Couldn't save. Check your connection and try again."; save.disabled = false; }
     });
     box.append(el("div", { class: "row" }, save, el("button", { type: "button", class: "btn ghost", text: "Cancel", onclick: () => { editing = false; renderMemberPanel(); } }), msg));
@@ -3324,7 +3347,7 @@ body.env-staging .envbar { display: block; }
     }
     return !n ? null : red / n > 0.35 ? "Mythic" : pur / n > 0.35 ? "Epic" : "Legendary";
   }
-  if (window.__expose) { window.__presetGroup = (sc) => presetGroup(sc); window.__charCanon = (n) => charCanon(n); window.__memberByName = (n) => (memberByName(n) || {}).id || null; window.__memberIgn = (id) => (memberById(id) || {}).ign; window.__presetKind = (b) => presetKind(b); window.__presetDiffers = (a, b) => presetDiffers(a, b); window.__videoStills = (f, o) => videoStills(f, new AbortController().signal, () => {}, o); window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
+  if (window.__expose) { window.__presetGroup = (sc) => presetGroup(sc); window.__charCanon = (n) => charCanon(n); window.__memberByName = (n) => (memberByName(n) || {}).id || null; window.__memberIgn = (id) => (memberById(id) || {}).ign; window.__memberGet = (id) => clone(memberById(id) || null); window.__presetKind = (b) => presetKind(b); window.__presetDiffers = (a, b) => presetDiffers(a, b); window.__videoStills = (f, o) => videoStills(f, new AbortController().signal, () => {}, o); window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
   if (window.__expose) { window.__readPresetStill = (b) => readPresetStill(b); }
   if (window.__expose) { window.__readGear = readGear; window.__gearTile = async (blob, b, slot) => { const bmp = await createImageBitmap(blob); return gearSlotRead(gearDesc(bmp, b[0], b[1], b[2] - b[0], b[3] - b[1]), slot, await loadGearRefs()); }; }
   if (window.__expose) { window.__readMystling = readMystling; window.__matchMystTile = async (blob, b) => { const bmp = await createImageBitmap(blob); return matchMystTile(bmp, b); }; }
@@ -3933,45 +3956,106 @@ body.env-staging .envbar { display: block; }
   // --- grouping: Team Info lists, presets in order, presets matched to players ---
   const LANE_OF = (s) => { const t = String(s || "").toLowerCase(); return t.startsWith("l") ? "left" : t.startsWith("m") ? "middle" : t.startsWith("r") ? "right" : null; };
   const powM = (s) => { const m = String(s || "").match(/([\d.]+)\s*([MB])?/i); if (!m) return null; const v = parseFloat(m[1]); return m[2] && m[2].toUpperCase() === "B" ? v * 1000 : v; };
-  // ----- one member's Expedition preset from a screenshot (or two: before and after swiping the gear row) -----
-  // Claude reads the characters and behavior; the mystling, gear and runes are matched on the device, like the video.
-  function presetShotPanel(m) {
-    const wrap = el("div", { class: "hintbox stack", id: "sp-panel" });
-    const file = el("input", { type: "file", id: "sp-file", accept: "image/*", multiple: "" });
-    const go = el("button", { type: "button", class: "btn", id: "sp-read", text: "Read", disabled: "" });
-    const st = el("span", { class: "small", id: "sp-status" }), out = el("div", { class: "stack", id: "sp-result" });
-    const close = (saved) => { editing = false; wrap.remove(); if (saved) renderMemberPanel(); };
-    wrap.append(el("div", { class: "row", style: "justify-content:space-between" }, el("b", { text: `${m.ign}'s Expedition preset from a screenshot` }),
-        el("button", { type: "button", class: "btn ghost", text: "Close", onclick: () => close() })),
-      el("div", { class: "small muted", text: "In game, open the preset in Expedition and take a screenshot. To get all six gear pieces, swipe the gear row and take a second one (optional). Claude reads the characters and behavior (uses a bit of your Claude usage); the mystling, gear and runes are matched on this device." }),
-      el("div", { class: "row" }, file, go, st), out);
-    file.addEventListener("change", () => { const n = file.files.length; st.className = n > 2 ? "small err" : "small"; st.textContent = n > 2 ? "Pick one screenshot, or two if you swiped the gear row." : ""; go.disabled = !n || n > 2; out.replaceChildren(); });
-    go.addEventListener("click", async () => {
-      const files = [...file.files].slice(0, 2); if (!files.length) return;
+  // ----- Edit screens: which build, and filling it from screenshots -----
+  const mainTime = (m) => (m.mainBuild && (m.mainBuild.updatedAt || Date.parse(m.mainBuild.date || "") || 0)) || 0;
+  const editBuildOf = (b, label) => { const x = { ...emptyBuild("custom", label), ...clone(b || {}) }; x.gear = Object.fromEntries(Object.entries(x.gear || {}).filter(([, g]) => g && (g.set || g.q))); return x; };
+  function buildSwitch(cur, onPick) {   // "Expedition preset · Main build"
+    const seg = el("div", { class: "bseg", role: "group", "aria-label": "Build to edit" });
+    for (const [k, t] of [["exp", "Expedition preset"], ["main", "Main build"]]) {
+      const b = el("button", { type: "button", "data-build": k, "aria-pressed": String(k === cur), text: t });
+      b.addEventListener("click", () => { for (const x of seg.querySelectorAll("button")) x.setAttribute("aria-pressed", String(x === b)); onPick(k); });
+      seg.append(b);
+    }
+    return el("div", { class: "field" }, el("label", { text: "Build to edit" }), seg);
+  }
+  // Read 1-2 screenshots into a build patch. Expedition: preset screens (Claude names characters and range/movement, this device
+  // matches mystling, gear and runes). Main build: the profile's Gear tab and Runes tab (all on this device).
+  async function readShotsInto(kind, files, say) {
+    const out = { gear: {}, runes: null, chars: null, behavior: null, myst: null };
+    if (kind === "exp") {
+      const stills = files.map(f => ({ blob: f, url: URL.createObjectURL(f), extra: [] })), screens = stills.map((_, k) => ({ i: k + 1, type: "unread" }));
       const sample = window.claude && typeof claude.use === "function" ? await claude.use("sample") : null;
-      if (!sample) { st.className = "small err"; st.textContent = "Reading screenshots isn't available here. Open this page inside Claude."; return; }
-      go.disabled = true; st.className = "small"; out.replaceChildren();
-      try {
-        const stills = files.map(f => ({ blob: f, url: URL.createObjectURL(f), extra: [] })), screens = stills.map((_, k) => ({ i: k + 1, type: "unread" }));
-        const errs = await vidReadInto(screens, screens.map(x => x.i), stills, sample, new AbortController().signal, 2, () => { st.textContent = "Reading the screenshot…"; }, presetPrompt);
-        if (errs.fatal) { st.className = "small err"; st.textContent = errs.fatal; go.disabled = false; return; }
-        const use = screens.filter(x => x.type === "preset" || x.type === "unread");   // unread by Claude: the device can still match what it knows
-        if (!use.length) { st.className = "small err"; st.textContent = "That doesn't look like a preset screen. Open the preset in Expedition and screenshot that."; go.disabled = false; return; }
-        st.textContent = "Matching the mystling, gear and runes…";
-        for (const sc of use) { try { sc.pdev = await readPresetStill(stills[sc.i - 1].blob); } catch { /* left to the review */ } sc.type = "preset"; }
-        const pr = { n: 1, lane: null, slot: { name: m.ign, lane: null, order: null }, frames: use.map(x => x.i), reads: use, near: [] };
-        Object.assign(pr, mergePresetReads(use));
-        st.textContent = use.length < screens.length ? "One screenshot wasn't a preset screen and was left out. Check the rest, then save." : "Check it, correct anything, then save.";
-        renderPresetResult({ lists: { left: [], middle: [], right: [] }, subs: [], presets: [pr] }, screens, stills, { one: { m, box: out, state: {}, onClose: close } });
-      } catch { st.className = "small err"; st.textContent = "Something went wrong reading that. Try again."; go.disabled = false; }
+      let note = "";
+      if (sample) { say("Reading the screenshots…"); const errs = await vidReadInto(screens, screens.map(x => x.i), stills, sample, new AbortController().signal, 2, () => {}, presetPrompt); if (errs.fatal) note = errs.fatal + " Characters and range/movement were left as they are."; }
+      else note = "Claude can't read images here, so characters and range/movement were left as they are.";
+      if (screens.some(x => x.type === "teaminfo" || x.type === "other")) { const bad = screens.filter(x => x.type === "teaminfo" || x.type === "other").map(x => x.i); if (bad.length === screens.length) return { error: "That doesn't look like a preset screen. Open the preset in Expedition and screenshot that." }; }
+      say("Matching the mystling, gear and runes…");
+      const use = screens.filter(x => x.type !== "teaminfo" && x.type !== "other");
+      for (const sc of use) { try { sc.pdev = await readPresetStill(stills[sc.i - 1].blob); } catch { /* left unread */ } }
+      if (!use.some(sc => sc.pdev && (sc.pdev.gear || (sc.pdev.runes && sc.pdev.runes.layout === "preset")))) return { error: "Couldn't find a preset on that screenshot. Open the preset in Expedition and screenshot it whole." };
+      const m = mergePresetReads(use);
+      return { ...out, chars: m.chars, behavior: m.behavior, myst: m.myst, gear: m.gear || {}, runes: m.runes, note };
+    }
+    say("Matching gear and runes on this device…");
+    const runeReads = []; let any = false;
+    for (const f of files) {
+      try { const g = await readGear(f); if (g) { any = true; for (const [slot, v] of Object.entries(g.slots)) { const o = out.gear[slot]; if (!o || (v.set && !o.set)) out.gear[slot] = v; } } } catch { /* not a gear tab */ }
+      try { const r = await readRunes(f); if (r && r.layout === "profile") { any = true; runeReads.push(r); } } catch { /* not a runes tab */ }
+    }
+    if (!any) return { error: "Couldn't find the Gear or Runes tab on those screenshots. Take them from the player's profile: one of the Gear tab, one of the Runes tab." };
+    out.runes = runeReads.length ? voteRunes(runeReads) : null;
+    return out;
+  }
+  // Lay a read over the build being edited: what was read replaces, what wasn't read keeps what's there. Returns the new build and
+  // which fields came from the screenshots or need a look (editor field keys).
+  function applyShotRead(b, r) {
+    const nb = clone(b), from = [], unsure = [];
+    if (r.chars) r.chars.forEach((v, i) => { if (v === "__none") { nb.chars[i] = null; from.push("c" + i); } else if (v) { const was = (b.chars || [])[i]; nb.chars[i] = { name: v, star: was && was.name === v ? was.star : null }; from.push("c" + i); } else unsure.push("c" + i); });
+    for (const { id } of D.gearSlots) { const g = r.gear && r.gear[id]; if (!g) continue; if (g.set) { nb.gear[id] = { set: g.set, q: g.q || (b.gear?.[id]?.set === g.set ? b.gear[id].q : "") || "" }; from.push("g-" + id); if (!g.q) unsure.push("gq-" + id); } else unsure.push("g-" + id); }
+    if (r.runes) { const by = {}; for (const sl of (r.runes.slots || r.runes)) { (by[sl.type] = by[sl.type] || []).push(sl); }
+      for (const t of RTYPES) (by[t] || []).forEach((sl, i) => { nb.runes[t] = nb.runes[t] || [];
+        if (sl.name) { nb.runes[t][i] = { name: sl.name, q: sl.q || (nb.runes[t][i] && nb.runes[t][i].name === sl.name ? nb.runes[t][i].q : "") || "" }; from.push(`r-${t}-${i}`); }
+        else if (sl.empty) { nb.runes[t][i] = null; from.push(`r-${t}-${i}`); } else unsure.push(`r-${t}-${i}`); });
+      for (const t of RTYPES) nb.runes[t] = (nb.runes[t] || []).filter(Boolean).filter((x, i, a) => a.findIndex(y => y.name === x.name) === i); }
+    if (r.myst) { if (r.myst.empty) { nb.mystling = null; from.push("myst"); } else if (r.myst.name) { nb.mystling = { name: r.myst.name, stars: r.myst.stars ?? null }; from.push("myst"); if (r.myst.stars == null) unsure.push("myst-s"); } else unsure.push("myst"); }
+    if (r.behavior) { nb.behavior = { ...(nb.behavior || {}) }; for (const k of ["range", "movement"]) { if (r.behavior[k]) { nb.behavior[k] = r.behavior[k]; from.push(k === "range" ? "range" : "move"); } else unsure.push(k === "range" ? "range" : "move"); } }
+    return { nb, from, unsure };
+  }
+  function markShotFields(prefix, from, unsure) { for (const k of from) $(`${prefix}-${k}`)?.classList.add("fromshot"); for (const k of unsure) $(`${prefix}-${k}`)?.classList.add("unsure"); }
+  // the "Fill from screenshots" box: two slots; getKind() says which build, onRead(read) lays it over the editor
+  function shotFillBox(prefix, getKind, onRead) {
+    const box = el("div", { class: "hintbox stack", id: prefix + "-shots", style: "gap:8px" });
+    const f1 = el("input", { type: "file", accept: "image/*", id: prefix + "-shot1" }), f2 = el("input", { type: "file", accept: "image/*", id: prefix + "-shot2" });
+    const l1 = el("span", { class: "small muted" }), l2 = el("span", { class: "small muted" }), st = el("span", { class: "small", id: prefix + "-shot-status" });
+    const go = el("button", { type: "button", class: "btn ghost", id: prefix + "-shot-read", text: "Read screenshots" });
+    const labels = () => { const k = getKind(); l1.textContent = k === "exp" ? "Preset screen" : "Gear tab (profile)"; l2.textContent = k === "exp" ? "After swiping the gear row (optional)" : "Runes tab (profile)"; };
+    labels();
+    box.append(el("b", { text: "Fill from screenshots" }),
+      el("div", { class: "small muted", text: "Pick one or two screenshots, then read them: the fields below fill in for the build selected above, with anything unsure outlined in red. Nothing is saved until you press Save." }),
+      el("div", { class: "stack", style: "gap:4px" }, l1, f1), el("div", { class: "stack", style: "gap:4px" }, l2, f2), el("div", { class: "row" }, go, st));
+    go.addEventListener("click", async () => {
+      const files = [f1.files[0], f2.files[0]].filter(Boolean);
+      if (!files.length) { st.className = "small err"; st.textContent = "Pick a screenshot first."; return; }
+      go.disabled = true; st.className = "small";
+      try { const r = await readShotsInto(getKind(), files, (t) => { st.textContent = t; });
+        if (r.error) { st.className = "small err"; st.textContent = r.error; }
+        else { const n = onRead(r); st.className = "small ok-msg"; st.textContent = `Filled ${n.from} field${n.from === 1 ? "" : "s"} from the screenshot${files.length > 1 ? "s" : ""}${n.unsure ? `; ${n.unsure} need${n.unsure === 1 ? "s" : ""} a look (red)` : ""}. Check them, then Save.${r.note ? " " + r.note : ""}`; } }
+      catch { st.className = "small err"; st.textContent = "Something went wrong reading that. Try again."; }
+      go.disabled = false;
     });
-    return wrap;
+    return { el: box, relabel: labels };
+  }
+  // A member saving their own main build: officers write the roster; members write their own record, which the roster reads
+  async function saveMainAsPlayer(b, from) {
+    const mm = myMember(); if (!mm) throw new Error("not linked");
+    const at = Date.now(), mb = { ...(mm.mainBuild || {}), chars: b.chars, gear: b.gear, runes: b.runes, mystling: b.mystling, date: localDate(at), updatedAt: at, src: from };
+    delete mb.incomplete;
+    if (isEditor) { const nm = clone(memberById(mm.id)); nm.mainBuild = mb; await saveMember(nm, "updated own main build", `${mm.ign} (from ${from})`); return; }
+    try { await moveMyRecords(true); } catch { /* the old single record still works */ }
+    const ref = db.doc("presets/" + myId), cur = await ref.get(), d = cur.exists ? (cur.data() || {}) : {};
+    const changes = diffObj({ mainBuild: clone(mm.mainBuild || {}) }, { mainBuild: mb });
+    await ref.set({ ...d, memberId: mm.id, ign: mm.ign, mainBuild: mb, mainAt: at, v: d.log || d.shared ? 1 : 2 });
+    try { applyPresetToInventory(mb); await saveProfile(null, true); } catch { /* inventory is a convenience */ }
+    await logEvent("updated own main build", `${mm.ign} (from ${from})`, { src: /screenshot/.test(from) ? "screenshot" : "typed", changes });
   }
   function mergeDevReads(reads) {   // several frames of one preset screen: best read per gear slot, a named mystling over an unsure one
     const out = { gear: {} };
     for (const d of reads) {
       if (d.myst && (!out.myst || (d.myst.name && (!out.myst.name || d.myst.score > out.myst.score)) || (d.myst.empty && !out.myst.name))) out.myst = d.myst;
-      for (const [slot, g] of Object.entries(d.gear || {})) { const o = out.gear[slot]; if (!o || (g.set && !o.set) || (!!g.set === !!o.set && (g.q && !o.q || (g.score || -9) > (o.score || -9)))) out.gear[slot] = g; }
+      for (const [slot, g] of Object.entries(d.gear || {})) { const o = out.gear[slot];
+        if (o && o.set && g.set && o.set !== g.set) { out.gear[slot] = { set: null, q: null, conflict: true }; continue; }   // frames disagree (one caught mid-swipe): ask, don't guess
+        if (o && o.conflict) continue;
+        if (!o || (g.set && !o.set) || (!!g.set === !!o.set && (g.q && !o.q || (g.score || -9) > (o.score || -9)))) out.gear[slot] = g; }
       if (d.runes) { const nm = (r) => ((r && r.slots) || []).filter(x => x.name).length; if (!out.runes || nm(d.runes) > nm(out.runes)) out.runes = d.runes; }
     }
     if (!Object.keys(out.gear).length) delete out.gear;

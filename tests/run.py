@@ -217,7 +217,7 @@ async def main():
         await mpg.fill("#roster-search", ""); await mpg.wait_for_timeout(100)
         check("member can't edit other rows", await mpg.locator("#roster-body button.gchip").count() == 6)
         await mpg.fill("#roster-search", "shoex"); await mpg.click("#roster-body tr:first-child"); await mpg.wait_for_timeout(300)
-        check("member sees 'Edit my preset'", "Edit my preset" in await mpg.inner_text("#member-panel"))
+        check("member sees 'Edit my builds'", "Edit my builds" in await mpg.inner_text("#member-panel"))
         await mc.close()
         # mobile
         m = await b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2)
