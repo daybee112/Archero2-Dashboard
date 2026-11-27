@@ -4010,7 +4010,9 @@ body.env-staging .envbar { display: block; }
         const has = (l, n) => Object.values(lists[l]).some(x => x.name.toLowerCase() === n.toLowerCase());
         const known = LANES.find(l => main.some(r => has(l, r.name)));
         let L = known;
-        if (!L) { const tab = LANE_OF(sc.lane), free = LANES.filter(l => !used.has(l));
+        const tab0 = LANE_OF(sc.lane);   // more of the same list (rows 6-8, say, with no name from the page before): same tab, rows still empty
+        if (!L && lane && (!tab0 || tab0 === lane) && main.every(r => Number.isInteger(+r.order) && !lists[lane][+r.order]) && Object.keys(lists[lane]).length) L = lane;
+        if (!L) { const tab = tab0, free = LANES.filter(l => !used.has(l));
           L = tab && free.includes(tab) && (!lane || laneIdx(tab) > laneIdx(lane)) ? tab : free.find(l => !lane || laneIdx(l) > laneIdx(lane)) || tab || lane; }
         if (!L) continue;
         lane = L; used.add(L);

@@ -88,6 +88,12 @@ async def main():
         g = await pg.evaluate("(s) => { const g = window.__presetGroup(s); return { presets: g.presets.map(p => ({ who: (p.slot || {}).name || null, truth: p.reads[0].who })) }; }", num(video() + subpart()))
         bad = [(p["truth"], p["who"]) for p in g["presets"] if p["truth"] != p["who"]]
         check("one video: the subs at the end, after Right: all 43 presets to the right players", len(g["presets"]) == 43 and not bad, f"{len(g['presets'])} {bad[:4]}")
+        # 10. a Team Info screen that shows rows 7-8 and the first subs together (Daby's Nov 26 screenshot), with powers
+        mixed = [{"type": "teaminfo", "lane": "left", "rows": [{"order": 7, "name": "Terminus323", "power": "9.24M"}, {"order": 8, "name": "Bubobubo", "power": "8.82M"},
+                  {"order": "Sub", "name": "Yullong", "power": "10.25M"}, {"order": "Sub", "name": "TheDragonix725", "power": "8.06M"}, {"order": "Sub", "name": "Michelo", "power": "7.97M"}]}]
+        v = video(); first_l = [ti("left", 0)]
+        g = await pg.evaluate("(s) => { const g = window.__presetGroup(s); return { left: g.lists.left.map(x => x.order + ':' + x.name), subs: g.subs.map(x => x.name + ' ' + x.power) }; }", num(first_l + mixed))
+        check("rows 7-8 plus subs on one screen: rows go to the lane, subs (with power) to the subs", g["left"][-2:] == ["7:Terminus323", "8:Bubobubo"] and g["subs"] == ["Yullong 10.25", "TheDragonix725 8.06", "Michelo 7.97"], json.dumps(g))
         # 8. presetDiffers itself
         d = await pg.evaluate("""() => [window.__presetDiffers({ chars: ['Helix'] }, { chars: ['Thor'] }), window.__presetDiffers({ chars: ['Helix'] }, { chars: [null] }),
           window.__presetDiffers({ pdev: { gear: { weapon: { set: 'Oracle', q: 'Chaotic' }, armor: { set: 'Oracle', q: 'Chaotic' }, ring: { set: 'Oracle', q: 'Chaotic' } } } }, { pdev: { gear: { weapon: { set: 'Dragoon', q: 'Chaotic' }, armor: { set: 'Dragoon', q: 'Chaotic' }, ring: { set: 'Oracle', q: 'Chaotic' } } } })]""")

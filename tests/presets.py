@@ -18,9 +18,15 @@ PRE = lambda c: {"type": "preset", "chars": c, "behavior": {"range": "Mid", "mov
 SCRIPT = {1: TI(TOP), 2: PRE(["Helix", "Demeter", "Thor"]), 3: TI(TOP), 4: PRE(["Hela", "Otta", None]), 5: TI(TOP), 6: PRE(["Phynx", "Cleo", "Thor"]), 7: TI(TOP),
           8: PRE(["Helix", "Otta", "Thor"]), 9: TI(TOP), 10: PRE(["Helix", "Demeter", "Thor"]), 11: TI(TOP), 12: TI(LOW), 13: PRE(["Alex", "", ""]), 14: TI(LOW),
           15: PRE(["Phynx", "Otta", "Cleo"]), 16: TI(LOW), 17: PRE(["Helix", "Hela", "Thor"]), 18: {"type": "other"}}
-SAMPLE = "window.__script = " + json.dumps(SCRIPT) + """;
+# Claude's answers by what's on each screen (the device's preset check), not by screen number: the screen finder doesn't
+# keep exactly the same screens every run, and numbers would slip
+PRES = [SCRIPT[k] for k in sorted(SCRIPT) if SCRIPT[k]["type"] == "preset"]
+SAMPLE = "window.__pres = " + json.dumps(PRES) + "; window.__ti = " + json.dumps([TI(TOP), TI(LOW)]) + """;
 window.__sampleImpl = async (prompt, opts) => { const nums = (prompt.match(/screens ([\\d, ]+), in this order/) || [])[1].split(',').map(x => +x.trim());
-  return { text: JSON.stringify({ screens: nums.map(i => ({ i, ...(window.__script[i] || { type: 'other' }) })) }) }; };"""
+  if (!window.__labels) { const st = window.__curStills, out = []; let k = 0;
+    for (const s of st) { const kind = await window.__presetKind(s.blob); if (kind === 'preset') { const prev = out[out.length - 1]; out.push(prev && prev.type === 'preset' ? prev : window.__pres[k++] || { type: 'other' }); } else out.push(k >= 5 ? window.__ti[1] : window.__ti[0]); }
+    window.__labels = out; }
+  return { text: JSON.stringify({ screens: nums.map(i => ({ i, ...(window.__labels[i - 1] || { type: 'other' }) })) }) }; };"""
 CARDS = """() => [...document.querySelectorAll('#vid-result .vcard[data-key]')].map(c => ({ key: c.dataset.key, text: c.innerText.replace(/\\s+/g, ' '),
   vals: Object.fromEntries([...c.querySelectorAll('[data-f]')].filter(x => 'value' in x && x.type !== 'radio').map(x => [x.dataset.f, x.value])),
   unsure: [...c.querySelectorAll('.unsure')].map(x => x.dataset.f), on: c.querySelector('.von').checked }))"""
