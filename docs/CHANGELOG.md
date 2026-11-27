@@ -57,6 +57,13 @@ remove them from this list.
 
 (None right now. The v10.0.0 MHARU → мнαяυ rename was done on live right after publishing, 2026-11-26.)
 
+### Project docs to sync (to-do, per Daby 2026-11-26)
+
+- **v10.0.0:** copy this file to the project's `dashboard/CHANGELOG.md`, and archive the v10.0.0 text files
+  (`index.html`, `changelog.json`, `build-data.json`, `env.js`, `gear-digits.json`, `gear-refs.json`,
+  `mystling-refs.json`, `rune-refs.json`) under the project's `dashboard/releases/v10.0.0/`. The `.jpg` reference
+  sheets stay in GitHub only. Skipped at release time to save usage. Remove this item once done.
+
 ## In-tool changes (activity log), per Daby 2026-11-22
 
 Changes made inside the tool aren't releases, so they aren't entries here. They live in the activity log (version
