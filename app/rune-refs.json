@@ -837,6 +837,17 @@
    "name": "Ricochet Strike",
    "type": "enhancement",
    "src": "Daby's Ricochet Strike popup, Nov 26 (Mythic)"
+  },
+  {
+   "name": "Swordstrike Aerie",
+   "type": "etched",
+   "small": true,
+   "src": "Daby's preset screenshot, Nov 26"
+  },
+  {
+   "name": "Swordstrike Aerie",
+   "type": "etched",
+   "src": "Daby's Swordstrike Aerie popup, Nov 26"
   }
  ]
 }
