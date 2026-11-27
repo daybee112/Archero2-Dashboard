@@ -66,6 +66,28 @@ async def main():
         check("scrolled list numbered 1-5: rows 6-8 still land on 6-8", all([r["name"] for r in g["lists"][l]] == LANE[l] for l in LANE) and ok(g)[0], json.dumps({l: [r["name"] for r in g["lists"][l]] for l in LANE})[:300])
         # 7. the gear swipe on one preset doesn't split it (same mystling, same everything)
         check("two frames of one preset stay one preset", all(x["n"] == 2 for x in (await pairs(pg, video()))["presets"]))
+        # 9. subs: pages of Sub rows (the last page repeats a name), each sub's preset opened in order: after Left's 8, or alone
+        SUBP = [["Yullong", "TheDragonix725", "Michelo", "Itsgeorgees", "GoatGeass"], ["Prodegie", "sles", "DrFuko", "Buchacha", "TylerG"], ["Bazal", "Jess19", "Abr0", "slenderu", "Tw3aKZ"], ["Tw3aKZ", "KevinShock", "Profetafume", "Banditten", "Legitkit"]]
+        SUBS = [n for k, pg_ in enumerate(SUBP) for n in pg_ if not (k == 3 and n == "Tw3aKZ")]
+        def subpart():
+            out = []
+            for k, n in enumerate(SUBS):
+                page = SUBP[0] if k < 5 else SUBP[1] if k < 10 else SUBP[2] if k < 15 else SUBP[3]
+                out += [{"type": "teaminfo", "lane": "left", "rows": [{"order": "Sub", "name": x, "power": "7.0M"} for x in page]}, {"type": "preset", "chars": [None] * 3, "pdev": {"myst": {"name": MYST[k % 8], "stars": k}}, "who": n}]
+            return out + [{"type": "teaminfo", "lane": "left", "rows": [{"order": "Sub", "name": x, "power": "7.0M"} for x in SUBP[3]]}]
+        def num(lst):
+            for i, x in enumerate(lst): x["i"] = i + 1
+            return lst
+        g = await pg.evaluate("(s) => { const g = window.__presetGroup(s); return { subs: g.subs.map(x => x.name), lists: g.lists, presets: g.presets.map(p => ({ who: (p.slot || {}).name || null, truth: p.reads[0].who })) }; }", num(subpart()))
+        check("subs video alone: 19 subs in order, the repeat counted once", g["subs"] == SUBS, str(g["subs"]))
+        check("subs video alone: each preset goes to its sub", [p["who"] for p in g["presets"]] == SUBS and not any(g["lists"][l] for l in LANE), str([p["who"] for p in g["presets"]][:6]))
+        v = video(); cut = next(i for i, x in enumerate(v) if x.get("type") == "teaminfo" and x["lane"] == "middle")
+        g = await pg.evaluate("(s) => { const g = window.__presetGroup(s); return { subs: g.subs.map(x => x.name), presets: g.presets.map(p => ({ who: (p.slot || {}).name || null, truth: p.reads[0].who })) }; }", num(v[:cut] + subpart() + v[cut:]))
+        bad = [(p["truth"], p["who"]) for p in g["presets"] if p["truth"] != p["who"]]
+        check("one video: Left 1-8, then the subs, then Middle and Right: all 43 presets to the right players", len(g["presets"]) == 43 and not bad, f"{len(g['presets'])} {bad[:4]}")
+        g = await pg.evaluate("(s) => { const g = window.__presetGroup(s); return { presets: g.presets.map(p => ({ who: (p.slot || {}).name || null, truth: p.reads[0].who })) }; }", num(video() + subpart()))
+        bad = [(p["truth"], p["who"]) for p in g["presets"] if p["truth"] != p["who"]]
+        check("one video: the subs at the end, after Right: all 43 presets to the right players", len(g["presets"]) == 43 and not bad, f"{len(g['presets'])} {bad[:4]}")
         # 8. presetDiffers itself
         d = await pg.evaluate("""() => [window.__presetDiffers({ chars: ['Helix'] }, { chars: ['Thor'] }), window.__presetDiffers({ chars: ['Helix'] }, { chars: [null] }),
           window.__presetDiffers({ pdev: { gear: { weapon: { set: 'Oracle', q: 'Chaotic' }, armor: { set: 'Oracle', q: 'Chaotic' }, ring: { set: 'Oracle', q: 'Chaotic' } } } }, { pdev: { gear: { weapon: { set: 'Dragoon', q: 'Chaotic' }, armor: { set: 'Dragoon', q: 'Chaotic' }, ring: { set: 'Oracle', q: 'Chaotic' } } } })]""")

@@ -3865,7 +3865,8 @@ body.env-staging .envbar { display: block; }
     return `These ${nums.length} screenshots (screens ${nums.join(", ")}, in this order) are from the Guild Expedition of the mobile game Archero 2, our guild ArchAcademy.\n` +
       "Each is one of:\n" +
       "- teaminfo: the \"Team Info\" list. Rows have an Order (a number 1-8, or \"Sub\"), a player name and a power like 9.72M. Tabs Left / Middle / Right at the bottom: the lighter, highlighted one is the lane. " +
-      "IGNORE the yellow bar just above the tabs (the viewer's own slot, not a row) and any rows covered by a popup of buttons.\n" +
+      "IGNORE the yellow bar just above the tabs (the viewer's own slot, not a row) and any rows covered by a popup of buttons. " +
+        "Below the 8 numbered rows come the subs: every sub row shows the word Sub in the Order column, so give those order \"Sub\", never a number, and list them top to bottom as shown (a page may repeat names from the page before).\n" +
       "- preset: one player's preset popup (no name on it): a large Deployed character portrait and two smaller Resonance portraits, a mystling, a Gear Preset row, a Rune Preset grid, and Behavior Preset with two values: range (Melee, Mid or Long) and movement (Balanced, Offense, Movement or Pickup).\n" +
       "- other: anything else (loading screens, maps, blank lists).\n" +
       "For preset screens name the three characters [deployed, resonance1, resonance2] from the list Alex, Nyanja, Helix, Hela, Mymu, Hou Yi, Seraph, Dracoola, Rolla, Loki, Phynx, Nezha, Otta, Demon King Atreus, Thor, Cleo, Wukong, Artemis, Demeter; \"\" for an empty slot, null if unsure.\n" +
@@ -4267,8 +4268,12 @@ body.env-staging .envbar { display: block; }
           const nm = clone(m); nm.power = { m: Math.round(p.power * 100) / 100, date: today, src: "Team Info" }; await saveMember(nm, "edited roster", `${m.ign}: power from Team Info`); pw2++; }
         if (vidCtx && weekById(vidCtx.week)) {
           const w = weekById(vidCtx.week), nw = clone(w), nr = (nw.rounds || []).find(x => x.n === vidCtx.round);
-          if (nr) { nr.registered = { ...Object.fromEntries(LANES.map(l => [l, g.lists[l].map(p => ({ name: p.name, power: p.power }))])), subs: g.subs.map(p => ({ name: p.name, power: p.power })), at: Date.now() };
-            nr.uploads = { ...(nr.uploads || {}), presets: { at: Date.now(), date: today, players: n } };
+          if (nr) {   // a video updates only what it shows: a subs-only video keeps the lanes, a lanes-only video keeps the subs
+            const was = nr.registered || {}, pick = (list) => list.map(p => ({ name: p.name, power: p.power }));
+            nr.registered = { ...Object.fromEntries(LANES.map(l => [l, g.lists[l].length ? pick(g.lists[l]) : (was[l] || [])])), subs: g.subs.length ? pick(g.subs) : (was.subs || []), at: Date.now() };
+            const old = nr.uploads && nr.uploads.presets && !nr.uploads.presets.from ? nr.uploads.presets : {}, hasLanes = LANES.some(l => g.lists[l].length);
+            const nSub = picked.filter(d => d.slot && d.slot.lane === "sub").length, lanesN = hasLanes ? n - nSub : (old.lanesN != null ? old.lanesN : 0), subsN = g.subs.length ? nSub : (old.subsN || 0);
+            nr.uploads = { ...(nr.uploads || {}), presets: { at: Date.now(), date: today, players: lanesN + subsN, lanesN, subsN } };
             await saveWeek(nw, `Round ${vidCtx.round}: our lanes and presets uploaded (${n} presets) (${w.label})`); }
         }
         msg.className = "small ok-msg"; msg.textContent = `Saved ${n} preset${n === 1 ? "" : "s"}${added ? ` (${added} added to the roster)` : ""}${pw2 ? `, power for ${pw2} more` : ""}.`;
