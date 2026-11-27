@@ -974,6 +974,10 @@ body.env-staging .envbar { display: block; }
 
   // ================= helpers =================
   const charByName = (n) => D.characters.find(c => c.name === n);
+  // a character name as Claude wrote it: exact, any case, or a unique part of the name ("Atreus", "DK Atreus" → Demon King Atreus)
+  const charCanon = (v) => { if (!v || typeof v !== "string") return null; const t = v.trim().toLowerCase().replace(/^dk\s+/, "demon king ");
+    const ex = D.characters.find(c => c.name.toLowerCase() === t); if (ex) return ex.name;
+    const part = D.characters.filter(c => c.name.toLowerCase().includes(t) || t.includes(c.name.toLowerCase())); return part.length === 1 ? part[0].name : null; };
   const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
   const owned = (n) => hasOwn(inv.chars, n) && (inv.chars[n] === null || Number.isInteger(inv.chars[n]));
   const star = (n) => (owned(n) ? (Number.isInteger(inv.chars[n]) ? inv.chars[n] : 0) : -1);   // unknown counts as ★0 for scoring
@@ -3319,7 +3323,7 @@ body.env-staging .envbar { display: block; }
     }
     return !n ? null : red / n > 0.35 ? "Mythic" : pur / n > 0.35 ? "Epic" : "Legendary";
   }
-  if (window.__expose) { window.__presetGroup = (sc) => presetGroup(sc); window.__memberByName = (n) => (memberByName(n) || {}).id || null; window.__memberIgn = (id) => (memberById(id) || {}).ign; window.__presetKind = (b) => presetKind(b); window.__presetDiffers = (a, b) => presetDiffers(a, b); window.__videoStills = (f, o) => videoStills(f, new AbortController().signal, () => {}, o); window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
+  if (window.__expose) { window.__presetGroup = (sc) => presetGroup(sc); window.__charCanon = (n) => charCanon(n); window.__memberByName = (n) => (memberByName(n) || {}).id || null; window.__memberIgn = (id) => (memberById(id) || {}).ign; window.__presetKind = (b) => presetKind(b); window.__presetDiffers = (a, b) => presetDiffers(a, b); window.__videoStills = (f, o) => videoStills(f, new AbortController().signal, () => {}, o); window.__readRunes = readRunes; window.__voteRunes = (r) => voteRunes(r); }   // tests only
   if (window.__expose) { window.__readPresetStill = (b) => readPresetStill(b); }
   if (window.__expose) { window.__readGear = readGear; window.__gearTile = async (blob, b, slot) => { const bmp = await createImageBitmap(blob); return gearSlotRead(gearDesc(bmp, b[0], b[1], b[2] - b[0], b[3] - b[1]), slot, await loadGearRefs()); }; }
   if (window.__expose) { window.__readMystling = readMystling; window.__matchMystTile = async (blob, b) => { const bmp = await createImageBitmap(blob); return matchMystTile(bmp, b); }; }
@@ -3853,10 +3857,10 @@ body.env-staging .envbar { display: block; }
     "Hela (blue): dark hair with a teal streak, gold horned headpiece with green gem, green eyes, grey-green skin. Mymu (blue): mummy, white bandages, shadowed face, gold triangle headpiece with red gem, one yellow eye.\n" +
     "Hou Yi (blue): dark hair with feathers, green headband, red face paint. Seraph (purple): brown hair, gold tiara with red gem, yellow eyes. Dracoola (purple): vampire, dark purple slicked hair, pale purple skin, red eyes.\n" +
     "Rolla (purple): platinum hair, blue crystal crown. Loki (purple): orange hair, gold horned helmet, green eyes, green outfit. Phynx (purple): black cat in a gold-and-blue pharaoh headdress, red sun disc.\n" +
-    "Nezha (purple): black hair buns with red ribbons, red forehead mark. Otta (gold): pirate, black skull hat, white bear-like face, red coat. Demon King Atreus (gold): dark red hood, white hair, red eyes, smirk, no helmet.\n" +
+    "Nezha (purple): black hair buns with red ribbons, red forehead mark. Otta (gold): pirate, black skull hat, white bear-like face, red coat. Demon King Atreus (gold): a big dark maroon hat on top of a cream/tan hood, white hair, red eyes, smirk, black glove, no helmet; badge: red-and-black demon crest.\n" +
     "Thor (gold): gold winged helmet, red hair, yellow eyes, frown. Cleo (gold): black bob with bangs, red-and-gold Egyptian headdress, bored half-lidded eyes. Wukong (gold): monkey, orange fur, red face paint, gold headband.\n" +
     "Artemis (gold): white hair, silver half-moon tiara with green jewel, purple eyes. Demeter (gold): golden wavy hair, gold laurel wreath and tiara with red gem.\n" +
-    "Look-alikes: Hela (blue, dark hair) vs Loki (purple, orange hair). Cleo vs Thor vs Atreus: Cleo has bangs under an Egyptian headdress, Thor a winged helmet and red hair, Atreus no helmet and a maroon hood. Never match on one feature.";
+    "Look-alikes: Hela (blue, dark hair) vs Loki (purple, orange hair). Cleo vs Thor vs Atreus: Cleo has bangs under an Egyptian headdress, Thor a winged helmet and red hair, Atreus no helmet, a cream hood under a maroon hat. Seraph (purple, brown hair, gold tiara) vs Demeter (gold, golden hair, laurel wreath). Always write the full name Demon King Atreus. Never match on one feature.";
   function presetPrompt(nums) {
     return `These ${nums.length} screenshots (screens ${nums.join(", ")}, in this order) are from the Guild Expedition of the mobile game Archero 2, our guild ArchAcademy.\n` +
       "Each is one of:\n" +
@@ -4036,7 +4040,7 @@ body.env-staging .envbar { display: block; }
 
   function mergePresetReads(reads) {
     const vote = (vals) => { const c = {}; for (const v of vals) if (v != null) c[v] = (c[v] || 0) + 1; const top = Object.entries(c).sort((a, z) => z[1] - a[1])[0]; return top ? top[0] : null; };
-    const chars = [0, 1, 2].map(k => vote(reads.map(r => (r.chars || [])[k]).map(v => v === "" ? "__none" : v && D.characters.some(c => c.name === v) ? v : null)));
+    const chars = [0, 1, 2].map(k => vote(reads.map(r => (r.chars || [])[k]).map(v => v === "" ? "__none" : charCanon(v))));
     const beh = { range: vote(reads.map(r => r.behavior && r.behavior.range).filter(v => D.behaviorOptions.range.includes(v))),
       movement: vote(reads.map(r => r.behavior && r.behavior.movement).filter(v => D.behaviorOptions.movement.includes(v))) };
     let myst = null, gear = {}; const runeReads = [];

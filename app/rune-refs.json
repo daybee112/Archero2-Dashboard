@@ -826,6 +826,17 @@
    "name": "Echo Scythe",
    "type": "etched",
    "src": "Daby's Echo Scythe popup, Nov 26"
+  },
+  {
+   "name": "Ricochet Strike",
+   "type": "enhancement",
+   "small": true,
+   "src": "Daby's preset screenshot, Nov 26 (Mythic)"
+  },
+  {
+   "name": "Ricochet Strike",
+   "type": "enhancement",
+   "src": "Daby's Ricochet Strike popup, Nov 26 (Mythic)"
   }
  ]
 }

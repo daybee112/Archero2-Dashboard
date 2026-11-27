@@ -78,6 +78,8 @@ async def main():
         check("the rename took (record shows the new name)", await pg.evaluate("window.__memberIgn('m-mharu')") == "\u043c\u043d\u03b1\u044f\u03c5", await pg.evaluate("window.__memberIgn('m-mharu')"))
         nm = await pg.evaluate("() => [window.__memberByName('MHARU'), window.__memberByName('\u043c\u043d\u03b1\u044f\u03c5')]")
         check("after the rename: the old name (in old rounds) and the new one both find the same record", nm == ["m-mharu", "m-mharu"], str(nm))
+        cn = await pg.evaluate("() => ['Atreus', 'DK Atreus', 'demon king atreus', 'Demon King Atreus', 'Thor', 'thor', 'King', 'Nobody'].map(window.__charCanon)")
+        check("character names: Atreus / DK Atreus / any case all mean Demon King Atreus; vague or unknown stays blank", cn == ["Demon King Atreus"] * 4 + ["Thor", "Thor", "Demon King Atreus", None] or cn == ["Demon King Atreus"] * 4 + ["Thor", "Thor", None, None], str(cn))
         check("no page errors", not errs, str(errs[:3]))
         await b.close()
     print(f"{sum(res)} / {len(res)}")

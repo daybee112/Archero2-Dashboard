@@ -8,7 +8,8 @@ from real profile Runes and Team Info preset screens (each checked by eye), so m
 actually appear, on Mythic red frames, and behind some glow. Cells marked `small: true` in the JSON are those. Potion Spring, Meteor Split and Orbital Orb
 were added Nov 24 (popups plus 4 small icons). Nov 26: Echo Scythe added (popup + 1 small) and one small cell that was
 cut as Pulsing Orb relabelled to Echo Scythe (it was an Echo Scythe); small cells added for Vine Bind, Rootguard,
-Plant Crit, Plant Summon, Equinox Bloom and Orbital Orb from Daby's preset screenshots.
+Plant Crit, Plant Summon, Equinox Bloom and Orbital Orb from Daby's preset screenshots. Ricochet Strike in its Mythic look
+(solid red body: popup + 1 small) added the same day.
 
 Scripts (Python prototypes, paths point at the original frame folders):
 - `find_icon.py`: finds the icon tile in a popup screenshot.
