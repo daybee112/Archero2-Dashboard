@@ -7,10 +7,9 @@
  "releases": [
     {
       "id": "v11.1.0",
-      "date": "not released yet",
-      "by": "Daby (staging preview)",
-      "draft": true,
-      "title": "Leave a round out of DPS averages (in testing)",
+      "date": "2026-11-27",
+      "by": "Daby (published by Claude)",
+      "title": "Leave a round out of DPS averages",
       "changes": [
         "Rounds: a played round has a Leave out of DPS averages button for officers (and Count in DPS averages to undo it), for rounds whose numbers aren't typical, like a blowout by a far stronger guild. Everyone sees the round marked as left out.",
         "A left-out round still shows on each player's history, marked as left out, but doesn't count toward their average, the week's top DPS or lane planning."

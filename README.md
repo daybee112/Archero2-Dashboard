@@ -3,7 +3,7 @@
 Guild dashboard for the Archero 2 guild **ArchAcademy**: roster, inventories and builds, Training Ground, and Guild Expedition planning and results.
 
 - **Live dashboard:** https://claude.ai/artifact/MaDLSLGhDxJPiPJcWeJ4si (a claude.ai artifact, slug `a699eb5d-8093-41f9-a74f-b4e8d5d70341`)
-- **Current stable release:** **v11.0.0** (2026-11-27). v9.0.0 (2026-11-23) was the first release marked stable.
+- **Current stable release:** **v11.1.0** (2026-11-27). v9.0.0 (2026-11-23) was the first release marked stable.
 - **Release history:** release commits ("Release vX.Y.Z") on `main`, tags on GitHub, and [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Claude's sessions can't push tags, so Daby tags each release on GitHub.
 - **Data model:** [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md)
 
