@@ -169,6 +169,7 @@ table.lb { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 
 table.lb th, table.lb td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.lb th { font-size: .8rem; color: var(--muted); font-weight: 600; }
 table.lb td.num, table.lb th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.lb tr.oppplayer[aria-selected="true"] td { background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .err { color: var(--bad); font-size: .9rem; }
 .ok-msg { color: var(--good); font-size: .9rem; }
 .hintbox { border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; }
@@ -4857,11 +4858,11 @@ body.env-staging .envbar { display: block; }
       dps: dps.reduce((a, x) => a + x.v, 0), estimated: dps.filter(x => x.est).length };
   }
   function oppPlayerInfo(oppName, name) {
-    const o = allOpponents()[oppName];
-    const scan = o && (o.scans || []).length ? o.scans[o.scans.length - 1].players.find(p => p.name === name) : null;
-    const seen = [];
-    for (const w of allWeeks()) for (const r of (w.rounds || [])) if (r.opponent === oppName) for (const s of (r.theirStats || [])) if (s.name === name && s.dps) seen.push(s.dps);
-    for (const ob of EXP.observations) if (ob.guild === oppName) for (const s of (ob.stats || [])) if (s.name === name && s.dps) seen.push(s.dps);
+    const o = allOpponents()[oppName], c = oppCanon(o, name), same = (x) => oppCanon(o, x) === c;   // merged names count as one player
+    const scan = o && (o.scans || []).length ? o.scans[o.scans.length - 1].players.find(p => same(p.name)) : null;
+    const seen = [];   // matches left out of DPS averages don't count
+    for (const w of allWeeks()) for (const r of (w.rounds || [])) if (r.opponent === oppName && !r.theirNoDps) for (const s of (r.theirStats || [])) if (same(s.name) && s.dps) seen.push(s.dps);
+    for (const ob of EXP.observations) if (ob.guild === oppName && !ob.noDps) for (const s of (ob.stats || [])) if (same(s.name) && s.dps) seen.push(s.dps);
     return { scan, dps: seen.length ? seen.reduce((a, x) => a + x, 0) / seen.length : null, seen: seen.length };
   }
   const gearOf = (scan) => { const g = (scan?.gear || "").split(" ")[0]; return ["Dragoon", "Oracle", "Griffin", "Mixed", "Other"].includes(g) ? g : null; };
@@ -5286,16 +5287,23 @@ body.env-staging .envbar { display: block; }
     // Played rounds are read-only (Claude keeps that data); officers can edit the lineup of a round not yet played.
     const canLineup = isEditor && !r.result && r.status !== "done";
     panel.append(el("div", { class: "row", style: "justify-content:space-between" },
-      el("div", {}, el("h2", {}, `Round ${r.n} vs `, r.opponent ? guildLink(r.opponent) : "?"), el("div", { class: "small muted" }, r.date || "", " ", statusChip, r.noDps ? " · left out of DPS averages" : "")),
+      el("div", {}, el("h2", {}, `Round ${r.n} vs `, r.opponent ? guildLink(r.opponent) : "?"), el("div", { class: "small muted" }, r.date || "", " ", statusChip, r.noDps ? " · our DPS left out of averages" : "", r.theirNoDps ? ` · ${r.opponent || "their"} DPS left out` : "")),
       el("div", { class: "row" },
         canLineup && !editing ? el("button", { type: "button", class: "btn ghost", text: "Edit lineup", onclick: () => { expEditing = "lineup"; renderExpedition(); } }) : null,
         (r.our && LANES.some(l => (r.our[l]?.players || []).length)) ? imgBtn("Lineup image", () => lineupSpec(w, r, r.their && LANES.some(l => (r.their[l]?.players || []).length) ? r.their : (predictTheirLanes(r.opponent, w.id, r.n) || {}).lanes)) : null,
         (r.stats || []).some(s => s.surv) && !r.partialStats ? imgBtn("Results image", () => resultsSpec(w, r)) : null,
-        // officers: leave a round out of DPS averages when its numbers aren't typical (say, a blowout by a far stronger guild)
-        isEditor && (r.stats || []).length ? el("button", { type: "button", class: "btn ghost", id: "btn-nodps", text: r.noDps ? "Count in DPS averages" : "Leave out of DPS averages",
-          title: r.noDps ? "This round doesn't count toward anyone's DPS average. Count it again." : "Keep this round's numbers on show but stop them counting toward DPS averages (for rounds that aren't typical).",
-          onclick: async (e) => { e.currentTarget.disabled = true; try { await setNoDps(w, r, !r.noDps); } catch { e.currentTarget.disabled = false; } } }) : null,
         el("button", { type: "button", class: "btn ghost", text: expEditing === "info" ? "Hide round details" : "Round details", "aria-expanded": String(expEditing === "info"), onclick: () => { expEditing = expEditing === "info" ? null : "info"; renderExpedition(); } }))));
+    // officers: leave a side's numbers out of DPS averages when the round isn't typical (say, a blowout by a far stronger guild);
+    // ours and theirs switch separately (per Daby)
+    if (isEditor && ((r.stats || []).length || (r.theirStats || []).length)) {
+      const line = (label, on, id, field) => el("div", { class: "row", style: "justify-content:space-between" },
+        el("span", { class: "small" }, label, el("span", { class: "muted", text: on ? " · left out" : " · counted" })),
+        el("button", { type: "button", class: "btn ghost", id, text: on ? "Count again" : "Leave out",
+          onclick: async (e) => { e.currentTarget.disabled = true; try { await setNoDps(w, r, !on, field); } catch { e.currentTarget.disabled = false; } } }));
+      panel.append(el("div", { class: "stack dpsavg", style: "gap:4px" }, el("div", { class: "small muted", text: "DPS averages" }),
+        (r.stats || []).length ? line("ArchAcademy", !!r.noDps, "btn-nodps", "noDps") : null,
+        (r.theirStats || []).length ? line(r.opponent || "Opponent", !!r.theirNoDps, "btn-their-nodps", "theirNoDps") : null));
+    }
     const bc = r.result ? resultsCard(w, r) : briefingCard(w, r); if (bc) panel.append(bc);
     if (r.strategy) panel.append(el("p", { class: "small", style: "margin:0" }, el("b", { text: "Plan in short: " }), r.strategy));
     if (expEditing === "info") panel.append(roundDetails(w, r));
@@ -5502,17 +5510,158 @@ body.env-staging .envbar { display: block; }
     const durOf = (lanesStats, ln, extra) => Math.max(extra || 0, ...lanesStats.filter(s => s.lane === ln && s.surv).map(s => s.surv), 0) || null;
     for (const w of allWeeks()) for (const r of (w.rounds || [])) if (r.opponent === n && r.their) {
       const both = [...(r.theirStats || []), ...(r.stats || [])];
-      hist.push({ week: w.id, round: r.n, vs: "ArchAcademy", label: `${w.label} · Round ${r.n} vs ArchAcademy`, lanes: r.their, stats: r.theirStats || [],
+      hist.push({ week: w.id, round: r.n, vs: "ArchAcademy", label: `${w.label} · Round ${r.n} vs ArchAcademy`, lanes: r.their, stats: r.theirStats || [], noDps: !!r.theirNoDps, ref: { kind: "round", w, r },
         dur: Object.fromEntries(LANES.map(l => [l, durOf(both, l, r.laneResults?.[l]?.dur)])),
         result: r.result ? (r.result === "W" ? "they lost " : "they won ") + (r.score ? r.score.split("-").reverse().join("-") : "") : (LANES.some(l => r.their[l]?.predicted) ? "not played yet · predicted lineup" : "not played yet") });
     }
     for (const ob of EXP.observations) if (ob.guild === n) {
       const pair = EXP.observations.find(x => x.week === ob.week && x.round === ob.round && x.guild === ob.vs && x.vs === ob.guild);
       const both = [...(ob.stats || []), ...((pair && pair.stats) || [])];
-      hist.push({ week: ob.week, round: ob.round, vs: ob.vs, label: `${weekById(ob.week)?.label || ob.week} · Round ${ob.round} vs ${ob.vs}`, lanes: ob.lanes, stats: ob.stats || [],
+      hist.push({ week: ob.week, round: ob.round, vs: ob.vs, label: `${weekById(ob.week)?.label || ob.week} · Round ${ob.round} vs ${ob.vs}`, lanes: ob.lanes, stats: ob.stats || [], noDps: !!ob.noDps, ref: { kind: "obs", ob },
         dur: Object.fromEntries(LANES.map(l => [l, durOf(both, l)])), result: ob.result + (ob.note ? " · " + ob.note : "") });
     }
     return hist.sort((a, z) => a.week === z.week ? a.round - z.round : (a.week < z.week ? -1 : 1));
+  }
+  // ----- opponent rosters -----
+  // One roster per guild across all weeks (per Daby), worked out from its matches (results) and roster scans, so results
+  // never overwrite an upload. Officers' choices live on the guild record: links (misread name → name) merge a player,
+  // notSame keeps pairs ruled different, profiles holds hand-entered details. The newest value of each detail wins.
+  const OPP_PROF = ["power", "mythic", "leg", "gear", "mystling", "note", "runes"];
+  const oppCanon = (o, name) => { let x = name; for (let k = 0; k < 5 && o && o.links && o.links[x]; k++) x = o.links[x]; return x; };
+  function nameDist(a, b) {   // edit distance, capped at 2 (only "one letter off" matters)
+    a = [...a]; b = [...b]; if (Math.abs(a.length - b.length) > 1) return 2;
+    let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) { const cur = [i]; for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; }
+    return Math.min(2, prev[b.length]);
+  }
+  function oppRoster(n) {
+    const o = allOpponents()[n] || {}, P = new Map();
+    const get = (name) => { const c = oppCanon(o, name); let p = P.get(c);
+      if (!p) P.set(c, p = { name: c, aliases: new Set(), rounds: [], profile: {}, at: {}, scans: new Set(), hand: false });
+      if (name !== c) p.aliases.add(name); return p; };
+    const put = (p, src, t) => { for (const k of OPP_PROF) if (src[k] != null && src[k] !== "" && !(p.at[k] > t)) { p.profile[k] = src[k]; p.at[k] = t; } };
+    (o.scans || []).forEach((sc, i) => { const t = Date.parse((sc.date || "") + "T12:00:00Z") || 0; for (const sp of (sc.players || [])) { const p = get(sp.name); p.scans.add(i); put(p, sp, t); } });
+    for (const [name, pr] of Object.entries(o.profiles || {})) { const p = get(name); p.hand = true; put(p, pr, pr.at || 0); }
+    for (const h of oppMatches(n)) for (const l of LANES) { const L = (h.lanes || {})[l] || {};
+      for (const name of (L.players || [])) {
+        const st = h.stats.find(x => x.name === name && x.lane === l) || h.stats.find(x => x.name === name) || null;
+        const sv = st ? (st.survSec || st.surv) : null, dps = st ? (st.dps || (st.dmg != null && sv ? st.dmg / sv : null)) : null;
+        const pct = st ? (st.survPct ?? (h.dur[l] && st.surv ? Math.min(100, st.surv / h.dur[l] * 100) : null)) : null;
+        get(name).rounds.push({ week: h.week, round: h.round, vs: h.vs, lane: l, anchor: L.anchor === name, st, dps, pct, counts: dps != null && !h.noDps, leftOut: !!h.noDps });
+      } }
+    const avg = (a) => { a = a.filter(x => x != null); return a.length ? a.reduce((s, x) => s + x, 0) / a.length : null; };
+    return [...P.values()].map(p => { const c = p.rounds.filter(r => r.counts), pr = p.profile;
+      return { ...p, counted: c.length, avgDps: avg(c.map(r => r.dps)), pct: avg(p.rounds.map(r => r.pct)),
+        taken: avg(p.rounds.map(r => r.st?.taken)), heal: avg(p.rounds.map(r => r.st?.heal)), dmg: p.rounds.reduce((s, r) => s + (r.st?.dmg || 0), 0),
+        lanes: [...new Set(p.rounds.map(r => LANE_LABEL[r.lane][0]))], hp: pr.mythic != null ? pr.mythic * 18 + (pr.leg || 0) * 1.8 : null,
+        hasProfile: pr.power != null || pr.mythic != null || !!pr.gear || !!pr.mystling }; });
+  }
+  // names one letter apart that never shared a match or a scan: maybe the same player misread (per Daby: ask each time)
+  function oppNameChecks(n, roster) {
+    const o = allOpponents()[n] || {}, R = roster || oppRoster(n);
+    const key = (a, b) => [a, b].sort().join("\u0001"), ruled = new Set((o.notSame || []).map(x => key(x[0], x[1])));
+    const met = (a, b) => a.rounds.some(x => b.rounds.some(y => y.week === x.week && y.round === x.round && y.vs === x.vs)) || [...a.scans].some(i => b.scans.has(i));
+    const out = [];
+    for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) { const a = R[i], b = R[j];
+      if (Math.min([...a.name].length, [...b.name].length) < 3 || ruled.has(key(a.name, b.name))) continue;
+      if ((a.name.toLowerCase() === b.name.toLowerCase() || nameDist(a.name, b.name) <= 1) && !met(a, b)) out.push([a, b]); }
+    return out;
+  }
+  async function linkOppNames(n, a, b, same) {
+    const o = clone(allOpponents()[n] || { name: n }); o.name = n;
+    if (same) {   // keep the name read off a scan (a profile screen), else the one with more rounds
+      const keep = (b.scans.size && !a.scans.size) || (!a.scans.size === !b.scans.size && b.rounds.length > a.rounds.length) ? b : a, drop = keep === a ? b : a;
+      o.links = { ...(o.links || {}), [drop.name]: keep.name };
+      if (o.profiles && o.profiles[drop.name]) { o.profiles[keep.name] = { ...o.profiles[drop.name], ...(o.profiles[keep.name] || {}) }; delete o.profiles[drop.name]; }
+      await saveOpponent(o, `${n} roster: ${drop.name} is ${keep.name} (same player)`);
+    } else { o.notSame = [...(o.notSame || []), [a.name, b.name]]; await saveOpponent(o, `${n} roster: ${a.name} and ${b.name} are different players`); }
+  }
+  async function saveOppProfile(n, name, vals) {
+    const o = clone(allOpponents()[n] || { name: n }); o.name = n;
+    o.profiles = { ...(o.profiles || {}), [name]: { ...vals, at: Date.now(), by: myName || "" } };
+    await saveOpponent(o, `${n} roster: edited ${name}'s profile`);
+  }
+  async function setObsNoDps(ob, on) {   // leave a match we only watched out of that guild's DPS averages (per Daby)
+    if (!db || !isEditor) throw new Error("not allowed");
+    const nob = clone(ob); if (on) nob.noDps = true; else delete nob.noDps; nob.updatedAt = Date.now(); nob.updatedBy = myId;
+    await db.doc(`observations/${ob.week}-r${ob.round}-${oppId(ob.guild)}`).set(nob);
+    EXP.observations = EXP.observations.map(x => x === ob ? nob : x); renderExpedition();
+    logEvent("expedition", `${ob.guild}: ${weekById(ob.week)?.label || ob.week} R${ob.round} vs ${ob.vs} ${on ? "left out of" : "counted in"} their DPS averages`, { changes: [`noDps: ${on ? "empty → true" : "true → empty"}`] });
+  }
+  function oppRosterSection(n) {
+    const R = oppRoster(n).sort((a, z) => (z.avgDps ?? -1) - (a.avgDps ?? -1) || (z.hp ?? -1) - (a.hp ?? -1) || a.name.localeCompare(z.name));
+    const wrap = el("div", { class: "stack opproster", "data-roster": n });
+    if (!R.length) { wrap.append(el("h3", { text: "Roster" }), el("p", { class: "small muted", text: "No players yet. Saving round results or uploading a roster scan adds them." })); return wrap; }
+    const withProf = R.filter(p => p.hasProfile).length;
+    wrap.append(el("h3", { text: `Roster, all weeks (${R.length} players)` }),
+      el("p", { class: "small muted", style: "margin:0", text: `${withProf} of ${R.length} with profile details. Players come from round results and roster scans; results only add names and stats, they never change an upload. Avg DPS skips matches left out of DPS averages.` }));
+    if (isEditor) for (const [a, b] of oppNameChecks(n, R)) {
+      const msg = el("span", { class: "small" });
+      const desc = (x) => `${x.name} (${x.rounds.length} round${x.rounds.length === 1 ? "" : "s"}${x.scans.size ? ", scanned" : ""})`;
+      const act = (same) => async () => { msg.textContent = "Saving…"; try { await linkOppNames(n, a, b, same); } catch { msg.className = "small err"; msg.textContent = "Couldn't save."; } };
+      wrap.append(el("div", { class: "panel row namecheck", style: "justify-content:space-between" },
+        el("span", { class: "small" }, el("b", { text: "Same player? " }), `${desc(a)} looks like ${desc(b)}`),
+        el("span", { class: "row" }, el("button", { type: "button", class: "btn ghost", text: "Same player", onclick: act(true) }),
+          el("button", { type: "button", class: "btn ghost", text: "Different players", onclick: act(false) }), msg)));
+    }
+    const cols = ["Player", "Lanes", "Rounds", "Avg DPS", "Survived", "Dmg taken", "Healing", "Power", "Mythic / Leg", "Lane HP", "Gear", "Mystling", "Profile"];
+    const t = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, ...cols.map((c, i) => el("th", { class: i >= 2 && i <= 9 ? "num" : "", text: c })))));
+    const tb = el("tbody");
+    // the tapped player's rounds and profile open in a panel under the table, not inside it: the table scrolls sideways on phones
+    const detail = el("div", { class: "panel stack oppdetail", hidden: true });
+    let openName = null;
+    for (const p of R) { const pr = p.profile, g = gearOf(pr);
+      const row = el("tr", { class: "oppplayer", style: "cursor:pointer", title: "Show rounds and profile", onclick: () => {
+        tb.querySelectorAll("tr.oppplayer").forEach(x => x.removeAttribute("aria-selected"));
+        if (openName === p.name) { openName = null; detail.hidden = true; return; }
+        openName = p.name; row.setAttribute("aria-selected", "true");
+        detail.replaceChildren(el("div", { class: "row", style: "justify-content:space-between" }, el("b", { text: p.name }),
+          el("button", { type: "button", class: "btn ghost", text: "Close", onclick: () => { openName = null; detail.hidden = true; row.removeAttribute("aria-selected"); } })), oppPlayerDetail(n, p));
+        detail.hidden = false; detail.scrollIntoView({ block: "nearest", behavior: "smooth" }); } },
+        el("td", {}, el("b", { text: p.name }), p.aliases.size ? el("div", { class: "small muted", text: "also read as " + [...p.aliases].join(", ") }) : null),
+        el("td", { class: "small", text: p.lanes.join(" · ") || "—" }),
+        el("td", { class: "num", text: p.rounds.length ? String(p.rounds.length) + (p.counted < p.rounds.filter(r => r.dps != null).length ? "*" : "") : "—" }),
+        el("td", { class: "num", text: p.avgDps != null ? fmtRate(p.avgDps) : "—" }),
+        el("td", { class: "num", text: p.pct != null ? Math.round(p.pct) + "%" : "—" }),
+        el("td", { class: "num", text: p.taken != null ? fmtK(p.taken) : "—" }), el("td", { class: "num", text: p.heal != null ? fmtK(p.heal) : "—" }),
+        el("td", { class: "num", text: pr.power != null ? Number(pr.power).toFixed(2) + "M" : "—" }),
+        el("td", { class: "num", text: pr.mythic != null ? `${pr.mythic} / ${pr.leg ?? "?"}` : "—" }), el("td", { class: "num", text: p.hp != null ? "+" + Math.round(p.hp) + "%" : "—" }),
+        el("td", {}, g ? el("span", { class: "set " + g, text: pr.gear }) : (pr.gear || "—")), el("td", { class: "small", text: pr.mystling || "—" }),
+        el("td", {}, el("span", { class: "chip " + (p.hasProfile ? "good" : "hyp"), text: p.hasProfile ? (p.hand ? "edited" : "scanned") : "needed" })));
+      tb.append(row); }
+    t.append(tb);
+    wrap.append(el("div", { class: "tablewrap" }, t), el("p", { class: "small muted", style: "margin:0", text: "Tap a player for their rounds and profile. Averages are per round; * = some rounds left out of DPS averages." }), detail);
+    return wrap;
+  }
+  function oppPlayerDetail(n, p) {
+    const box = el("div", { class: "stack", style: "padding:4px 0" });
+    if (p.rounds.length) {
+      const t = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, ...["Match", "Lane", "DPS", "Damage", "Survived", "Taken", "Healing"].map((c, i) => el("th", { class: i >= 2 ? "num" : "", text: c })))));
+      const tb = el("tbody");
+      for (const r of p.rounds) tb.append(el("tr", {}, el("td", { class: "small", text: `${weekById(r.week)?.label || r.week} · R${r.round} vs ${r.vs}${r.leftOut ? " (left out)" : ""}` }),
+        el("td", { class: "small", text: LANE_LABEL[r.lane] + (r.anchor ? " ⚓" : "") }), el("td", { class: "num", text: r.dps != null ? fmtRate(r.dps) : "—" }),
+        el("td", { class: "num", text: r.st?.dmg != null ? fmtK(r.st.dmg) : "—" }), el("td", { class: "num", text: r.pct != null ? Math.round(r.pct) + "%" : r.st?.surv ? r.st.surv + "s" : "—" }),
+        el("td", { class: "num", text: r.st?.taken != null ? fmtK(r.st.taken) : "—" }), el("td", { class: "num", text: r.st?.heal != null ? fmtK(r.st.heal) : "—" })));
+      t.append(tb); box.append(el("div", { class: "tablewrap" }, t));
+    } else box.append(el("p", { class: "small muted", style: "margin:0", text: "Not seen in a match yet (from a roster scan only)." }));
+    const pr = p.profile, runes = pr.runes ? Object.values(pr.runes).flat().filter(Boolean) : [];
+    box.append(el("p", { class: "small", style: "margin:0" }, el("b", { text: "Profile: " }),
+      [pr.power != null ? `power ${Number(pr.power).toFixed(2)}M` : "power —", pr.mythic != null ? `Mythic ${pr.mythic} / Legendary ${pr.leg ?? "?"}` : "artifacts —", `gear ${pr.gear || "—"}`, `mystling ${pr.mystling || "—"}`].join(" · "),
+      runes.length ? el("div", { class: "muted", text: "Runes: " + runes.join(", ") }) : null, pr.note ? el("div", { class: "muted", text: "Note: " + pr.note }) : null));
+    if (isEditor) {
+      const f = {}, msg = el("span", { class: "small" });
+      const inp = (k, label, w) => el("label", { class: "row small" }, label + " ", f[k] = el("input", { type: "text", value: pr[k] ?? "", style: `width:${w}px`, "data-k": k }));
+      box.append(el("details", { class: "oppedit" }, el("summary", { class: "small", text: "Edit profile" }),
+        el("div", { class: "stack", style: "margin-top:6px" },
+          el("div", { class: "row" }, inp("power", "Power (M)", 70), inp("mythic", "Mythic", 50), inp("leg", "Legendary", 50)),
+          el("div", { class: "row" }, inp("gear", "Gear", 180), inp("mystling", "Mystling", 140)), inp("note", "Note", 260),
+          el("div", { class: "row" }, el("button", { type: "button", class: "btn", text: "Save profile", onclick: async () => {
+            const v = {}; for (const k of ["power", "mythic", "leg"]) { const x = parseFloat(f[k].value); if (Number.isFinite(x)) v[k] = k === "power" ? x : Math.round(x); }
+            for (const k of ["gear", "mystling", "note"]) if (f[k].value.trim()) v[k] = f[k].value.trim();
+            msg.textContent = "Saving…"; try { await saveOppProfile(n, p.name, v); } catch { msg.className = "small err"; msg.textContent = "Couldn't save."; } } }), msg),
+          el("p", { class: "small muted", style: "margin:0", text: "Saved details stand until a newer roster scan reads them again. Blank boxes keep what's there." }))));
+    }
+    return box;
   }
   function renderOpponents() {
     const box = $("exp-opponents"); box.replaceChildren();
@@ -5594,7 +5743,10 @@ body.env-staging .envbar { display: block; }
       if (hist.length) {
         const t = el("table", { class: "lb lanehist" }, el("thead", {}, el("tr", {}, el("th", { text: "Match" }), ...LANES.map(l => el("th", { text: LANE_LABEL[l] })))));
         const tb = el("tbody");
-        for (const h of hist) tb.append(el("tr", {}, el("td", { class: "small" }, el("b", { text: h.label }), el("div", { class: "muted", text: h.result })),
+        for (const h of hist) tb.append(el("tr", {}, el("td", { class: "small" }, el("b", { text: h.label }), el("div", { class: "muted", text: h.result }),
+            (h.stats || []).length ? el("div", { class: "muted", text: h.noDps ? "left out of DPS averages" : "counts toward DPS averages" }) : null,
+            isEditor && (h.stats || []).length ? el("button", { type: "button", class: "btn ghost obsnodps", text: h.noDps ? "Count again" : "Leave out", style: "margin-top:4px",
+              onclick: async (e) => { e.currentTarget.disabled = true; try { if (h.ref.kind === "obs") await setObsNoDps(h.ref.ob, !h.noDps); else await setNoDps(h.ref.w, h.ref.r, !h.noDps, "theirNoDps"); } catch { e.currentTarget.disabled = false; } } }) : null),
           ...LANES.map(l => {
             const L = h.lanes[l] || {}, ps = L.players || [], dur = h.dur[l];
             const order = [...ps].sort((a, z) => (a === L.anchor ? -1 : z === L.anchor ? 1 : 0));
@@ -5609,45 +5761,9 @@ body.env-staging .envbar { display: block; }
         t.append(tb);
         body.append(el("div", {}, el("h3", { text: weekOnly ? `Lane history, ${w.label}` : "Lane history, all weeks" }),
           el("p", { class: "small muted", style: "margin:0 0 6px", text: "Each player: DPS · seconds survived. ✓ = alive at the end of the fight." }), el("div", { class: "tablewrap" }, t)));
-        // per-player results over the matches shown
-        const agg = {};
-        for (const h of hist) for (const l of LANES) for (const p of (h.lanes[l]?.players || [])) {
-          const st = h.stats.find(x => x.name === p && x.lane === l) || h.stats.find(x => x.name === p);
-          const a = agg[p] || (agg[p] = { name: p, lanes: [], dps: [], surv: [], alive: 0, aliveKnown: 0, dmg: 0 });
-          a.lanes.push(LANE_LABEL[l][0]);
-          if (!st) continue;
-          const dps = st.dps || (st.dmg != null && st.surv ? st.dmg / st.surv : null);
-          if (dps) a.dps.push(dps); if (st.surv) a.surv.push(st.surv); if (st.dmg) a.dmg += st.dmg;
-          if (st.surv && h.dur[l]) { a.aliveKnown++; if (st.surv >= h.dur[l]) a.alive++; }
-        }
-        const avg = (x) => x.length ? x.reduce((s, v) => s + v, 0) / x.length : null;
-        const rows = Object.values(agg).filter(a => a.dps.length || a.surv.length).sort((a, z) => (avg(z.dps) ?? -1) - (avg(a.dps) ?? -1));
-        if (rows.length) {
-          const pt = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Player" }), el("th", { text: "Gear" }), el("th", { text: "Lanes" }), el("th", { class: "num", text: "Avg DPS" }), el("th", { class: "num", text: "Best DPS" }), el("th", { class: "num", text: "Avg survived" }), el("th", { class: "num", text: "Alive at end" }), el("th", { class: "num", text: "Total damage" }))));
-          const ptb = el("tbody");
-          for (const a of rows) { const g = gearOf(oppPlayerInfo(n, a.name).scan);
-            ptb.append(el("tr", {}, el("td", {}, el("b", { text: a.name })), el("td", {}, g ? el("span", { class: "set " + g, text: g }) : "—"), el("td", { class: "small", text: a.lanes.join(" · ") }),
-              el("td", { class: "num", text: a.dps.length ? fmtRate(avg(a.dps)) : "—" }), el("td", { class: "num", text: a.dps.length ? fmtRate(Math.max(...a.dps)) : "—" }),
-              el("td", { class: "num", text: a.surv.length ? Math.round(avg(a.surv)) + "s" : "—" }), el("td", { class: "num", text: a.aliveKnown ? `${a.alive} of ${a.aliveKnown}` : "—" }), el("td", { class: "num", text: a.dmg ? fmtK(a.dmg) : "—" }))); }
-          pt.append(ptb);
-          body.append(el("div", {}, el("h3", { text: weekOnly ? `Player results, ${w.label}` : "Player results, all weeks" }),
-            el("p", { class: "small muted", style: "margin:0 0 6px", text: `Over the ${hist.length} match${hist.length === 1 ? "" : "es"} above. Lanes in round order (L = Left, M = Middle, R = Right).` }), el("div", { class: "tablewrap" }, pt)));
-        }
       } else body.append(el("p", { class: "small muted", text: weekOnly ? "No lane history for this guild in this week." : "No lane history yet." }));
-      // roster scan
-      // roster scan: the one taken during the selected week (within 7 days of its start), or the latest when showing all
-      const inSel = (sc) => { if (!w) return true; const d = Date.parse(sc.date + "T12:00:00Z"), st = Date.parse(w.id + "T00:00:00Z"); return d >= st && d < st + 7 * 864e5; };
-      const scan = weekOnly ? (o.scans || []).filter(inSel).slice(-1)[0] : (o.scans || []).slice(-1)[0];
-      if (scan) {
-        const rows = scan.players.map(p => ({ ...p, hp: p.mythic != null ? p.mythic * 18 + (p.leg || 0) * 1.8 : null, info: oppPlayerInfo(n, p.name) })).sort((a, z) => (z.hp ?? -1) - (a.hp ?? -1));
-        const t = el("table", { class: "lb" }, el("thead", {}, el("tr", {}, el("th", { text: "Player" }), el("th", { class: "num", text: "Power" }), el("th", { class: "num", text: "Mythic / Leg" }), el("th", { class: "num", text: "Lane HP" }), el("th", { text: "Gear" }), el("th", { class: "num", text: "DPS seen" }), el("th", { text: "Note" }))));
-        const tb = el("tbody");
-        for (const p of rows) tb.append(el("tr", {}, el("td", { text: p.name }), el("td", { class: "num", text: p.power ? p.power.toFixed(2) + "M" : "—" }), el("td", { class: "num", text: p.mythic != null ? `${p.mythic} / ${p.leg ?? "?"}` : "—" }),
-          el("td", { class: "num", text: p.hp != null ? "+" + Math.round(p.hp) + "%" : "—" }), el("td", {}, gearOf(p) ? el("span", { class: "set " + gearOf(p), text: p.gear }) : (p.gear || "—")),
-          el("td", { class: "num", text: p.info.dps ? `${fmtRate(p.info.dps)} (${p.info.seen})` : "—" }), el("td", { class: "small muted", text: p.note || "" })));
-        t.append(tb);
-        body.append(el("div", {}, el("h3", { text: `Roster scan (${scan.date}, ${scan.players.length} players)` }), el("div", { class: "tablewrap" }, t)));
-      } else body.append(el("p", { class: "small muted", text: weekOnly && (o.scans || []).length ? "No roster scan from this week." : "No roster scan yet." }));
+      // roster: every player seen in results or scans, all weeks (per Daby: one roster per guild)
+      body.append(oppRosterSection(n));
       // the editor goes on each guild's first tile only (seed opponents have no name field; without it the save went to a nameless doc)
       if (isEditor && !editorShown.has(n)) { editorShown.add(n); body.append(opponentEditor({ ...o, name: n })); }
       list.append(card);
@@ -6134,10 +6250,10 @@ body.env-staging .envbar { display: block; }
     nr.uploads = { ...(nr.uploads || {}), [key]: { at: Date.now(), date: localDate(Date.now()), ...info } };
     await saveWeek(nw, `Round ${ctx.round}: ${key === "presets" ? "our lanes and presets" : "our roster and profiles"} uploaded (${w.label})`);
   }
-  async function setNoDps(w, r, on) {   // leave a round out of DPS averages, or count it again
+  async function setNoDps(w, r, on, field = "noDps") {   // leave our side (noDps) or theirs (theirNoDps) out of DPS averages, or count it again
     const nw = clone(w), nr = nw.rounds.find(x => x.n === r.n); if (!nr) return;
-    if (on) nr.noDps = true; else delete nr.noDps;
-    await saveWeek(nw, `Round ${r.n}: ${on ? "left out of" : "counted in"} DPS averages (${w.label})`);
+    if (on) nr[field] = true; else delete nr[field];
+    await saveWeek(nw, `Round ${r.n}: ${field === "theirNoDps" ? (r.opponent || "their") + "'s" : "our"} DPS ${on ? "left out of" : "counted in"} DPS averages (${w.label})`);
   }
   let vidCtx = null;   // which week and round the open reader is for
   function renderUploads(w) {
@@ -6399,6 +6515,9 @@ body.env-staging .envbar { display: block; }
     const nw = clone(w), nr = (nw.rounds || []).find(x => x.n === resCtx.round); if (!nr) throw new Error("That round isn't in this week.");
     const opp = B.left === "ArchAcademy" ? B.right : B.left;
     if (nr.opponent && nr.opponent !== "tbd" && nr.opponent !== opp) throw new Error(`These screens are vs ${opp}, but Round ${nr.n} is vs ${nr.opponent}.`);
+    // rosters before the save, to say what the results added (results only add players; uploads stay as they are)
+    const rosterGuilds = [...new Set(res.battles.flatMap(O => [O.left, O.right]))].filter(g => g && g !== "ArchAcademy");
+    const knownBefore = Object.fromEntries(rosterGuilds.map(g => [g, new Set(oppRoster(g).flatMap(p => [p.name, ...p.aliases]))]));
     const stats = [], theirStats = [], their = {}, laneResults = {};
     for (const l of LANES) {
       const a = B.sides.ArchAcademy[l], b = B.sides[opp][l], L = B.lanes[l];
@@ -6441,7 +6560,10 @@ body.env-staging .envbar { display: block; }
     }
     renderExpedition();
     const un = stats.filter(s => s.unmatched).map(s => s.ign);
-    return `Saved: ${stats.length} of our players, ${theirStats.length} of ${opp}'s${other ? ", and the other battle" : ""}.` + (un.length ? ` Not on the roster: ${un.join(", ")}.` : "") + (allMissing.length ? ` Missing: ${allMissing.join(", ")}.` : "");
+    const added = rosterGuilds.map(g => { const R = oppRoster(g); return `${g} +${R.filter(p => !knownBefore[g].has(p.name)).length}`; });
+    const checks = rosterGuilds.reduce((n, g) => n + oppNameChecks(g).length, 0);
+    return `Saved: ${stats.length} of our players, ${theirStats.length} of ${opp}'s${other ? ", and the other battle" : ""}.` + (un.length ? ` Not on the roster: ${un.join(", ")}.` : "") + (allMissing.length ? ` Missing: ${allMissing.join(", ")}.` : "")
+      + ` Opponent rosters: ${added.join(", ")} new player${added.length === 1 ? "" : "s"}.` + (checks ? ` ${checks} name${checks === 1 ? "" : "s"} to check on the Opponents tab (same player or not).` : "");
   }
   function openResultsFor(ctx) {
     const pnl = $("res-panel"); $("exp-uploads-reader").append(pnl);
@@ -6465,7 +6587,7 @@ body.env-staging .envbar { display: block; }
     finally { $("btn-res-read").disabled = !$("res-files").files.length; }
   });
   if (window.__expose) { window.__resultsKind = resultsKind; window.__resultsAssemble = resultsAssemble; window.__parseAmt = parseAmt; window.__renderResults = renderResults;
-    window.__openResultsFor = openResultsFor; window.__saveResults = saveResults; window.__setResCtx = (c) => { resCtx = c; }; window.__dpsAvg = (i) => dpsAvg5(i); window.__playerMatches = (i) => buildPlayerMatches(i); }
+    window.__openResultsFor = openResultsFor; window.__saveResults = saveResults; window.__setResCtx = (c) => { resCtx = c; }; window.__dpsAvg = (i) => dpsAvg5(i); window.__oppRoster = (n) => oppRoster(n).map(p => ({ ...p, aliases: [...p.aliases], scans: [...p.scans] })); window.__oppNameChecks = (n) => oppNameChecks(n).map(([a, b]) => [a.name, b.name]); window.__oppInfo = (o, n) => oppPlayerInfo(o, n); window.__saveOppProfile = (o, n, v) => saveOppProfile(o, n, v); window.__playerMatches = (i) => buildPlayerMatches(i); }
   function newWeekPrompt(n) {
     return `These ${n} screenshot${n > 1 ? "s are" : " is"} from the Guild Expedition screens of the mobile game Archero 2, for our guild ArchAcademy.\n` +
       "- The main screen shows the 4 guilds of this week's group, each with its name and power (like 390.45M or 1.19B).\n" +

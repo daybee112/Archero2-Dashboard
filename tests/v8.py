@@ -54,7 +54,7 @@ async def main():
         await pg.click("#exp-sub button[data-sub=opponents]"); await pg.wait_for_timeout(300)
         await pg.click("#opp-list details:first-child > summary"); await pg.wait_for_timeout(300)
         t = await pg.inner_text("#opp-list")
-        check("opponents, habits, scans from the database", "LANE HABITS" in t.upper() and "ROSTER SCAN" in t.upper())
+        check("opponents, habits, roster from the database", "LANE HABITS" in t.upper() and "ROSTER, ALL WEEKS" in t.upper())
         await pg.click("#opp-all"); await pg.wait_for_timeout(300)
         check("all 8 guilds", len(set(await pg.eval_on_selector_all("#opp-list > details", "d=>d.map(x=>x.dataset.guild)"))) == 8)
         await pg.click("#exp-sub button[data-sub=results]"); await pg.wait_for_timeout(300)

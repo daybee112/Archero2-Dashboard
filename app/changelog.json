@@ -6,6 +6,20 @@
  },
  "releases": [
     {
+      "id": "v11.2.0",
+      "date": "not released yet",
+      "by": "Daby (staging preview)",
+      "draft": true,
+      "title": "Opponent rosters from round results (in testing)",
+      "changes": [
+        "Opponents: each guild's card has one roster across all weeks, built from round results (every deployed player, with DPS, survival, damage taken and healing per round) and from roster scans (profile details).",
+        "Results only add players and stats; they never change an uploaded roster or profile. Tap a player for their rounds and profile; officers can fill in or fix a profile with Edit profile.",
+        "When a name is one letter off from a player already on that roster (a likely misread), officers get a Same player / Different players check.",
+        "DPS averages: rounds we fought have separate Leave out switches for us and the opponent, and each match we only watched can be left out of that guild's averages from its lane history.",
+        "Saving round results says how many new players each opponent's roster gained."
+      ]
+    },
+    {
       "id": "v11.1.0",
       "date": "2026-11-27",
       "by": "Daby (published by Claude)",
