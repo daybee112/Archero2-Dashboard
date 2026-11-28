@@ -5286,11 +5286,15 @@ body.env-staging .envbar { display: block; }
     // Played rounds are read-only (Claude keeps that data); officers can edit the lineup of a round not yet played.
     const canLineup = isEditor && !r.result && r.status !== "done";
     panel.append(el("div", { class: "row", style: "justify-content:space-between" },
-      el("div", {}, el("h2", {}, `Round ${r.n} vs `, r.opponent ? guildLink(r.opponent) : "?"), el("div", { class: "small muted" }, r.date || "", " ", statusChip)),
+      el("div", {}, el("h2", {}, `Round ${r.n} vs `, r.opponent ? guildLink(r.opponent) : "?"), el("div", { class: "small muted" }, r.date || "", " ", statusChip, r.noDps ? " · left out of DPS averages" : "")),
       el("div", { class: "row" },
         canLineup && !editing ? el("button", { type: "button", class: "btn ghost", text: "Edit lineup", onclick: () => { expEditing = "lineup"; renderExpedition(); } }) : null,
         (r.our && LANES.some(l => (r.our[l]?.players || []).length)) ? imgBtn("Lineup image", () => lineupSpec(w, r, r.their && LANES.some(l => (r.their[l]?.players || []).length) ? r.their : (predictTheirLanes(r.opponent, w.id, r.n) || {}).lanes)) : null,
         (r.stats || []).some(s => s.surv) && !r.partialStats ? imgBtn("Results image", () => resultsSpec(w, r)) : null,
+        // officers: leave a round out of DPS averages when its numbers aren't typical (say, a blowout by a far stronger guild)
+        isEditor && (r.stats || []).length ? el("button", { type: "button", class: "btn ghost", id: "btn-nodps", text: r.noDps ? "Count in DPS averages" : "Leave out of DPS averages",
+          title: r.noDps ? "This round doesn't count toward anyone's DPS average. Count it again." : "Keep this round's numbers on show but stop them counting toward DPS averages (for rounds that aren't typical).",
+          onclick: async (e) => { e.currentTarget.disabled = true; try { await setNoDps(w, r, !r.noDps); } catch { e.currentTarget.disabled = false; } } }) : null,
         el("button", { type: "button", class: "btn ghost", text: expEditing === "info" ? "Hide round details" : "Round details", "aria-expanded": String(expEditing === "info"), onclick: () => { expEditing = expEditing === "info" ? null : "info"; renderExpedition(); } }))));
     const bc = r.result ? resultsCard(w, r) : briefingCard(w, r); if (bc) panel.append(bc);
     if (r.strategy) panel.append(el("p", { class: "small", style: "margin:0" }, el("b", { text: "Plan in short: " }), r.strategy));
@@ -6175,10 +6179,8 @@ body.env-staging .envbar { display: block; }
              : item("Opponent roster and profiles", "Set this round's opponent first (New week or Rounds)", "todo"),
         ours("ours", "Our roster and profiles", "Profile video of our members: power, artifacts, gear, runes, mystling. Saved as each player's main build and inventory.", "__us"),
         ours("presets", "Our lanes and presets", "Team Info for each lane and the subs, then every player's preset in list order. Saved as each player's Expedition preset.", "__presets"),
-        item("Results", (ru ? `Saved ${ru.date || ""}${ru.missing ? `; missing ${ru.missing.join(", ")}` : ""}. ` : (r.stats || []).length ? "Saved. " : "") + "The Schedule screen plus both guilds' Details for every lane, in both battles (13 screenshots)."
-          + ((r.stats || []).length ? (r.noDps ? " Left out of DPS averages." : " Counts toward DPS averages; leave it out when a round's numbers aren't typical (say, a blowout by a far stronger guild).") : ""), resK, null,
-          btn((r.stats || []).length ? "Upload again" : "Upload screenshots", !!(r.stats || []).length, () => openResultsFor(ctx)),
-          (r.stats || []).length ? btn(r.noDps ? "Count in DPS averages" : "Leave out of DPS averages", true, async (b) => { b.disabled = true; try { await setNoDps(w, r, !r.noDps); } catch { b.disabled = false; } }) : null));
+        item("Results", (ru ? `Saved ${ru.date || ""}${ru.missing ? `; missing ${ru.missing.join(", ")}` : ""}. ` : (r.stats || []).length ? "Saved. " : "") + "The Schedule screen plus both guilds' Details for every lane, in both battles (13 screenshots).", resK, null,
+          btn((r.stats || []).length ? "Upload again" : "Upload screenshots", !!(r.stats || []).length, () => openResultsFor(ctx))));
     }
     box.append(el("div", { class: "panel stack" },
       el("h2", { style: "margin:0", text: "Uploads for the " + w.label.replace(/^Week/, "week") }),
