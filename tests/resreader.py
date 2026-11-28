@@ -1,3 +1,4 @@
+import json
 import os as _os
 HERE = _os.path.dirname(_os.path.abspath(__file__))
 APP = _os.path.join(HERE, "..", "app")
@@ -142,6 +143,25 @@ async def main():
         await pg.select_option("#exp-week", "2026-11-02"); await pg.wait_for_timeout(300)
         row = await pg.inner_text("#exp-uploads-list")
         check("and named on the Results row", "missing Happiness Right" in row, row[:600])
+        # leave a round out of DPS averages (Nov 27: R1 vs Unity cut everyone's DPS to about 12%), then count it again
+        await pg.select_option("#exp-week", "2026-11-16"); await pg.wait_for_timeout(300)
+        key = "expedition/2026-11-16/rounds/1"
+        R16 = next(r for w in SEED["weeks"] if w["id"] == "2026-11-16" for r in w["rounds"] if r["n"] == 1)
+        ign = next(x["ign"] for x in R16["stats"] if x.get("surv"))
+        before = await pg.evaluate(f"window.__dpsAvg({json.dumps(ign)})")
+        r1 = pg.locator("#exp-uploads-list .upl", has_text="Results").first
+        await r1.locator("button", has_text="Leave out of DPS averages").click(); await pg.wait_for_timeout(700)
+        after = await pg.evaluate(f"window.__dpsAvg({json.dumps(ign)})")
+        left = await pg.evaluate(f"!!window.__store.get('{key}').noDps")
+        check("Leave out of DPS averages saves the round as left out", left)
+        check("and that round stops counting in the player's average", after is None or after["total"] == before["total"] - 1, f"{ign}: {before} → {after}")
+        pm = await pg.evaluate(f"window.__playerMatches({json.dumps(ign)}).filter(x => x.week === '2026-11-16' && x.round === 1)")
+        check("the round is still listed, marked as left out", len(pm) == 1 and pm[0]["leftOut"] and not pm[0]["counts"], str(pm))
+        r1 = pg.locator("#exp-uploads-list .upl", has_text="Results").first
+        check("the Results row says so", "Left out of DPS averages." in await r1.inner_text())
+        await r1.locator("button", has_text="Count in DPS averages").click(); await pg.wait_for_timeout(700)
+        back = await pg.evaluate(f"window.__dpsAvg({json.dumps(ign)})")
+        check("Count in DPS averages puts it back", back == before and not await pg.evaluate(f"!!window.__store.get('{key}').noDps"), f"{back} vs {before}")
         # 4) the same Nov 24 screens as a screen recording (Daby's, re-encoded to H.264 at half size for this browser)
         await pg.set_input_files("#res-files", _os.path.join(FIX, "w1124-r1", "recording-h264.mp4"))
         kinds = await pg.evaluate("""async () => { const f = document.querySelector('#res-files').files[0];

@@ -4823,9 +4823,9 @@ body.env-staging .envbar { display: block; }
       const dps = s.dmg != null && sv(s) ? s.dmg / sv(s) : null;
       const laneDps = (r.stats || []).filter(x => x.lane === s.lane && x.dmg != null && sv(x)).map(x => x.dmg / sv(x));
       const med = median(laneDps);
-      const counts = dps != null && !r.partialStats && !(r.offSet || []).includes(ign);
+      const counts = dps != null && !r.partialStats && !r.noDps && !(r.offSet || []).includes(ign);   // noDps: an officer left the round out (e.g. a blowout vs a far stronger guild)
       out.push({ week: w.id, weekLabel: w.label, round: r.n, date: r.date, opponent: r.opponent, lane: s.lane, dmg: s.dmg, surv: s.surv, heal: s.heal,
-        dps, laneMedian: med, index: dps != null && med ? dps / med : null, counts, offSet: (r.offSet || []).includes(ign), partial: !!r.partialStats,
+        dps, laneMedian: med, index: dps != null && med ? dps / med : null, counts, offSet: (r.offSet || []).includes(ign), partial: !!r.partialStats, leftOut: !!r.noDps,
         alive: s.surv && r.laneResults && r.laneResults[s.lane] && r.laneResults[s.lane].dur ? s.surv >= r.laneResults[s.lane].dur : null,
         anchor: r.our && r.our[s.lane] && r.our[s.lane].anchor === ign });
     }
@@ -5134,6 +5134,7 @@ body.env-staging .envbar { display: block; }
     box.append(el("div", { class: "small" }, el("b", { text: "Date: " }), r.date || "—", " · ", el("b", { text: "Status: " }), laneLockState(r).label, r.result ? [" · ", el("b", { text: "Result: " }), `${r.result === "W" ? "won" : r.result === "L" ? "lost" : "draw"} ${r.score || ""}`] : ""),
       el("div", { class: "tablewrap" }, t));
     if (r.partialStats) box.append(el("div", { class: "small muted", text: "Only part of this round's per-player stats were recorded (no survival times), so it doesn't count toward DPS averages." }));
+    if (r.noDps) box.append(el("div", { class: "small muted", text: "Left out of DPS averages by an officer: the numbers are shown but don't count toward anyone's average." }));
     if ((r.offSet || []).length) box.append(el("div", { class: "small muted", text: `On a different gear set than they use now (shown, not averaged): ${r.offSet.join(", ")}.` }));
     if (r.notes) box.append(notesList(r.notes));
     box.append(el("div", { class: "small muted", text: "Round data is kept by Claude from the screenshots Daby shares. Spot something wrong? Tell Daby." }));
@@ -5197,7 +5198,7 @@ body.env-staging .envbar { display: block; }
     }
     // top DPS this week (players with 2+ counted rounds)
     const per = {};
-    for (const r of played) if (!r.partialStats) for (const st of (r.stats || [])) if (st.surv && !(r.offSet || []).includes(st.ign)) (per[st.ign] = per[st.ign] || []).push(st.dmg / st.surv);
+    for (const r of played) if (!r.partialStats && !r.noDps) for (const st of (r.stats || [])) if (st.surv && !(r.offSet || []).includes(st.ign)) (per[st.ign] = per[st.ign] || []).push(st.dmg / st.surv);
     const top = Object.entries(per).filter(([, a]) => a.length >= 2).map(([ign, a]) => ({ ign, n: a.length, avg: a.reduce((x, y) => x + y, 0) / a.length })).sort((a, z) => z.avg - a.avg).slice(0, 3);
     const aa = final && standings ? standings.find(g => g.guild === "ArchAcademy") : null;
     return { played, total, final, rounds, wins, losses, standings, missing, top, dmg: aa && aa.dmg != null ? aa.dmg : rounds.reduce((a, x) => a + x.ourDmg, 0), lessons: final ? (w.lessons || []) : [] };
@@ -5836,7 +5837,7 @@ body.env-staging .envbar { display: block; }
     ms.forEach((m, i) => {
       const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", x(i).toFixed(1)); c.setAttribute("cy", y(m.dps).toFixed(1)); c.setAttribute("r", "3");
       c.setAttribute("fill", m.counts ? "var(--accent)" : "var(--surface)"); c.setAttribute("stroke", "var(--accent)"); c.setAttribute("stroke-width", "1.2"); c.setAttribute("class", "perfdot");
-      const tip = `${m.weekLabel} · Round ${m.round}: ${fmtRate(m.dps)}${m.offSet ? " (other gear set)" : m.partial ? " (partial round)" : ""}`;
+      const tip = `${m.weekLabel} · Round ${m.round}: ${fmtRate(m.dps)}${m.offSet ? " (other gear set)" : m.partial ? " (partial round)" : m.leftOut ? " (left out of averages)" : ""}`;
       c.dataset.tip = tip;
       const show = (e) => { e.stopPropagation(); if (!perfTip) { perfTip = el("div", { class: "perftip" }); document.body.append(perfTip); } perfTip.textContent = tip; perfTip.hidden = false;
         const r = c.getBoundingClientRect(); perfTip.style.left = Math.min(r.left + window.scrollX + 8, window.scrollX + document.documentElement.clientWidth - perfTip.offsetWidth - 8) + "px"; perfTip.style.top = (r.top + window.scrollY - 30) + "px"; };
@@ -5853,7 +5854,7 @@ body.env-staging .envbar { display: block; }
       sections: [tipsForImage.length ? { heading: "What stands out", bullets: tipsForImage } : null,
         { table: { columns: [{ label: "Round", w: 2 }, { label: "Lane" }, { label: "Damage", align: "right" }, { label: "Survived", align: "right" }, { label: "DPS", align: "right" }, { label: "vs lane", align: "right" }],
           rows: [...ms].reverse().map(x => [`${x.weekLabel} R${x.round} vs ${x.opponent}`, LANE_LABEL[x.lane] + (x.anchor ? " ⚓" : ""), fmtK(x.dmg), x.surv ? x.surv + "s" : "—", { text: x.dps != null ? fmtRate(x.dps) + (x.counts ? "" : " *") : "—", bold: x.counts }, x.index != null ? x.index.toFixed(2) + "×" : "—"]) } },
-        ms.some(x => !x.counts && x.dps != null) ? { text: "* not counted in averages (different gear set or partial round)." } : null].filter(Boolean) });
+        ms.some(x => !x.counts && x.dps != null) ? { text: "* not counted in averages (different gear set, partial round, or a round left out by an officer)." } : null].filter(Boolean) });
     const tipsForImage = [];
     const back = expBack || { sub: "players" };
     const backLabel = back.tab === "roster" ? "Back to Roster" : back.sub === "rounds" ? "Back to Rounds" : back.sub === "opponents" ? "Back to Opponents" : back.sub === "results" ? "Back to Week results" : "Back to Expedition roster";
@@ -5892,7 +5893,7 @@ body.env-staging .envbar { display: block; }
       el("td", { text: LANE_LABEL[x.lane] + (x.anchor ? " ⚓" : "") }), el("td", { class: "num", text: fmtK(x.dmg) }), el("td", { class: "num", text: x.surv ? x.surv + "s" + (x.alive ? " ✓" : "") : "—" }),
       el("td", { class: "num", text: x.dps != null ? fmtRate(x.dps) : "—" }), el("td", { class: "num", text: x.laneMedian ? fmtRate(x.laneMedian) : "—" }),
       el("td", { class: "num", text: x.index != null ? x.index.toFixed(2) + "×" : "—" }), el("td", { class: "num", text: x.heal != null ? fmtK(x.heal) : "—" }),
-      el("td", { class: "small muted", text: x.offSet ? "other gear set, not averaged" : x.partial ? "partial round, not averaged" : "" })));
+      el("td", { class: "small muted", text: x.offSet ? "other gear set, not averaged" : x.partial ? "partial round, not averaged" : x.leftOut ? "round left out of averages" : "" })));
     t.append(tb);
     panel.append(el("div", { class: "tablewrap" }, t), el("p", { class: "small muted", style: "margin:0", text: "✓ = alive at the end of the fight." }));
     return panel;
@@ -6129,6 +6130,11 @@ body.env-staging .envbar { display: block; }
     nr.uploads = { ...(nr.uploads || {}), [key]: { at: Date.now(), date: localDate(Date.now()), ...info } };
     await saveWeek(nw, `Round ${ctx.round}: ${key === "presets" ? "our lanes and presets" : "our roster and profiles"} uploaded (${w.label})`);
   }
+  async function setNoDps(w, r, on) {   // leave a round out of DPS averages, or count it again
+    const nw = clone(w), nr = nw.rounds.find(x => x.n === r.n); if (!nr) return;
+    if (on) nr.noDps = true; else delete nr.noDps;
+    await saveWeek(nw, `Round ${r.n}: ${on ? "left out of" : "counted in"} DPS averages (${w.label})`);
+  }
   let vidCtx = null;   // which week and round the open reader is for
   function renderUploads(w) {
     const box = $("exp-uploads-list"); box.replaceChildren();
@@ -6169,8 +6175,10 @@ body.env-staging .envbar { display: block; }
              : item("Opponent roster and profiles", "Set this round's opponent first (New week or Rounds)", "todo"),
         ours("ours", "Our roster and profiles", "Profile video of our members: power, artifacts, gear, runes, mystling. Saved as each player's main build and inventory.", "__us"),
         ours("presets", "Our lanes and presets", "Team Info for each lane and the subs, then every player's preset in list order. Saved as each player's Expedition preset.", "__presets"),
-        item("Results", (ru ? `Saved ${ru.date || ""}${ru.missing ? `; missing ${ru.missing.join(", ")}` : ""}. ` : (r.stats || []).length ? "Saved. " : "") + "The Schedule screen plus both guilds' Details for every lane, in both battles (13 screenshots).", resK, null,
-          btn((r.stats || []).length ? "Upload again" : "Upload screenshots", !!(r.stats || []).length, () => openResultsFor(ctx))));
+        item("Results", (ru ? `Saved ${ru.date || ""}${ru.missing ? `; missing ${ru.missing.join(", ")}` : ""}. ` : (r.stats || []).length ? "Saved. " : "") + "The Schedule screen plus both guilds' Details for every lane, in both battles (13 screenshots)."
+          + ((r.stats || []).length ? (r.noDps ? " Left out of DPS averages." : " Counts toward DPS averages; leave it out when a round's numbers aren't typical (say, a blowout by a far stronger guild).") : ""), resK, null,
+          btn((r.stats || []).length ? "Upload again" : "Upload screenshots", !!(r.stats || []).length, () => openResultsFor(ctx)),
+          (r.stats || []).length ? btn(r.noDps ? "Count in DPS averages" : "Leave out of DPS averages", true, async (b) => { b.disabled = true; try { await setNoDps(w, r, !r.noDps); } catch { b.disabled = false; } }) : null));
     }
     box.append(el("div", { class: "panel stack" },
       el("h2", { style: "margin:0", text: "Uploads for the " + w.label.replace(/^Week/, "week") }),
@@ -6455,7 +6463,7 @@ body.env-staging .envbar { display: block; }
     finally { $("btn-res-read").disabled = !$("res-files").files.length; }
   });
   if (window.__expose) { window.__resultsKind = resultsKind; window.__resultsAssemble = resultsAssemble; window.__parseAmt = parseAmt; window.__renderResults = renderResults;
-    window.__openResultsFor = openResultsFor; window.__saveResults = saveResults; window.__setResCtx = (c) => { resCtx = c; }; }
+    window.__openResultsFor = openResultsFor; window.__saveResults = saveResults; window.__setResCtx = (c) => { resCtx = c; }; window.__dpsAvg = (i) => dpsAvg5(i); window.__playerMatches = (i) => buildPlayerMatches(i); }
   function newWeekPrompt(n) {
     return `These ${n} screenshot${n > 1 ? "s are" : " is"} from the Guild Expedition screens of the mobile game Archero 2, for our guild ArchAcademy.\n` +
       "- The main screen shows the 4 guilds of this week's group, each with its name and power (like 390.45M or 1.19B).\n" +
