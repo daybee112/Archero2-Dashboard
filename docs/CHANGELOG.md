@@ -65,6 +65,7 @@ remove them from this list.
   sheets stay in GitHub only. Skipped at release time to save usage. Remove this item once done.
 - **v11.0.0:** archive `index.html` and `changelog.json` under the project's `dashboard/releases/v11.0.0/` (the other
   files are unchanged from v10.0.0), and copy this file again.
+- **v11.1.0:** same for `dashboard/releases/v11.1.0/` (`index.html`, `changelog.json`).
 
 ## In-tool changes (activity log), per Daby 2026-11-22
 
@@ -154,6 +155,26 @@ results, saved accounts, roster edits, activity log). Older releases read newer 
 ---
 
 ## Releases (newest first)
+
+### v11.1.0 — 2026-11-27 — live
+- **Type:** minor (page improvement: a switch on an existing feature). Branches: `feature/dps-leave-out` →
+  `release/v11.1.0` → `main`. Tried on staging by Daby first (button first on Uploads, moved to the Rounds tab at his
+  request).
+- **Requested by:** Daby · **Published by:** Claude
+- **Pre-publish audit:** clean (live matched v11.0.0, platform version `1795822130-bdd3`; permission rules unchanged)
+- **Headless test before publish:** full suite before the button move: all pass except the known offline `run` font
+  check; after the move: `resreader` 42/42, `uploads`, `exp`, `weekres` all pass.
+- **Platform version:** `1795837897-a129`
+- **Files** (17; sha256 confirmed against live):
+  - `index.html` · 605,473 bytes · `a0a67806d984c7ed92368edc18c70e05447fcc01e9b1f97a0202ed55c7e1b3b0` (changed)
+  - `changelog.json` · 40,238 · `5443bcd20c44d8816f431e9dd9c15d4c27854755fb0f611288d0fc445e26b173` (changed)
+  - the other 15 unchanged from v10.0.0
+- **Permission rules:** unchanged from v7.0.0.
+- **Changes:** see the v11.1.0 entry in `app/changelog.json` (2 items). Round field `noDps: true` = left out of DPS
+  averages (player averages, week top DPS, lane planning); the round still shows on player histories, marked.
+- **Data after publishing** (logged): Week of Nov 24 R1 set to `noDps`, its DPS-averages note and first key note
+  reworded to match (same as staging).
+- **Archive:** GitHub `main`, commit "Release v11.1.0: leave a round out of DPS averages" (`7fe6959`).
 
 ### v11.0.0 — 2026-11-27 — live
 - **Type:** major (new feature: round results from screenshots). Branches: `feature/results-reader` → `release/v11.0.0`
